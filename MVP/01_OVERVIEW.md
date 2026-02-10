@@ -29,15 +29,22 @@ To avoid "noise," the platform should be divided into three specific modules tha
 
 For Rwanda, where data sovereignty and long-term maintenance are key, an **Open-Source Standard** stack is best.
 
-### Frontend: Next.js + Tailwind CSS
+### Framework: Next.js 16+ (App Router)
 
 * **Why:** Next.js provides **Server-Side Rendering (SSR)** for fast dashboard loading and **Progressive Web App (PWA)** capabilities. A PWA allows health workers to "install" the web app on their phones for offline use without going through the Play Store.
-* **State Management:** **Zustand** or **React Query** for managing complex, real-time data fetching from health centers.
+* **Architecture:** Combined frontend and backend in one repository for easier maintenance and deployment.
 
-### Backend: Node.js (Express) or Go
+### Database: MongoDB Atlas
 
-* **Why:** High concurrency. In the event of an outbreak, thousands of CHWs might submit reports simultaneously. Node.js handles these asynchronous events efficiently.
-* **Database:** **PostgreSQL** with **PostGIS** for geographic mapping. PostGIS is essential for Rwanda’s hilly terrain to calculate "catchment areas" for health centers.
+* **Why:** Managed, secure, and free tier for your initial pilot. Better suited for the flexible healthcare data structures with document-based storage that can adapt to changing health reporting requirements.
+
+### Authentication: NextAuth.js
+
+* **Why:** Native MongoDB adapter for secure health worker logins with easy integration and support for multiple authentication providers.
+
+### Validation: Zod
+
+* **Why:** Runtime and compile-time validation for healthcare data integrity, ensuring data quality and consistency across the platform.
 
 ### Interoperability Layer: HL7 FHIR
 
@@ -49,10 +56,12 @@ For Rwanda, where data sovereignty and long-term maintenance are key, an **Open-
 
 | Requirement | Technical Strategy |
 | --- | --- |
-| **Data Privacy** | Implement **RBAC (Role-Based Access Control)**. A CHW should only see their village; the Minister sees the whole country. Use **JWT** for secure sessions. |
+| **Data Privacy** | Implement **RBAC (Role-Based Access Control)**. A CHW should only see their village; the Minister sees the whole country. Use **NextAuth.js** with JWT for secure sessions. |
 | **Connectivity** | **Service Workers** for background syncing. If the internet fails during a report, the "Submit" action is queued in a background sync task. |
 | **Analytics** | Use **Apache Superset** or a custom **D3.js** implementation for the charts. This allows epidemiologists to "slice and dice" data by age, gender, and location. |
 | **Reliability** | **Dockerize** the entire stack. This allows RISA (Rwanda Information Society Authority) to host the platform on their local servers easily. |
+| **Validation** | Use **Zod** for runtime and compile-time validation to ensure data integrity across all forms and API endpoints. |
+| **Database** | Use **MongoDB Atlas** for flexible document-based storage that can adapt to changing health reporting requirements. |
 
 ---
 

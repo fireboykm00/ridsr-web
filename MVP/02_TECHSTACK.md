@@ -3,56 +3,55 @@
 
 ---
 
-## 1. Database Schema (ERD)
+## 1. Database Schema (Collections)
 
-The core of RIDSR is **Interoperability**. We use **PostgreSQL with PostGIS** for spatial tracking.
+The core of RIDSR is **Interoperability**. We use **MongoDB Atlas** for flexible document-based storage.
 
 ```mermaid
-erDiagram
-    FACILITY ||--o{ PATIENT : treats
-    PATIENT ||--o{ CASE_REPORT : has
-    CASE_REPORT ||--o{ LAB_SPECIMEN : requires
-    LAB_SPECIMEN ||--o{ LAB_RESULT : yields
-    CASE_REPORT ||--o{ ALERT : triggers
-    
-    FACILITY {
-        uuid id PK
-        string name
-        enum type "HC, DH, PH, RH"
-        geometry location
-        uuid sector_id FK
-    }
-    
-    PATIENT {
-        uuid id PK
-        string national_id UK "NID Integration"
-        string names
-        date dob
-        enum gender
-        string phone
-    }
+graph TD
+    A[FACILITY Collection] -->|treats| B[PATIENT Collection]
+    B -->|has| C[CASE_REPORT Collection]
+    C -->|requires| D[LAB_SPECIMEN Collection]
+    D -->|yields| E[LAB_RESULT Collection]
+    C -->|triggers| F[ALERT Collection]
 
-    CASE_REPORT {
-        uuid id PK
-        uuid patient_id FK
-        uuid disease_id FK
-        date onset_date
-        enum status "Suspected, Probable, Confirmed"
-        boolean is_hospitalized
-        jsonb symptoms
-    }
+    subgraph "FACILITY Document"
+        id[ID: ObjectId]
+        name[Name: String]
+        type[Type: Enum "HC, DH, PH, RH"]
+        location[Location: Point {type, coordinates}]
+        sectorId[Sector ID: ObjectId]
+    end
 
-    ALERT {
-        uuid id PK
-        uuid case_report_id FK
-        enum priority "Low, Medium, High, Emergency"
-        datetime timestamp
-        boolean is_verified
-    }
+    subgraph "PATIENT Document"
+        pid[ID: ObjectId]
+        nationalId[National ID: String Unique]
+        names[Names: String]
+        dob[DOB: Date]
+        gender[Gender: Enum]
+        phone[Phone: String]
+    end
 
+    subgraph "CASE_REPORT Document"
+        crid[ID: ObjectId]
+        patientId[Patient ID: ObjectId]
+        diseaseId[Disease ID: ObjectId]
+        onsetDate[Onset Date: Date]
+        status[Status: Enum "Suspected, Probable, Confirmed"]
+        isHospitalized[Is Hospitalized: Boolean]
+        symptoms[Symptoms: Object]
+    end
+
+    subgraph "ALERT Document"
+        alid[ID: ObjectId]
+        caseReportId[Case Report ID: ObjectId]
+        priority[Priority: Enum "Low, Medium, High, Emergency"]
+        timestamp[Timestamp: DateTime]
+        isVerified[Is Verified: Boolean]
+    end
 ```
 
-> **Note:** The `national_id` is crucial for de-duplication across Rwanda's health centers.
+> **Note:** The `nationalId` is crucial for de-duplication across Rwanda's health centers.
 
 ---
 
@@ -60,14 +59,17 @@ erDiagram
 
 To meet **RISA (Rwanda Information Society Authority)** hosting and data sovereignty standards:
 
-* **Frontend:** **Next.js 14+ (App Router)**.
-* *Why:* Fast SSR for dashboards and built-in PWA support for health workers in rural areas with poor 4G.
+* **Framework:** **Next.js 16+ (App Router)**.
+* *Why:* Fast SSR for dashboards and built-in PWA support for health workers in rural areas with poor 4G. Combined frontend and backend in one repository for easier maintenance.
 
-* **Backend:** **Node.js (NestJS)** or **Go**.
-* *Why:* NestJS provides a structured, enterprise-grade architecture that is easy for MoH teams to maintain long-term.
+* **Database:** **MongoDB Atlas**.
+* *Why:* Managed, secure, and free tier for your initial pilot. Better suited for the flexible healthcare data structures.
 
-* **Database:** **PostgreSQL + PostGIS**.
-* *Why:* To visualize disease clusters across Rwanda's 30 districts and 416 sectors.
+* **Authentication:** **NextAuth.js**.
+* *Why:* Native MongoDB adapter for secure health worker logins with easy integration.
+
+* **Validation:** **Zod**.
+* *Why:* Runtime and compile-time validation for healthcare data integrity.
 
 * **Real-time:** **Socket.io** or **WebSockets** for the National Command Center's live alert feed.
 * **Interoperability:** **HL7 FHIR API** (Standard for sharing data with OpenMRS/DHIS2).
