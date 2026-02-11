@@ -1,5 +1,5 @@
 // src/app/(main)/terms/page.tsx
-import Card from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 
 const TermsPage = () => {
   return (
@@ -30,7 +30,7 @@ const TermsPage = () => {
 
           <h2 className="text-xl font-semibold text-gray-900 mt-6 mb-4">Data Privacy</h2>
           <p className="text-gray-700 mb-4">
-            All data entered into the RIDSR platform is handled in accordance with Rwanda's data protection laws
+            All data entered into the RIDSR platform is handled in accordance with Rwanda&apos;s data protection laws
             and international standards for health data privacy. We implement appropriate security measures to
             protect your information.
           </p>

@@ -3,10 +3,11 @@
 
 import { SessionProvider } from 'next-auth/react';
 import { ToastProvider } from '@/components/ui/Toast';
+import { Session } from 'next-auth';
 
 type Props = {
   children: React.ReactNode;
-  session: any;
+  session: Session | null;
 };
 
 export default function NextAuthProvider({ children, session }: Props) {

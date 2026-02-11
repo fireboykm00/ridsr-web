@@ -1,7 +1,7 @@
 // src/components/ui/PasswordInput.tsx
 import React, { useState } from 'react';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import Input from './Input';
+import { Input } from './Input';
 
 interface PasswordInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -51,4 +51,4 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 
 PasswordInput.displayName = 'PasswordInput';
 
-export default PasswordInput;
+export { PasswordInput };

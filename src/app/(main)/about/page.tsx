@@ -1,5 +1,5 @@
 // src/app/(main)/about/page.tsx
-import Card from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 
 const AboutPage = () => {
   return (
@@ -15,8 +15,8 @@ const AboutPage = () => {
             surveillance, rapid response, and data-driven decision making for health professionals across Rwanda.
           </p>
           <p className="text-gray-700">
-            By connecting health facilities nationwide, we're creating a robust system that strengthens
-            Rwanda's capacity to detect, investigate, and respond to public health threats.
+            By connecting health facilities nationwide, we are creating a robust system that strengthens
+            Rwanda&apos;s capacity to detect, investigate, and respond to public health threats.
           </p>
         </Card>
 

@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Card from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 export default function AuthErrorPage() {
@@ -14,21 +14,24 @@ export default function AuthErrorPage() {
     // Get error from URL query params
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
-    
+
     if (errorParam) {
+      let errorMessage = '';
       switch (errorParam) {
         case 'CredentialsSignin':
-          setError('Invalid email or password. Please try again.');
+          errorMessage = 'Invalid email or password. Please try again.';
           break;
         case 'Verification':
-          setError('Verification link expired or invalid. Please try again.');
+          errorMessage = 'Verification link expired or invalid. Please try again.';
           break;
         case 'OAuthAccountNotLinked':
-          setError('Account not linked. Please sign in with the same provider you used originally.');
+          errorMessage = 'Account not linked. Please sign in with the same provider you used originally.';
           break;
         default:
-          setError('An authentication error occurred. Please try again.');
+          errorMessage = 'An authentication error occurred. Please try again.';
       }
+      // Using a timeout to avoid calling setState directly in the effect
+      setTimeout(() => setError(errorMessage), 0);
     }
   }, []);
 

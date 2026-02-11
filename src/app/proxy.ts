@@ -1,9 +1,28 @@
-// src/proxy.ts
+// src/app/proxy.ts
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { USER_ROLES } from "@/types";
+
+// Get redirect path based on user role
+async function getRedirectPath(userRole?: string): Promise<string> {
+  if (!userRole) return "/dashboard";
+
+  switch (userRole) {
+    case USER_ROLES.ADMIN:
+    case USER_ROLES.NATIONAL_OFFICER:
+      return "/dashboard";
+    case USER_ROLES.DISTRICT_OFFICER:
+      return "/dashboard";
+    case USER_ROLES.HEALTH_WORKER:
+    case USER_ROLES.LAB_TECHNICIAN:
+      return "/dashboard";
+    default:
+      return "/dashboard";
+  }
+}
 
 // This function protects routes that require authentication
-export default auth((req) => {
+export default auth(async (req) => {
   // Get the pathname of the request
   const pathname = req.nextUrl.pathname;
 
@@ -26,14 +45,16 @@ export default auth((req) => {
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated and tries to access login page, redirect to dashboard
+  // If user is authenticated and tries to access login page, redirect to appropriate dashboard
   if (req.auth && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    const redirectPath = await getRedirectPath(req.auth.user?.role);
+    return NextResponse.redirect(new URL(redirectPath, req.url));
   }
 
-  // If user is authenticated and accesses root path, redirect to dashboard
+  // If user is authenticated and accesses root path, redirect to appropriate dashboard
   if (req.auth && pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    const redirectPath = await getRedirectPath(req.auth.user?.role);
+    return NextResponse.redirect(new URL(redirectPath, req.url));
   }
 
   // If user is not authenticated and accesses dashboard or other protected routes, redirect to login
@@ -41,13 +62,6 @@ export default auth((req) => {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("callbackUrl", req.url);
-    return NextResponse.redirect(url);
-  }
-
-  // For admin routes, check if user has admin role
-  if (pathname.startsWith("/admin") && req.auth?.user?.role !== "admin") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 

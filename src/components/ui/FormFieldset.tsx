@@ -29,4 +29,4 @@ const FormFieldset = React.forwardRef<HTMLFieldSetElement, FormFieldsetProps>(
 
 FormFieldset.displayName = 'FormFieldset';
 
-export default FormFieldset;
+export { FormFieldset };

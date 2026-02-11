@@ -1,5 +1,5 @@
 // src/app/(main)/faq/page.tsx
-import Card from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 
 const FAQPage = () => {
   const faqs = [

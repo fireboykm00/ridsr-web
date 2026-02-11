@@ -1,36 +1,23 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { ROLES, UserRole } from "./utils/auth";
+import { USER_ROLES, User, UserRole } from "@/types";
+import { getMockUser } from "./auth-mock";
 
-// Define the user type
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-}
-
-// In a real application, you would fetch user data from your database
-async function getUser(email: string, password: string) {
-  // This is a mock implementation - in a real app, you'd query your database
-  if (email === "admin@ridsr.rw" && password === "admin123") {
-    return {
-      id: "1",
-      name: "Admin User",
-      email: "admin@ridsr.rw",
-      role: ROLES.ADMIN
-    };
+// TODO: Replace with real database authentication
+async function getUser(identifier: string, password: string): Promise<User | null> {
+  // For development: use mock credentials
+  if (process.env.NODE_ENV === "development") {
+    return getMockUser(identifier, password);
   }
 
-  if (email.endsWith("@ridsr.rw") && password === "health123") {
-    return {
-      id: "2",
-      name: "Health Worker",
-      email: email,
-      role: ROLES.HEALTH_WORKER
-    };
-  }
+  // TODO: In production, query database:
+  // const user = await db.user.findUnique({
+  //   where: { email: identifier }
+  // });
+  // if (user && await verifyPassword(password, user.passwordHash)) {
+  //   return user;
+  // }
 
   return null;
 }
@@ -45,35 +32,39 @@ export const {
     Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        identifier: { label: "Email or Worker ID", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const { email, password } = credentials as {
-          email: string;
-          password: string;
-        };
+        try {
+          const { identifier, password } = credentials as {
+            identifier?: string;
+            password?: string;
+          };
 
-        if (!email || !password) {
-          throw new Error("Email and password are required");
-        }
+          if (!identifier?.trim()) {
+            throw new Error("Email or Worker ID is required");
+          }
 
-        // Verify user credentials
-        const user = await getUser(email, password);
+          if (!password?.trim()) {
+            throw new Error("Password is required");
+          }
 
-        if (!user) {
-          throw new Error("Invalid email or password");
-        }
+          const user = await getUser(identifier.trim(), password);
 
-        // In a real app, you would hash passwords and compare them
-        // For demo purposes, we're using plain text comparison
-        if (email === "admin@ridsr.rw" && password === "admin123") {
+          if (!user) {
+            throw new Error("Invalid email/worker ID or password");
+          }
+
+          if (!user.isActive) {
+            throw new Error("Your account has been deactivated. Please contact support.");
+          }
+
           return user;
-        } else if (email.endsWith("@ridsr.rw") && password === "health123") {
-          return user;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Authentication failed";
+          throw new Error(message);
         }
-
-        throw new Error("Invalid email or password");
       },
     }),
   ],
@@ -82,6 +73,10 @@ export const {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.workerId = user.workerId;
+        token.facilityId = user.facilityId;
+        token.district = user.district;
+        token.province = user.province;
       }
       return token;
     },
@@ -89,17 +84,20 @@ export const {
       if (token) {
         session.user!.role = token.role as UserRole;
         session.user!.id = token.id as string;
+        session.user!.workerId = token.workerId as string;
+        session.user!.facilityId = token.facilityId as string;
+        session.user!.district = token.district as string;
+        session.user!.province = token.province as string;
       }
       return session;
     },
   },
   pages: {
     signIn: "/login",
-    error: "/auth/error", // Custom error page
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 });

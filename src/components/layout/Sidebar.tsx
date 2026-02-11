@@ -1,114 +1,252 @@
-// src/components/layout/Sidebar.tsx
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import RIDSRLogo from '../ui/RIDSRLogo';
+import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { USER_ROLES } from '@/types';
+import {
+  HomeIcon,
+  DocumentTextIcon,
+  TableCellsIcon,
+  Cog6ToothIcon,
+  ArrowRightStartOnRectangleIcon,
+  ChartBarIcon,
+  UserCircleIcon,
+  BuildingOfficeIcon,
+  MapPinIcon,
+  ExclamationTriangleIcon,
+  UserGroupIcon,
+  BellIcon,
+  DocumentIcon
+} from '@heroicons/react/24/outline';
 
-interface SidebarItem {
+interface NavItem {
   name: string;
-  href?: string;
-  icon?: React.ReactNode;
-  children?: SidebarItem[];
+  href: string;
+  icon: React.ReactNode;
+  roles: string[];
+  onClick?: () => void;
 }
 
-interface SidebarProps {
-  items: SidebarItem[];
-  collapsed?: boolean;
-  onToggleCollapse?: () => void;
-}
+const Sidebar: React.FC = () => {
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
 
-const SidebarItemComponent: React.FC<{
-  item: SidebarItem;
-  level?: number;
-}> = ({ item, level = 0 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  const paddingLeft = level === 0 ? 'pl-3' : `pl-${6 + level * 2}`;
-  
-  if (item.children && item.children.length > 0) {
-    return (
-      <div>
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-full flex items-center gap-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ${paddingLeft}`}
-        >
-          {item.icon && <span>{item.icon}</span>}
-          <span className="flex-1 text-left">{item.name}</span>
-          {isExpanded ? (
-            <ChevronDownIcon className="h-4 w-4" />
-          ) : (
-            <ChevronRightIcon className="h-4 w-4" />
-          )}
-        </button>
-        {isExpanded && (
-          <div className="ml-4 border-l border-gray-200 pl-2">
-            {item.children.map((child, idx) => (
-              <SidebarItemComponent key={idx} item={child} level={level + 1} />
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  if (!session?.user) {
+    return null;
   }
-  
-  return (
-    <Link
-      href={item.href || '#'}
-      className={`flex items-center gap-3 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors ${paddingLeft}`}
-    >
-      {item.icon && <span>{item.icon}</span>}
-      <span>{item.name}</span>
-    </Link>
-  );
-};
 
-const Sidebar: React.FC<SidebarProps> = ({ items, collapsed = false, onToggleCollapse }) => {
+  const getDashboardUrl = (): string => {
+    switch (session.user.role) {
+      case USER_ROLES.ADMIN:
+      case USER_ROLES.NATIONAL_OFFICER:
+        return '/dashboard/national';
+      case USER_ROLES.DISTRICT_OFFICER:
+        return `/dashboard/district/${session.user.district || 'default'}`;
+      default:
+        return `/dashboard/facility/${session.user.facilityId || 'default'}`;
+    }
+  };
+
+  const navItems: NavItem[] = [
+    {
+      name: 'Dashboard',
+      href: getDashboardUrl(),
+      icon: <HomeIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+    },
+    {
+      name: 'Report Case',
+      href: '/dashboard/report-case',
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.ADMIN],
+    },
+    {
+      name: 'Cases',
+      href: '/dashboard/cases',
+      icon: <TableCellsIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+    },
+    {
+      name: 'Patients',
+      href: '/dashboard/patients',
+      icon: <UserGroupIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+    },
+    {
+      name: 'Validation',
+      href: '/dashboard/validation',
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.LAB_TECHNICIAN, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Alerts',
+      href: '/dashboard/alerts',
+      icon: <BellIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Reports',
+      href: '/dashboard/reports',
+      icon: <DocumentIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Users',
+      href: '/dashboard/users',
+      icon: <UserGroupIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Facilities',
+      href: '/dashboard/facilities',
+      icon: <BuildingOfficeIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
+    },
+    {
+      name: 'Statistics',
+      href: '/dashboard/statistics',
+      icon: <ChartBarIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Action Dashboard',
+      href: '/dashboard/action-dashboard',
+      icon: <ChartBarIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+    },
+    {
+      name: 'Geographic View',
+      href: '/dashboard/geographic-view',
+      icon: <MapPinIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
+    },
+    {
+      name: 'Threshold Engine',
+      href: '/dashboard/threshold-engine',
+      icon: <ExclamationTriangleIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
+    },
+    {
+      name: 'Digital Bulletin',
+      href: '/dashboard/digital-bulletin',
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
+    },
+    {
+      name: 'Account',
+      href: '/dashboard/account',
+      icon: <UserCircleIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+    },
+    {
+      name: 'Administration',
+      href: '/dashboard/admin',
+      icon: <Cog6ToothIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN],
+    },
+    {
+      name: 'Logout',
+      href: '#',
+      icon: <ArrowRightStartOnRectangleIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+      onClick: () => signOut({ callbackUrl: '/login' })
+    },
+  ];
+
+  const filteredNavItems = navItems.filter(item => item.roles.includes(session.user.role));
+
   return (
-    <aside 
-      className={`bg-white h-full border-r border-gray-200 flex flex-col ${
-        collapsed ? 'w-20' : 'w-64'
-      } transition-all duration-300`}
-    >
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          {!collapsed && (
-            <div className="flex items-center space-x-2">
-              <RIDSRLogo size={32} showText={true} textSize={16} textColor="#1f2937" />
-            </div>
-          )}
-          {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
-            >
-              {collapsed ? (
-                <ChevronRightIcon className="h-5 w-5" />
-              ) : (
-                <ChevronDownIcon className="h-5 w-5" />
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-      
-      <nav className="flex-1 overflow-y-auto p-2">
-        <div className="space-y-1">
-          {items.map((item, index) => (
-            <SidebarItemComponent key={index} item={item} />
-          ))}
-        </div>
-      </nav>
-      
-      <div className="p-4 border-t border-gray-200">
-        {!collapsed && (
-          <div className="text-xs text-gray-500">
-            © {new Date().getFullYear()} RIDSR Platform
+    <div className="">
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow hover:bg-gray-50"
+        aria-label="Toggle sidebar"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen w-64 bg-white shadow-lg
+          transform transition-transform duration-300 ease-in-out
+          z-40
+          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
+        <nav className="h-full flex flex-col">
+          <div className="p-5 border-b border-gray-200">
+            <h1 className="text-xl font-bold text-gray-800">RIDSR</h1>
+            <p className="text-xs text-gray-500 mt-1">Rwanda IDSR System</p>
           </div>
-        )}
-      </div>
-    </aside>
+
+          <ul className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+            {filteredNavItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  {item.onClick ? (
+                    <button
+                      onClick={() => {
+                        item.onClick?.();
+                        setIsOpen(false);
+                      }}
+                      className={`
+                        w-full flex items-center px-4 py-2 rounded-lg transition-colors
+                        ${isActive
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <span className="mr-3">{item.icon}</span>
+                      <span>{item.name}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`
+                        flex items-center px-4 py-2 rounded-lg transition-colors
+                        ${isActive
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <span className="mr-3">{item.icon}</span>
+                      <span>{item.name}</span>
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="p-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500">
+              Logged in as: <span className="font-medium">{session.user.name}</span>
+            </p>
+          </div>
+        </nav>
+      </aside>
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 md:hidden z-30"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 
 export default Sidebar;
+

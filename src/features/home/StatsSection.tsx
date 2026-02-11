@@ -70,7 +70,7 @@ const StatsSection = () => {
                 Join the Digital Health Revolution
               </h3>
               <p className="text-blue-100 max-w-lg">
-                Become part of Rwanda's mission to strengthen public health through innovative technology solutions.
+                Become part of Rwanda&apos;s mission to strengthen public health through innovative technology solutions.
               </p>
             </div>
             <div className="md:w-1/3 flex justify-center md:justify-end">

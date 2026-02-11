@@ -2,11 +2,11 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import Card from '@/components/ui/Card';
-import BarChart from '@/components/ui/BarChart';
-import PieChart from '@/components/ui/PieChart';
-import LineChart from '@/components/ui/LineChart';
-import MapVisualization from '@/components/ui/MapVisualization';
+import { Card } from '@/components/ui/Card';
+import { BarChart } from '@/components/ui/BarChart';
+import { PieChart } from '@/components/ui/PieChart';
+import { LineChart } from '@/components/ui/LineChart';
+import { MapVisualization } from '@/components/ui/MapVisualization';
 
 const StatisticsPage = () => {
   const { data: session, status } = useSession();
@@ -66,10 +66,10 @@ const StatisticsPage = () => {
   ];
 
   return (
-    <div>
+    <div className="p-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Statistics Dashboard</h1>
-        <p className="text-gray-600">Detailed analytics and statistics for disease surveillance</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Epidemiological Statistics</h1>
+        <p className="text-gray-600">Detailed statistics and analytics for disease surveillance</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -98,15 +98,15 @@ const StatisticsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Disease Distribution</h3>
-          <PieChart 
-            data={diseaseData} 
+          <PieChart
+            data={diseaseData}
             size="md"
           />
         </Card>
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Trends</h3>
-          <LineChart 
-            data={weeklyData} 
+          <LineChart
+            data={weeklyData}
             color="blue"
           />
         </Card>
@@ -115,21 +115,21 @@ const StatisticsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Cases by Region</h3>
-          <BarChart 
+          <BarChart
             data={[
               { name: 'Kigali', value: 120 },
               { name: 'North', value: 95 },
               { name: 'South', value: 110 },
               { name: 'East', value: 85 },
               { name: 'West', value: 130 },
-            ]} 
+            ]}
           />
         </Card>
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Spread</h3>
-          <MapVisualization 
+          <MapVisualization
             regions={provinceData}
-            onRegionClick={(region) => alert(`Clicked on ${region.name}: ${region.value} cases`)}
+            onRegionClick={(region) => console.log(region)}
           />
         </Card>
       </div>

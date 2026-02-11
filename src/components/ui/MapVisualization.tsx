@@ -1,114 +1,139 @@
 // src/components/ui/MapVisualization.tsx
-import React from 'react';
+'use client';
 
-interface RegionData {
+import { useState, useEffect } from 'react';
+
+interface Region {
   name: string;
   value: number;
-  colorIntensity: number; // 0 to 1 scale for color intensity
+  colorIntensity: number;
 }
 
 interface MapVisualizationProps {
-  regions: RegionData[];
-  title?: string;
-  onRegionClick?: (region: RegionData) => void;
+  regions: Region[];
+  onRegionClick?: (region: Region) => void;
 }
 
-const MapVisualization: React.FC<MapVisualizationProps> = ({ 
-  regions, 
-  title,
-  onRegionClick 
-}) => {
-  // Simple SVG map of Rwanda with 5 provinces represented as rectangles
-  // In a real implementation, this would be replaced with actual geographic SVG paths
-  
-  const provincePositions = [
-    { id: 'kigali', name: 'Kigali City', x: 40, y: 30, width: 20, height: 15 },
-    { id: 'north', name: 'Northern Province', x: 30, y: 10, width: 40, height: 15 },
-    { id: 'south', name: 'Southern Province', x: 30, y: 50, width: 40, height: 20 },
-    { id: 'east', name: 'Eastern Province', x: 65, y: 30, width: 25, height: 25 },
-    { id: 'west', name: 'Western Province', x: 10, y: 25, width: 25, height: 30 },
-  ];
-  
+const MapVisualization = ({ regions, onRegionClick }: MapVisualizationProps) => {
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
+  const [hoveredRegion, setHoveredRegion] = useState<Region | null>(null);
+
   // Find min and max values for color scaling
-  const values = regions.map(r => r.value);
+  const values = regions.map(region => region.value);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
-  const range = maxValue - minValue || 1;
-  
+
+  // Function to get color based on value
   const getColor = (value: number) => {
-    // Normalize value to 0-1 scale
-    const normalized = (value - minValue) / range;
-    // Convert to hex color from light yellow to dark red
-    const intensity = Math.floor(normalized * 255);
-    return `rgb(${255}, ${255 - intensity}, ${255 - intensity})`;
+    // Normalize the value between 0 and 1
+    const normalizedValue = (value - minValue) / (maxValue - minValue || 1);
+    
+    // Create a gradient from light yellow to dark red
+    const r = Math.floor(255);
+    const g = Math.floor(255 - normalizedValue * 200);
+    const b = Math.floor(200 - normalizedValue * 200);
+    
+    return `rgb(${r}, ${g}, ${b})`;
   };
-  
+
+  // Mock Rwanda map data - simplified SVG paths for provinces
+  const mapData = [
+    { id: 'kigali', name: 'Kigali City', path: 'M100,50 L150,60 L140,100 L90,90 Z', value: 0 },
+    { id: 'north', name: 'Northern Province', path: 'M50,20 L150,30 L140,80 L40,70 Z', value: 0 },
+    { id: 'south', name: 'Southern Province', path: 'M50,100 L140,110 L130,160 L40,150 Z', value: 0 },
+    { id: 'east', name: 'Eastern Province', path: 'M150,80 L200,90 L190,140 L140,130 Z', value: 0 },
+    { id: 'west', name: 'Western Province', path: 'M0,80 L60,90 L50,140 L-10,130 Z', value: 0 },
+  ];
+
+  // Update map data with actual values
+  const updatedMapData = mapData.map(mapRegion => {
+    const regionData = regions.find(r => 
+      r.name.toLowerCase().includes(mapRegion.name.toLowerCase().split(' ')[0])
+    );
+    return {
+      ...mapRegion,
+      value: regionData?.value || 0,
+      color: getColor(regionData?.value || 0)
+    };
+  });
+
+  const handleRegionClick = (region: { name: string; path: string; value: number; color?: string }) => {
+    const regionData = regions.find(r =>
+      r.name.toLowerCase().includes(region.name.toLowerCase().split(' ')[0])
+    );
+    if (regionData) {
+      setSelectedRegion(regionData);
+      if (onRegionClick) {
+        onRegionClick(regionData);
+      }
+    }
+  };
+
+  const handleRegionHover = (region: { name: string; path: string; value: number; color?: string }) => {
+    const regionData = regions.find(r =>
+      r.name.toLowerCase().includes(region.name.toLowerCase().split(' ')[0])
+    );
+    setHoveredRegion(regionData || null);
+  };
+
   return (
-    <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
-      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-        <div className="relative w-full h-64">
-          <svg 
-            viewBox="0 0 100 80" 
-            className="w-full h-full"
-          >
-            {provincePositions.map((province, index) => {
-              const regionData = regions.find(r => 
-                r.name.toLowerCase().includes(province.name.toLowerCase())
-              );
-              
-              return (
-                <rect
-                  key={index}
-                  x={province.x}
-                  y={province.y}
-                  width={province.width}
-                  height={province.height}
-                  rx="2"
-                  ry="2"
-                  fill={regionData ? getColor(regionData.value) : "#E5E7EB"}
-                  stroke="#9CA3AF"
-                  strokeWidth="0.5"
-                  className="cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => regionData && onRegionClick?.(regionData)}
-                >
-                  {regionData && (
-                    <title>{`${province.name}: ${regionData.value}`}</title>
-                  )}
-                </rect>
-              );
-            })}
-            
-            {/* Province labels */}
-            {provincePositions.map((province, index) => (
-              <text
-                key={`label-${index}`}
-                x={province.x + province.width / 2}
-                y={province.y + province.height / 2}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize="2"
-                fontWeight="bold"
-                fill="#4B5563"
-                className="pointer-events-none"
-              >
-                {province.name.split(' ')[0]}
-              </text>
-            ))}
-          </svg>
-        </div>
+    <div className="relative">
+      <svg 
+        viewBox="0 0 200 180" 
+        className="w-full h-64 md:h-80 lg:h-96 border border-gray-200 rounded-lg bg-gray-50"
+      >
+        {updatedMapData.map((region, index) => (
+          <path
+            key={index}
+            d={region.path}
+            fill={region.color}
+            stroke="#94a3b8"
+            strokeWidth="0.5"
+            className="cursor-pointer transition-all duration-200 hover:opacity-90"
+            onClick={() => handleRegionClick(region)}
+            onMouseEnter={() => handleRegionHover(region)}
+            onMouseLeave={() => setHoveredRegion(null)}
+          />
+        ))}
         
-        {/* Legend */}
-        <div className="mt-4 flex items-center justify-center">
-          <div className="flex items-center">
-            <div className="text-xs text-gray-600 mr-2">Low</div>
-            <div className="w-16 h-2 bg-gradient-to-r from-yellow-200 to-red-500 rounded"></div>
-            <div className="text-xs text-gray-600 ml-2">High</div>
-          </div>
+        {/* Labels for regions */}
+        {updatedMapData.map((region, index) => (
+          <text
+            key={`label-${index}`}
+            x={region.path.split(' ')[1].replace('M', '').split(',')[0]}
+            y={parseInt(region.path.split(' ')[1].replace('M', '').split(',')[1]) + 25}
+            fontSize="4"
+            textAnchor="middle"
+            fill="#1e293b"
+            fontWeight="bold"
+            className="pointer-events-none"
+          >
+            {region.name.split(' ')[0]}
+          </text>
+        ))}
+      </svg>
+      
+      {/* Tooltip for hovered region */}
+      {hoveredRegion && (
+        <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+          <h4 className="font-semibold text-gray-900">{hoveredRegion.name}</h4>
+          <p className="text-sm text-gray-600">{hoveredRegion.value} cases</p>
+        </div>
+      )}
+      
+      {/* Legend */}
+      <div className="mt-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Legend</h4>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-4 bg-[#FFC878]"></div>
+          <span className="text-xs text-gray-600">Low</span>
+          <div className="flex-1 h-2 bg-gradient-to-r from-[#FFC878] via-[#FF6B6B] to-[#AD0000] rounded"></div>
+          <span className="text-xs text-gray-600">High</span>
+          <div className="w-4 h-4 bg-[#AD0000]"></div>
         </div>
       </div>
     </div>
   );
 };
 
-export default MapVisualization;
+export { MapVisualization };

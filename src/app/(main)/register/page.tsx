@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Input from '@/components/ui/Input';
-import PasswordInput from '@/components/ui/PasswordInput';
-import Button from '@/components/ui/Button';
-import Select from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { Button } from '@/components/ui/Button';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { useToastHelpers } from '@/components/ui/Toast';
+import RIDSRLogo from '@/components/ui/RIDSRLogo';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -24,11 +25,17 @@ export default function RegisterPage() {
   const router = useRouter();
   const { error: showError, success } = useToastHelpers();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+  const handleRoleChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      role: value
+    }));
+  };
+
+  const handleFacilityChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      facility: value
     }));
   };
 
@@ -51,7 +58,7 @@ export default function RegisterPage() {
     try {
       // In a real application, you would send this data to your API to create a user
       // For this demo, we'll just simulate the registration process
-      
+
       // After successful registration, sign in the user
       const result = await signIn('credentials', {
         redirect: false,
@@ -73,8 +80,9 @@ export default function RegisterPage() {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (err: any) {
-      showError(err.message || 'Registration failed. Please try again.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Registration failed. Please try again.';
+      showError(errorMessage);
       setLoading(false);
       console.error('Registration error:', err);
     }
@@ -92,9 +100,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <div className="mx-auto h-12 w-12 rounded-full bg-blue-700 flex items-center justify-center">
-            <span className="text-white font-bold text-xl">R</span>
-          </div>
+          <RIDSRLogo size={43} showText={true} textSize={24} textColor="#1f2937" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create Account
           </h2>
@@ -102,55 +108,54 @@ export default function RegisterPage() {
             Join the Rwanda National Integrated Disease Surveillance Platform
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <Input
             label="Full Name"
             type="text"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
             required
             autoComplete="name"
           />
-          
+
           <Input
             label="Email Address"
             type="email"
             name="email"
             value={formData.email}
-            onChange={handleChange}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             required
             autoComplete="email"
           />
-          
+
           <PasswordInput
             label="Password"
             name="password"
             value={formData.password}
-            onChange={handleChange}
+            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
             required
             autoComplete="new-password"
           />
-          
+
           <PasswordInput
             label="Confirm Password"
             name="confirmPassword"
             value={formData.confirmPassword}
-            onChange={handleChange}
+            onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
             required
             autoComplete="new-password"
           />
-          
-          <Select
+
+          <SearchableSelect
             label="Role"
-            name="role"
             value={formData.role}
-            onChange={handleChange}
+            onChange={handleRoleChange}
             options={roles}
             required
           />
-          
+
           <Input
             label="Health Facility/Institution"
             type="text"
@@ -183,7 +188,7 @@ export default function RegisterPage() {
             </Button>
           </div>
         </form>
-        
+
         <div className="text-center text-sm text-gray-600">
           <p>
             Already have an account?{' '}

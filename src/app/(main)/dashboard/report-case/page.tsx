@@ -1,18 +1,20 @@
-// src/app/(main)/report-case/page.tsx
+// src/app/(main)/dashboard/report-case/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import Form from '@/components/ui/Form';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
-import FormFieldset from '@/components/ui/FormFieldset';
-import { useToastHelpers } from '@/components/ui/Toast';
+import { Form } from '@/components/ui/Form';
+import { Input } from '@/components/ui/Input';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { FormFieldset } from '@/components/ui/FormFieldset';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { USER_ROLES } from '@/types';
+import { facilityService } from '@/lib/services/facility-service';
 
 // Define the schema for case reporting form
 const caseReportSchema = z.object({
@@ -30,6 +32,11 @@ const caseReportSchema = z.object({
   pregnancyStatus: z.string().optional(),
   outcome: z.enum(['recovered', 'deceased', 'ongoing', 'transferred']),
   treatmentGiven: z.string().optional(),
+  reporterFacility: z.string().min(1, 'Reporting facility is required'),
+  reporterRole: z.string().min(1, 'Reporter role is required'),
+  reporterName: z.string().min(1, 'Reporter name is required'),
+  reporterEmail: z.string().email('Invalid email format'),
+  reporterId: z.string().min(1, 'Reporter ID is required'),
 });
 
 type CaseReportFormData = z.infer<typeof caseReportSchema>;
@@ -37,7 +44,37 @@ type CaseReportFormData = z.infer<typeof caseReportSchema>;
 export default function CaseReportForm() {
   const { data: session, status } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [facilities, setFacilities] = useState<{ id: string, name: string, district: string }[]>([]);
   const { success, error } = useToastHelpers();
+
+  // Load facilities based on user role
+  useEffect(() => {
+    const loadFacilities = async () => {
+      if (status === 'authenticated' && session) {
+        try {
+          if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
+            // District officers can see facilities in their district
+            const districtFacilities = await facilityService.getFacilitiesByDistrict(session.user.district);
+            setFacilities(districtFacilities.map(f => ({ id: f.id, name: f.name, district: f.district })));
+          } else if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string) && session.user.facilityId) {
+            // Health workers and lab technicians can see their own facility
+            const facility = await facilityService.getFacilityById(session.user.facilityId);
+            if (facility) {
+              setFacilities([{ id: facility.id, name: facility.name, district: facility.district }]);
+            }
+          } else if ([USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user?.role as string)) {
+            // Admins and national officers can see all facilities
+            const allFacilities = await facilityService.getAllFacilities();
+            setFacilities(allFacilities.map(f => ({ id: f.id, name: f.name, district: f.district })));
+          }
+        } catch (err) {
+          console.error('Error loading facilities:', err);
+        }
+      }
+    };
+
+    loadFacilities();
+  }, [status, session]);
 
   if (status === "loading") {
     return (
@@ -72,24 +109,52 @@ export default function CaseReportForm() {
     formState: { errors },
     setValue,
     watch,
+    control
   } = useForm<CaseReportFormData>({
     resolver: zodResolver(caseReportSchema),
+    defaultValues: {
+      reporterFacility: session.user?.facilityId || '',
+      reporterRole: session.user?.role || '',
+      district: session.user?.district || '',
+      reporterName: session.user?.name || '',
+      reporterEmail: session.user?.email || '',
+      reporterId: session.user?.id || ''
+    }
   });
 
   const watchedGender = watch('gender');
+  const watchedReporterFacility = watch('reporterFacility');
+
+  // Set district based on selected facility
+  useEffect(() => {
+    if (watchedReporterFacility) {
+      const facility = facilities.find(f => f.id === watchedReporterFacility);
+      if (facility) {
+        setValue('district', facility.district);
+      }
+    }
+  }, [watchedReporterFacility, facilities, setValue]);
 
   const onSubmit = async (data: CaseReportFormData) => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call to submit case report
-      console.log('Submitting case report:', data);
+      // Prepare the submission data
+      const submissionData = {
+        ...data,
+        reporterId: session.user?.id,
+        reporterName: session.user?.name,
+        reporterEmail: session.user?.email,
+        reporterFacility: facilities.find(f => f.id === data.reporterFacility)?.name || data.reporterFacility,
+      };
+
+      console.log('Submitting case report:', submissionData);
 
       // In a real application, you would send the data to your API:
       // const response = await fetch('/api/case-report', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
+      //   body: JSON.stringify(submissionData),
       // });
 
       // Simulate API delay
@@ -97,7 +162,7 @@ export default function CaseReportForm() {
 
       // Show success toast
       success('Case report submitted successfully!');
-      
+
       // Reset form after successful submission
       setTimeout(() => {
         window.location.reload(); // Or reset form fields
@@ -159,6 +224,15 @@ export default function CaseReportForm() {
     { value: 'hepatitis-e', label: 'Hepatitis E' },
   ];
 
+  // Facility options based on user's permissions
+  const facilityOptions = [
+    { value: '', label: 'Select reporting facility' },
+    ...facilities.map(facility => ({
+      value: facility.id,
+      label: facility.name
+    }))
+  ];
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-4xl mx-auto">
@@ -195,7 +269,7 @@ export default function CaseReportForm() {
                   {...register('age', { valueAsNumber: true })}
                 />
 
-                <Select
+                <SearchableSelect
                   label="Gender"
                   error={errors.gender?.message}
                   options={[
@@ -208,7 +282,7 @@ export default function CaseReportForm() {
                 />
 
                 {watchedGender === 'female' && (
-                  <Select
+                  <SearchableSelect
                     label="Pregnancy Status"
                     options={[
                       { value: '', label: 'Select status' },
@@ -224,21 +298,21 @@ export default function CaseReportForm() {
 
             <FormFieldset legend="Location Information">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Select
+                <SearchableSelect
                   label="District"
                   error={errors.district?.message}
                   options={[{ value: '', label: 'Select district' }, ...districts]}
                   {...register('district')}
                 />
 
-                <Select
+                <SearchableSelect
                   label="Sector"
                   error={errors.sector?.message}
                   options={[{ value: '', label: 'Select sector' }, ...sectors]}
                   {...register('sector')}
                 />
 
-                <Select
+                <SearchableSelect
                   label="Cell"
                   error={errors.cell?.message}
                   options={[{ value: '', label: 'Select cell' }, ...cells]}
@@ -249,14 +323,14 @@ export default function CaseReportForm() {
 
             <FormFieldset legend="Clinical Information">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select
+                <SearchableSelect
                   label="Disease Category"
                   error={errors.diseaseCategory?.message}
                   options={[{ value: '', label: 'Select category' }, ...diseaseCategories]}
                   {...register('diseaseCategory')}
                 />
 
-                <Select
+                <SearchableSelect
                   label="Specific Disease"
                   error={errors.diseaseName?.message}
                   options={[{ value: '', label: 'Select disease' }, ...diseases]}
@@ -271,7 +345,7 @@ export default function CaseReportForm() {
                   {...register('onsetDate')}
                 />
 
-                <Select
+                <SearchableSelect
                   label="Outcome"
                   error={errors.outcome?.message}
                   options={[
@@ -291,18 +365,13 @@ export default function CaseReportForm() {
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {symptoms.map((symptom) => (
-                    <div key={symptom.value} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id={`symptom-${symptom.value}`}
-                        value={symptom.value}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        {...register('symptoms')}
-                      />
-                      <label htmlFor={`symptom-${symptom.value}`} className="ml-2 text-sm text-gray-700">
-                        {symptom.label}
-                      </label>
-                    </div>
+                    <Checkbox
+                      key={symptom.value}
+                      id={`symptom-${symptom.value}`}
+                      label={symptom.label}
+                      value={symptom.value}
+                      {...register('symptoms')}
+                    />
                   ))}
                 </div>
                 {errors.symptoms && (
