@@ -1,42 +1,45 @@
 // src/app/(main)/dashboard/report-case/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Form } from '@/components/ui/Form';
-import { Input } from '@/components/ui/Input';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { FormFieldset } from '@/components/ui/FormFieldset';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { USER_ROLES } from '@/types';
-import { facilityService } from '@/lib/services/facility-service';
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, Controller } from "react-hook-form";
+import { Form } from "@/components/ui/Form";
+import { Input } from "@/components/ui/Input";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { FormFieldset } from "@/components/ui/FormFieldset";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { USER_ROLES } from "@/types";
+import { facilityService } from "@/lib/services/facilityService";
+import { useToastHelpers } from "@/components/ui/Toast";
 
 // Define the schema for case reporting form
 const caseReportSchema = z.object({
-  patientName: z.string().min(2, 'Patient name must be at least 2 characters'),
-  nationalId: z.string().regex(/^\d{16}$/, 'National ID must be 16 digits'),
-  age: z.number().min(0).max(150, 'Age must be between 0 and 150'),
-  gender: z.enum(['male', 'female', 'other']),
-  district: z.string().min(1, 'District is required'),
-  sector: z.string().min(1, 'Sector is required'),
-  cell: z.string().min(1, 'Cell is required'),
-  symptoms: z.array(z.string()).nonempty('At least one symptom must be selected'),
-  onsetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  diseaseCategory: z.string().min(1, 'Disease category is required'),
-  diseaseName: z.string().min(1, 'Disease name is required'),
+  patientName: z.string().min(2, "Patient name must be at least 2 characters"),
+  nationalId: z.string().regex(/^\d{16}$/, "National ID must be 16 digits"),
+  age: z.number().min(0).max(150, "Age must be between 0 and 150"),
+  gender: z.enum(["male", "female", "other"]),
+  district: z.string().min(1, "District is required"),
+  sector: z.string().min(1, "Sector is required"),
+  cell: z.string().min(1, "Cell is required"),
+  symptoms: z
+    .array(z.string())
+    .nonempty("At least one symptom must be selected"),
+  onsetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+  diseaseCategory: z.string().min(1, "Disease category is required"),
+  diseaseName: z.string().min(1, "Disease name is required"),
   pregnancyStatus: z.string().optional(),
-  outcome: z.enum(['recovered', 'deceased', 'ongoing', 'transferred']),
+  outcome: z.enum(["recovered", "deceased", "ongoing", "transferred"]),
   treatmentGiven: z.string().optional(),
-  reporterFacility: z.string().min(1, 'Reporting facility is required'),
-  reporterRole: z.string().min(1, 'Reporter role is required'),
-  reporterName: z.string().min(1, 'Reporter name is required'),
-  reporterEmail: z.string().email('Invalid email format'),
-  reporterId: z.string().min(1, 'Reporter ID is required'),
+  reporterFacility: z.string().min(1, "Reporting facility is required"),
+  reporterRole: z.string().min(1, "Reporter role is required"),
+  reporterName: z.string().min(1, "Reporter name is required"),
+  reporterEmail: z.string().email("Invalid email format"),
+  reporterId: z.string().min(1, "Reporter ID is required"),
 });
 
 type CaseReportFormData = z.infer<typeof caseReportSchema>;
@@ -44,31 +47,68 @@ type CaseReportFormData = z.infer<typeof caseReportSchema>;
 export default function CaseReportForm() {
   const { data: session, status } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [facilities, setFacilities] = useState<{ id: string, name: string, district: string }[]>([]);
+  const [facilities, setFacilities] = useState<
+    { id: string; name: string; district: string }[]
+  >([]);
   const { success, error } = useToastHelpers();
 
   // Load facilities based on user role
   useEffect(() => {
     const loadFacilities = async () => {
-      if (status === 'authenticated' && session) {
+      if (status === "authenticated" && session) {
         try {
-          if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
+          if (
+            session.user?.role === USER_ROLES.DISTRICT_OFFICER &&
+            session.user.district
+          ) {
             // District officers can see facilities in their district
-            const districtFacilities = await facilityService.getFacilitiesByDistrict(session.user.district);
-            setFacilities(districtFacilities.map(f => ({ id: f.id, name: f.name, district: f.district })));
-          } else if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string) && session.user.facilityId) {
+            const districtFacilities =
+              await facilityService.getFacilitiesByDistrict(
+                session.user.district,
+              );
+            setFacilities(
+              districtFacilities.map((f) => ({
+                id: f.id,
+                name: f.name,
+                district: f.district,
+              })),
+            );
+          } else if (
+            [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(
+              session.user?.role as string,
+            ) &&
+            session.user.facilityId
+          ) {
             // Health workers and lab technicians can see their own facility
-            const facility = await facilityService.getFacilityById(session.user.facilityId);
+            const facility = await facilityService.getFacilityById(
+              session.user.facilityId,
+            );
             if (facility) {
-              setFacilities([{ id: facility.id, name: facility.name, district: facility.district }]);
+              setFacilities([
+                {
+                  id: facility.id,
+                  name: facility.name,
+                  district: facility.district,
+                },
+              ]);
             }
-          } else if ([USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user?.role as string)) {
+          } else if (
+            [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(
+              session.user?.role as string,
+            )
+          ) {
             // Admins and national officers can see all facilities
             const allFacilities = await facilityService.getAllFacilities();
-            setFacilities(allFacilities.map(f => ({ id: f.id, name: f.name, district: f.district })));
+            setFacilities(
+              allFacilities.map((f) => ({
+                id: f.id,
+                name: f.name,
+                district: f.district,
+              })),
+            );
           }
         } catch (err) {
-          console.error('Error loading facilities:', err);
+          console.error("Error loading facilities:", err);
         }
       }
     };
@@ -88,7 +128,9 @@ export default function CaseReportForm() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Access Denied
+          </h1>
           <p className="text-gray-600 mb-6">
             You must be signed in to view this page
           </p>
@@ -109,28 +151,28 @@ export default function CaseReportForm() {
     formState: { errors },
     setValue,
     watch,
-    control
+    control,
   } = useForm<CaseReportFormData>({
     resolver: zodResolver(caseReportSchema),
     defaultValues: {
-      reporterFacility: session.user?.facilityId || '',
-      reporterRole: session.user?.role || '',
-      district: session.user?.district || '',
-      reporterName: session.user?.name || '',
-      reporterEmail: session.user?.email || '',
-      reporterId: session.user?.id || ''
-    }
+      reporterFacility: session.user?.facilityId || "",
+      reporterRole: session.user?.role || "",
+      district: session.user?.district || "",
+      reporterName: session.user?.name || "",
+      reporterEmail: session.user?.email || "",
+      reporterId: session.user?.id || "",
+    },
   });
 
-  const watchedGender = watch('gender');
-  const watchedReporterFacility = watch('reporterFacility');
+  const watchedGender = watch("gender");
+  const watchedReporterFacility = watch("reporterFacility");
 
   // Set district based on selected facility
   useEffect(() => {
     if (watchedReporterFacility) {
-      const facility = facilities.find(f => f.id === watchedReporterFacility);
+      const facility = facilities.find((f) => f.id === watchedReporterFacility);
       if (facility) {
-        setValue('district', facility.district);
+        setValue("district", facility.district);
       }
     }
   }, [watchedReporterFacility, facilities, setValue]);
@@ -145,10 +187,12 @@ export default function CaseReportForm() {
         reporterId: session.user?.id,
         reporterName: session.user?.name,
         reporterEmail: session.user?.email,
-        reporterFacility: facilities.find(f => f.id === data.reporterFacility)?.name || data.reporterFacility,
+        reporterFacility:
+          facilities.find((f) => f.id === data.reporterFacility)?.name ||
+          data.reporterFacility,
       };
 
-      console.log('Submitting case report:', submissionData);
+      console.log("Submitting case report:", submissionData);
 
       // In a real application, you would send the data to your API:
       // const response = await fetch('/api/case-report', {
@@ -158,10 +202,10 @@ export default function CaseReportForm() {
       // });
 
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Show success toast
-      success('Case report submitted successfully!');
+      success("Case report submitted successfully!");
 
       // Reset form after successful submission
       setTimeout(() => {
@@ -169,8 +213,8 @@ export default function CaseReportForm() {
       }, 1000);
     } catch (err) {
       // Show error toast
-      error('Failed to submit case report. Please try again.');
-      console.error('Submission error:', err);
+      error("Failed to submit case report. Please try again.");
+      console.error("Submission error:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -178,66 +222,68 @@ export default function CaseReportForm() {
 
   // Options for various fields
   const districts = [
-    { value: 'kigali', label: 'Kigali City' },
-    { value: 'north', label: 'Northern Province' },
-    { value: 'south', label: 'Southern Province' },
-    { value: 'east', label: 'Eastern Province' },
-    { value: 'west', label: 'Western Province' },
+    { value: "kigali", label: "Kigali City" },
+    { value: "north", label: "Northern Province" },
+    { value: "south", label: "Southern Province" },
+    { value: "east", label: "Eastern Province" },
+    { value: "west", label: "Western Province" },
   ];
 
   const sectors = [
-    { value: 'nyarugenge', label: 'Nyarugenge' },
-    { value: 'gasabo', label: 'Gasabo' },
-    { value: 'kicukiro', label: 'Kicukiro' },
+    { value: "nyarugenge", label: "Nyarugenge" },
+    { value: "gasabo", label: "Gasabo" },
+    { value: "kicukiro", label: "Kicukiro" },
   ]; // Simplified - in reality, sectors would depend on selected district
 
   const cells = [
-    { value: 'gisozi', label: 'Gisozi' },
-    { value: 'kimironko', label: 'Kimironko' },
-    { value: 'nyarutarama', label: 'Nyarutarama' },
+    { value: "gisozi", label: "Gisozi" },
+    { value: "kimironko", label: "Kimironko" },
+    { value: "nyarutarama", label: "Nyarutarama" },
   ]; // Simplified - in reality, cells would depend on selected sector
 
   const symptoms = [
-    { value: 'fever', label: 'Fever' },
-    { value: 'headache', label: 'Headache' },
-    { value: 'nausea', label: 'Nausea' },
-    { value: 'vomiting', label: 'Vomiting' },
-    { value: 'diarrhea', label: 'Diarrhea' },
-    { value: 'rash', label: 'Rash' },
-    { value: 'jaundice', label: 'Jaundice' },
-    { value: 'bleeding', label: 'Bleeding' },
+    { value: "fever", label: "Fever" },
+    { value: "headache", label: "Headache" },
+    { value: "nausea", label: "Nausea" },
+    { value: "vomiting", label: "Vomiting" },
+    { value: "diarrhea", label: "Diarrhea" },
+    { value: "rash", label: "Rash" },
+    { value: "jaundice", label: "Jaundice" },
+    { value: "bleeding", label: "Bleeding" },
   ];
 
   const diseaseCategories = [
-    { value: 'epidemic-prone', label: 'Epidemic Prone Diseases' },
-    { value: 'communicable', label: 'Communicable Diseases' },
-    { value: 'non-communicable', label: 'Non-Communicable Diseases' },
+    { value: "epidemic-prone", label: "Epidemic Prone Diseases" },
+    { value: "communicable", label: "Communicable Diseases" },
+    { value: "non-communicable", label: "Non-Communicable Diseases" },
   ];
 
   const diseases = [
-    { value: 'cholera', label: 'Cholera' },
-    { value: 'malaria', label: 'Malaria' },
-    { value: 'typhoid', label: 'Typhoid' },
-    { value: 'measles', label: 'Measles' },
-    { value: 'plague', label: 'Plague' },
-    { value: 'yellow-fever', label: 'Yellow Fever' },
-    { value: 'hepatitis-e', label: 'Hepatitis E' },
+    { value: "cholera", label: "Cholera" },
+    { value: "malaria", label: "Malaria" },
+    { value: "typhoid", label: "Typhoid" },
+    { value: "measles", label: "Measles" },
+    { value: "plague", label: "Plague" },
+    { value: "yellow-fever", label: "Yellow Fever" },
+    { value: "hepatitis-e", label: "Hepatitis E" },
   ];
 
   // Facility options based on user's permissions
   const facilityOptions = [
-    { value: '', label: 'Select reporting facility' },
-    ...facilities.map(facility => ({
+    { value: "", label: "Select reporting facility" },
+    ...facilities.map((facility) => ({
       value: facility.id,
-      label: facility.name
-    }))
+      label: facility.name,
+    })),
   ];
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Case Reporting Form</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Case Reporting Form
+          </h1>
           <p className="text-gray-600">
             Report suspected or confirmed cases of epidemic-prone diseases
           </p>
@@ -251,14 +297,14 @@ export default function CaseReportForm() {
                   label="Patient Full Name"
                   variant="outlined"
                   error={errors.patientName?.message}
-                  {...register('patientName')}
+                  {...register("patientName")}
                 />
 
                 <Input
                   label="National ID (16 digits)"
                   variant="outlined"
                   error={errors.nationalId?.message}
-                  {...register('nationalId')}
+                  {...register("nationalId")}
                 />
 
                 <Input
@@ -266,31 +312,45 @@ export default function CaseReportForm() {
                   type="number"
                   variant="outlined"
                   error={errors.age?.message}
-                  {...register('age', { valueAsNumber: true })}
+                  {...register("age", { valueAsNumber: true })}
                 />
 
-                <SearchableSelect
-                  label="Gender"
-                  error={errors.gender?.message}
-                  options={[
-                    { value: '', label: 'Select gender' },
-                    { value: 'male', label: 'Male' },
-                    { value: 'female', label: 'Female' },
-                    { value: 'other', label: 'Other' },
-                  ]}
-                  {...register('gender')}
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Gender"
+                      error={errors.gender?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select gender" },
+                        { value: "male", label: "Male" },
+                        { value: "female", label: "Female" },
+                        { value: "other", label: "Other" },
+                      ]}
+                    />
+                  )}
                 />
 
-                {watchedGender === 'female' && (
-                  <SearchableSelect
-                    label="Pregnancy Status"
-                    options={[
-                      { value: '', label: 'Select status' },
-                      { value: 'pregnant', label: 'Pregnant' },
-                      { value: 'not_pregnant', label: 'Not Pregnant' },
-                      { value: 'unknown', label: 'Unknown' },
-                    ]}
-                    {...register('pregnancyStatus')}
+                {watchedGender === "female" && (
+                  <Controller
+                    name="pregnancyStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        label="Pregnancy Status"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: "", label: "Select status" },
+                          { value: "pregnant", label: "Pregnant" },
+                          { value: "not_pregnant", label: "Not Pregnant" },
+                          { value: "unknown", label: "Unknown" },
+                        ]}
+                      />
+                    )}
                   />
                 )}
               </div>
@@ -298,43 +358,90 @@ export default function CaseReportForm() {
 
             <FormFieldset legend="Location Information">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <SearchableSelect
-                  label="District"
-                  error={errors.district?.message}
-                  options={[{ value: '', label: 'Select district' }, ...districts]}
-                  {...register('district')}
+                <Controller
+                  name="district"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="District"
+                      error={errors.district?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select district" },
+                        ...districts,
+                      ]}
+                    />
+                  )}
                 />
 
-                <SearchableSelect
-                  label="Sector"
-                  error={errors.sector?.message}
-                  options={[{ value: '', label: 'Select sector' }, ...sectors]}
-                  {...register('sector')}
+                <Controller
+                  name="sector"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Sector"
+                      error={errors.sector?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select sector" },
+                        ...sectors,
+                      ]}
+                    />
+                  )}
                 />
 
-                <SearchableSelect
-                  label="Cell"
-                  error={errors.cell?.message}
-                  options={[{ value: '', label: 'Select cell' }, ...cells]}
-                  {...register('cell')}
+                <Controller
+                  name="cell"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Cell"
+                      error={errors.cell?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[{ value: "", label: "Select cell" }, ...cells]}
+                    />
+                  )}
                 />
               </div>
             </FormFieldset>
 
             <FormFieldset legend="Clinical Information">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SearchableSelect
-                  label="Disease Category"
-                  error={errors.diseaseCategory?.message}
-                  options={[{ value: '', label: 'Select category' }, ...diseaseCategories]}
-                  {...register('diseaseCategory')}
+                <Controller
+                  name="diseaseCategory"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Disease Category"
+                      error={errors.diseaseCategory?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select category" },
+                        ...diseaseCategories,
+                      ]}
+                    />
+                  )}
                 />
 
-                <SearchableSelect
-                  label="Specific Disease"
-                  error={errors.diseaseName?.message}
-                  options={[{ value: '', label: 'Select disease' }, ...diseases]}
-                  {...register('diseaseName')}
+                <Controller
+                  name="diseaseName"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Specific Disease"
+                      error={errors.diseaseName?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select disease" },
+                        ...diseases,
+                      ]}
+                    />
+                  )}
                 />
 
                 <Input
@@ -342,20 +449,27 @@ export default function CaseReportForm() {
                   type="date"
                   variant="outlined"
                   error={errors.onsetDate?.message}
-                  {...register('onsetDate')}
+                  {...register("onsetDate")}
                 />
 
-                <SearchableSelect
-                  label="Outcome"
-                  error={errors.outcome?.message}
-                  options={[
-                    { value: '', label: 'Select outcome' },
-                    { value: 'recovered', label: 'Recovered' },
-                    { value: 'deceased', label: 'Deceased' },
-                    { value: 'ongoing', label: 'Ongoing Treatment' },
-                    { value: 'transferred', label: 'Transferred' },
-                  ]}
-                  {...register('outcome')}
+                <Controller
+                  name="outcome"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Outcome"
+                      error={errors.outcome?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: "", label: "Select outcome" },
+                        { value: "recovered", label: "Recovered" },
+                        { value: "deceased", label: "Deceased" },
+                        { value: "ongoing", label: "Ongoing Treatment" },
+                        { value: "transferred", label: "Transferred" },
+                      ]}
+                    />
+                  )}
                 />
               </div>
 
@@ -370,12 +484,14 @@ export default function CaseReportForm() {
                       id={`symptom-${symptom.value}`}
                       label={symptom.label}
                       value={symptom.value}
-                      {...register('symptoms')}
+                      {...register("symptoms")}
                     />
                   ))}
                 </div>
                 {errors.symptoms && (
-                  <p className="mt-1 text-sm text-red-600">{errors.symptoms.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.symptoms.message}
+                  </p>
                 )}
               </div>
 
@@ -384,7 +500,7 @@ export default function CaseReportForm() {
                   label="Treatment Given"
                   variant="outlined"
                   placeholder="Describe treatment administered..."
-                  {...register('treatmentGiven')}
+                  {...register("treatmentGiven")}
                 />
               </div>
             </FormFieldset>
@@ -397,11 +513,7 @@ export default function CaseReportForm() {
               >
                 Reset Form
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                isLoading={isSubmitting}
-              >
+              <Button type="submit" variant="primary" isLoading={isSubmitting}>
                 Submit Case Report
               </Button>
             </div>

@@ -15,8 +15,8 @@ import {
 import {
   canAccessFacility
 } from '@/lib/auth-utils';
-import { facilityService } from '@/lib/services/facility-service';
-import { userService } from '@/lib/services/user-service';
+import { facilityService } from '@/lib/services/facilityService';
+import { userService } from '@/lib/services/userService';
 import { Facility, User, CaseStatus } from '@/types';
 
 interface CaseSummary {

@@ -45,9 +45,9 @@ export default function NationalDashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (status === 'authenticated' && session) {
+      if (status === 'authenticated' && session?.user) {
         // Check if user has access
-        const hasAccess = [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user?.role as string);
+        const hasAccess = session.user.role === USER_ROLES.ADMIN || session.user.role === USER_ROLES.NATIONAL_OFFICER;
         if (!hasAccess) {
           window.location.href = '/dashboard';
           return;
@@ -91,7 +91,7 @@ export default function NationalDashboard() {
     );
   }
 
-  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user?.role as string)) {
+  if (!session?.user || (session.user.role !== USER_ROLES.ADMIN && session.user.role !== USER_ROLES.NATIONAL_OFFICER)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">

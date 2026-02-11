@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { Input } from '@/components/ui/Input';
 
 export default function AccountPage() {
   const { data: session } = useSession();

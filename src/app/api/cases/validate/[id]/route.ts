@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { USER_ROLES } from '@/types';
 
 // POST: Validate case
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -12,11 +12,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   try {
+    const { id } = await params;
     const { status, notes } = await request.json();
 
     // TODO: Implement real database update
     // const caseRecord = await db.case.update({
-    //   where: { id: params.id },
+    //   where: { id },
     //   data: {
     //     validationStatus: status,
     //     validatorId: session.user.id,

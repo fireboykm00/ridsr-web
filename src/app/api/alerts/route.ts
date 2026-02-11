@@ -1,44 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { USER_ROLES } from '@/types';
+import { dbConnect } from '@/lib/services/db';
+import { Alert as AlertModel } from '@/lib/models';
 
-// GET: List alerts
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    await dbConnect();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
-    const severity = searchParams.get('severity');
 
-    // TODO: Implement real database query
-    // const alerts = await db.alert.findMany({
-    //   where: {
-    //     ...(status && { status }),
-    //     ...(severity && { severity }),
-    //   },
-    // });
+    const query: any = {};
+    if (status) query.status = status;
 
-    return NextResponse.json([]);
+    const alerts = await AlertModel.find(query).lean();
+    return NextResponse.json(alerts);
   } catch (error) {
+    console.error('Error fetching alerts:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST: Create alert
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
+    await dbConnect();
     const data = await request.json();
-
-    // TODO: Implement real database creation
-    // const alert = await db.alert.create({ data });
-
-    return NextResponse.json({}, { status: 201 });
+    const alert = await AlertModel.create(data);
+    return NextResponse.json(alert.toObject(), { status: 201 });
   } catch (error) {
+    console.error('Error creating alert:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

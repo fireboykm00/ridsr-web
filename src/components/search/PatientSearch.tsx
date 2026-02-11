@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useDebounce } from '@/hooks/useDebounce';
+import { MockDataService } from '@/lib/mocks/mock-service';
 
 interface Patient {
   id: string;
@@ -57,75 +58,12 @@ const PatientSearch: React.FC<PatientSearchProps> = ({ onSelectPatient, onCancel
         // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Mock patient data
-        const mockPatients: Patient[] = [
-          {
-            id: 'PATIENT001',
-            nationalId: '1234567890123456',
-            firstName: 'John',
-            lastName: 'Doe',
-            dateOfBirth: '1985-05-15',
-            gender: 'male',
-            phone: '+250788123456',
-            email: 'john.doe@example.com',
-            address: {
-              street: 'KG 123 St',
-              sector: 'Nyamirambo',
-              district: 'Gasabo',
-              province: 'Kigali City',
-              country: 'Rwanda',
-            },
-            facilityId: 'FAC001',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'PATIENT002',
-            nationalId: '1234567890123457',
-            firstName: 'Jane',
-            lastName: 'Smith',
-            dateOfBirth: '1990-08-22',
-            gender: 'female',
-            phone: '+250788123457',
-            email: 'jane.smith@example.com',
-            address: {
-              street: 'KN 456 Ave',
-              sector: 'Kanombe',
-              district: 'Kicukiro',
-              province: 'Kigali City',
-              country: 'Rwanda',
-            },
-            facilityId: 'FAC002',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 'PATIENT003',
-            nationalId: '1234567890123458',
-            firstName: 'Alice',
-            lastName: 'Johnson',
-            dateOfBirth: '1978-12-10',
-            gender: 'female',
-            phone: '+250788123458',
-            email: 'alice.johnson@example.com',
-            address: {
-              street: 'ST 789 Rd',
-              sector: 'Gikondo',
-              district: 'Gasabo',
-              province: 'Kigali City',
-              country: 'Rwanda',
-            },
-            facilityId: 'FAC001',
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        ];
-
+        // TODO: Fetch patients from API endpoint
+        // Using mock service for now
+        const allPatients = await MockDataService.getPatients();
+        
         // Filter based on search term
-        const filtered = mockPatients.filter(patient => 
+        const filtered = allPatients.filter(patient =>
           patient.firstName.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
           patient.lastName.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
           patient.nationalId.includes(debouncedSearchTerm) ||

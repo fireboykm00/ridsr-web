@@ -1,22 +1,21 @@
-import { Checkbox } from "@/components/ui/Checkbox";
-// src/app/(main)/dashboard/facility/[facilityId]/report-case/page.tsx
 'use client';
 
+import { Checkbox } from "@/components/ui/Checkbox";
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Form } from '@/components/ui/Form';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { FormFieldset } from '@/components/ui/FormFieldset';
 import { useToastHelpers } from '@/components/ui/Toast';
-import { USER_ROLES '@/lib/utils/auth';
-import { facilityService } from '@/lib/services/facility-service';
+import { USER_ROLES } from '@/types';
+import { facilityService } from '@/lib/services/facilityService';
 
 // Define the schema for case reporting form
 const caseReportSchema = z.object({
@@ -100,7 +99,7 @@ export default function FacilityCaseReportForm() {
     handleSubmit,
     formState: { errors },
     watch,
-
+    control
   } = useForm<CaseReportFormData>({
     resolver: zodResolver(caseReportSchema),
     defaultValues: {
@@ -239,28 +238,42 @@ export default function FacilityCaseReportForm() {
                   {...register('age', { valueAsNumber: true })}
                 />
 
-                <Select
-                  label="Gender"
-                  error={errors.gender?.message}
-                  options={[
-                    { value: '', label: 'Select gender' },
-                    { value: 'male', label: 'Male' },
-                    { value: 'female', label: 'Female' },
-                    { value: 'other', label: 'Other' },
-                  ]}
-                  {...register('gender')}
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Gender"
+                      error={errors.gender?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: '', label: 'Select gender' },
+                        { value: 'male', label: 'Male' },
+                        { value: 'female', label: 'Female' },
+                        { value: 'other', label: 'Other' },
+                      ]}
+                    />
+                  )}
                 />
 
                 {watchedGender === 'female' && (
-                  <Select
-                    label="Pregnancy Status"
-                    options={[
-                      { value: '', label: 'Select status' },
-                      { value: 'pregnant', label: 'Pregnant' },
-                      { value: 'not_pregnant', label: 'Not Pregnant' },
-                      { value: 'unknown', label: 'Unknown' },
-                    ]}
-                    {...register('pregnancyStatus')}
+                  <Controller
+                    name="pregnancyStatus"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableSelect
+                        label="Pregnancy Status"
+                        value={field.value}
+                        onChange={field.onChange}
+                        options={[
+                          { value: '', label: 'Select status' },
+                          { value: 'pregnant', label: 'Pregnant' },
+                          { value: 'not_pregnant', label: 'Not Pregnant' },
+                          { value: 'unknown', label: 'Unknown' },
+                        ]}
+                      />
+                    )}
                   />
                 )}
               </div>
@@ -268,45 +281,79 @@ export default function FacilityCaseReportForm() {
 
             <FormFieldset legend="Location Information">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Select
-                  label="District"
-                  error={errors.district?.message}
-                  options={[{ value: '', label: 'Select district' }, ...districts]}
-                  {...register('district')}
-                  value={facilityInfo?.district || ''} // Pre-filled with facility's district
-                  disabled // Disabled since it's based on the facility
+                <Controller
+                  name="district"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="District"
+                      error={errors.district?.message}
+                      value={facilityInfo?.district || ''}
+                      onChange={field.onChange}
+                      options={[{ value: '', label: 'Select district' }, ...districts]}
+                      disabled
+                    />
+                  )}
                 />
 
-                <Select
-                  label="Sector"
-                  error={errors.sector?.message}
-                  options={[{ value: '', label: 'Select sector' }, ...sectors]}
-                  {...register('sector')}
+                <Controller
+                  name="sector"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Sector"
+                      error={errors.sector?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[{ value: '', label: 'Select sector' }, ...sectors]}
+                    />
+                  )}
                 />
 
-                <Select
-                  label="Cell"
-                  error={errors.cell?.message}
-                  options={[{ value: '', label: 'Select cell' }, ...cells]}
-                  {...register('cell')}
+                <Controller
+                  name="cell"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Cell"
+                      error={errors.cell?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[{ value: '', label: 'Select cell' }, ...cells]}
+                    />
+                  )}
                 />
               </div>
             </FormFieldset>
 
             <FormFieldset legend="Clinical Information">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select
-                  label="Disease Category"
-                  error={errors.diseaseCategory?.message}
-                  options={[{ value: '', label: 'Select category' }, ...diseaseCategories]}
-                  {...register('diseaseCategory')}
+                <Controller
+                  name="diseaseCategory"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Disease Category"
+                      error={errors.diseaseCategory?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[{ value: '', label: 'Select category' }, ...diseaseCategories]}
+                    />
+                  )}
                 />
 
-                <Select
-                  label="Specific Disease"
-                  error={errors.diseaseName?.message}
-                  options={[{ value: '', label: 'Select disease' }, ...diseases]}
-                  {...register('diseaseName')}
+                <Controller
+                  name="diseaseName"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Specific Disease"
+                      error={errors.diseaseName?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[{ value: '', label: 'Select disease' }, ...diseases]}
+                    />
+                  )}
                 />
 
                 <Input
@@ -317,17 +364,24 @@ export default function FacilityCaseReportForm() {
                   {...register('onsetDate')}
                 />
 
-                <Select
-                  label="Outcome"
-                  error={errors.outcome?.message}
-                  options={[
-                    { value: '', label: 'Select outcome' },
-                    { value: 'recovered', label: 'Recovered' },
-                    { value: 'deceased', label: 'Deceased' },
-                    { value: 'ongoing', label: 'Ongoing Treatment' },
-                    { value: 'transferred', label: 'Transferred' },
-                  ]}
-                  {...register('outcome')}
+                <Controller
+                  name="outcome"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableSelect
+                      label="Outcome"
+                      error={errors.outcome?.message}
+                      value={field.value}
+                      onChange={field.onChange}
+                      options={[
+                        { value: '', label: 'Select outcome' },
+                        { value: 'recovered', label: 'Recovered' },
+                        { value: 'deceased', label: 'Deceased' },
+                        { value: 'ongoing', label: 'Ongoing Treatment' },
+                        { value: 'transferred', label: 'Transferred' },
+                      ]}
+                    />
+                  )}
                 />
               </div>
 

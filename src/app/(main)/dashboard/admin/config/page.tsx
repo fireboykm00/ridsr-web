@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { USER_ROLES } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { Button } from '@/components/ui/Button';
 
 export default function ConfigPage() {
   const { data: session } = useSession();

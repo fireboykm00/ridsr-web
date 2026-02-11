@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } f
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { USER_ROLES } from '@/types';
-import { facilityService } from '@/lib/services/facility-service';
+import { facilityService } from '@/lib/services/facilityService';
 
 interface Case {
   id: string;

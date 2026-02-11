@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
 import { USER_ROLES } from '@/types';
 

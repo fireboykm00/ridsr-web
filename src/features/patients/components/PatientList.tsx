@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { useSession } from 'next-auth/react';
-import { filterPatientsByAccess } from '@/lib/services/patient.service';
+import { filterPatientsByAccess } from '@/lib/services/patientService';
 
 interface Patient {
   id: string;

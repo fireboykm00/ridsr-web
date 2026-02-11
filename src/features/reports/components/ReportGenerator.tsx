@@ -69,7 +69,8 @@ const ReportGenerator: React.FC = () => {
       // In a real application, this would be an API call to generate the report
       await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
       
-      // Mock report data
+      // TODO: Fetch report data from API endpoint
+      // Using mock data for now
       const mockReport = {
         id: `REPORT_${Date.now()}`,
         title: `Generated ${filters.reportType} Report`,
@@ -77,7 +78,7 @@ const ReportGenerator: React.FC = () => {
         type: filters.reportType,
         dateGenerated: new Date().toISOString(),
         status: 'completed',
-        downloadUrl: '#', // In a real app, this would be the actual download URL
+        downloadUrl: '#',
         content: {
           summary: {
             totalCases: 124,
@@ -115,7 +116,7 @@ const ReportGenerator: React.FC = () => {
       setStep('result');
     } catch (error) {
       console.error('Error generating report:', error);
-      setStep('form'); // Return to form on error
+      setStep('form');
     }
   };
 

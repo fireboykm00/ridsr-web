@@ -1,25 +1,22 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
-import { USER_ROLES } from '@/types';
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import { USER_ROLES } from "@/types";
 import {
   HomeIcon,
   DocumentTextIcon,
   TableCellsIcon,
   Cog6ToothIcon,
   ArrowRightStartOnRectangleIcon,
-  ChartBarIcon,
   UserCircleIcon,
   BuildingOfficeIcon,
-  MapPinIcon,
-  ExclamationTriangleIcon,
   UserGroupIcon,
   BellIcon,
-  DocumentIcon
-} from '@heroicons/react/24/outline';
+  DocumentIcon,
+} from "@heroicons/react/24/outline";
 
 interface NavItem {
   name: string;
@@ -39,124 +36,153 @@ const Sidebar: React.FC = () => {
   }
 
   const getDashboardUrl = (): string => {
-    switch (session.user.role) {
-      case USER_ROLES.ADMIN:
-      case USER_ROLES.NATIONAL_OFFICER:
-        return '/dashboard/national';
-      case USER_ROLES.DISTRICT_OFFICER:
-        return `/dashboard/district/${session.user.district || 'default'}`;
-      default:
-        return `/dashboard/facility/${session.user.facilityId || 'default'}`;
+    if (session.user && session.user.role) {
+      switch (session.user.role) {
+        case USER_ROLES.ADMIN:
+        case USER_ROLES.NATIONAL_OFFICER:
+          return "/dashboard/national";
+        case USER_ROLES.DISTRICT_OFFICER:
+          return `/dashboard/district/${session.user.district || "default"}`;
+        default:
+          return `/dashboard/facility/${session.user.facilityId || "default"}`;
+      }
     }
+    return `/dashboard`;
   };
 
   const navItems: NavItem[] = [
     {
-      name: 'Dashboard',
+      name: "Dashboard",
       href: getDashboardUrl(),
       icon: <HomeIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
     },
     {
-      name: 'Report Case',
-      href: '/dashboard/report-case',
+      name: "Report Case",
+      href: "/dashboard/report-case",
       icon: <DocumentTextIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.ADMIN],
+      roles: [
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.ADMIN,
+      ],
     },
     {
-      name: 'Cases',
-      href: '/dashboard/cases',
+      name: "Cases",
+      href: "/dashboard/cases",
       icon: <TableCellsIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
     },
     {
-      name: 'Patients',
-      href: '/dashboard/patients',
+      name: "Patients",
+      href: "/dashboard/patient",
       icon: <UserGroupIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
     },
     {
-      name: 'Validation',
-      href: '/dashboard/validation',
+      name: "Validation",
+      href: "/dashboard/validation",
       icon: <DocumentTextIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.LAB_TECHNICIAN, USER_ROLES.DISTRICT_OFFICER],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.LAB_TECHNICIAN,
+        USER_ROLES.DISTRICT_OFFICER,
+      ],
     },
     {
-      name: 'Alerts',
-      href: '/dashboard/alerts',
+      name: "Alerts",
+      href: "/dashboard/alert",
       icon: <BellIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+      ],
     },
     {
-      name: 'Reports',
-      href: '/dashboard/reports',
+      name: "Reports",
+      href: "/dashboard/report",
       icon: <DocumentIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+      ],
     },
     {
-      name: 'Users',
-      href: '/dashboard/users',
+      name: "Users",
+      href: "/dashboard/user",
       icon: <UserGroupIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+      ],
     },
     {
-      name: 'Facilities',
-      href: '/dashboard/facilities',
+      name: "Facilities",
+      href: "/dashboard/facility",
       icon: <BuildingOfficeIcon className="w-5 h-5" />,
       roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
     },
+
     {
-      name: 'Statistics',
-      href: '/dashboard/statistics',
-      icon: <ChartBarIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
-    },
-    {
-      name: 'Action Dashboard',
-      href: '/dashboard/action-dashboard',
-      icon: <ChartBarIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER],
-    },
-    {
-      name: 'Geographic View',
-      href: '/dashboard/geographic-view',
-      icon: <MapPinIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
-    },
-    {
-      name: 'Threshold Engine',
-      href: '/dashboard/threshold-engine',
-      icon: <ExclamationTriangleIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
-    },
-    {
-      name: 'Digital Bulletin',
-      href: '/dashboard/digital-bulletin',
-      icon: <DocumentTextIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
-    },
-    {
-      name: 'Account',
-      href: '/dashboard/account',
+      name: "Account",
+      href: "/dashboard/account",
       icon: <UserCircleIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
     },
     {
-      name: 'Administration',
-      href: '/dashboard/admin',
+      name: "Administration",
+      href: "/dashboard/admin",
       icon: <Cog6ToothIcon className="w-5 h-5" />,
       roles: [USER_ROLES.ADMIN],
     },
     {
-      name: 'Logout',
-      href: '#',
+      name: "Logout",
+      href: "#",
       icon: <ArrowRightStartOnRectangleIcon className="w-5 h-5" />,
-      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN],
-      onClick: () => signOut({ callbackUrl: '/login' })
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
+      onClick: () => signOut({ callbackUrl: "/login" }),
     },
   ];
 
-  const filteredNavItems = navItems.filter(item => item.roles.includes(session.user.role));
+  const filteredNavItems = navItems.filter((item) =>
+    item.roles.includes(session.user.role),
+  );
 
   return (
     <div className="">
@@ -166,8 +192,18 @@ const Sidebar: React.FC = () => {
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow hover:bg-gray-50"
         aria-label="Toggle sidebar"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M4 6h16M4 12h16M4 18h16"
+          />
         </svg>
       </button>
 
@@ -177,7 +213,7 @@ const Sidebar: React.FC = () => {
           fixed top-0 left-0 h-screen w-64 bg-white shadow-lg
           transform transition-transform duration-300 ease-in-out
           z-40
-          ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
         <nav className="h-full flex flex-col">
@@ -188,7 +224,8 @@ const Sidebar: React.FC = () => {
 
           <ul className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
             {filteredNavItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href);
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
                   {item.onClick ? (
@@ -200,8 +237,8 @@ const Sidebar: React.FC = () => {
                       className={`
                         w-full flex items-center px-4 py-2 rounded-lg transition-colors
                         ${isActive
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >
@@ -215,8 +252,8 @@ const Sidebar: React.FC = () => {
                       className={`
                         flex items-center px-4 py-2 rounded-lg transition-colors
                         ${isActive
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >
@@ -231,7 +268,8 @@ const Sidebar: React.FC = () => {
 
           <div className="p-4 border-t border-gray-200">
             <p className="text-xs text-gray-500">
-              Logged in as: <span className="font-medium">{session.user.name}</span>
+              Logged in as:{" "}
+              <span className="font-medium">{session.user.name}</span>
             </p>
           </div>
         </nav>
@@ -249,4 +287,3 @@ const Sidebar: React.FC = () => {
 };
 
 export default Sidebar;
-

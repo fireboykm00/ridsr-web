@@ -6,9 +6,9 @@ import { useSession } from 'next-auth/react';
 import { Input } from './Input';
 import { SearchableSelect } from './SearchableSelect';
 import { Button } from './Button';
-import { userService } from '@/lib/services/user-service';
+import { userService } from '@/lib/services/userService';
 import { USER_ROLES } from '@/types';
-import { User } from '@/lib/services/user-service';
+import { User } from '@/lib/services/userService';
 
 interface UserSearchProps {
   onUserSelect?: (user: User) => void;

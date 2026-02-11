@@ -13,12 +13,12 @@ export default function AdminPage() {
   }
 
   const adminTools = [
-    { title: 'User Management', href: '/dashboard/users', description: 'Manage system users and roles' },
-    { title: 'Facility Management', href: '/dashboard/facilities', description: 'Configure health facilities' },
+    { title: 'User Management', href: '/dashboard/user', description: 'Manage system users and roles' },
+    { title: 'Facility Management', href: '/dashboard/facility', description: 'Configure health facilities' },
     { title: 'System Configuration', href: '/dashboard/admin/config', description: 'System settings and configuration' },
     { title: 'Audit Logs', href: '/dashboard/admin/logs', description: 'View system activity logs' },
     { title: 'Monitoring', href: '/dashboard/admin/monitoring', description: 'System health and performance' },
-    { title: 'Reports', href: '/dashboard/reports', description: 'Generate system reports' },
+    { title: 'Reports', href: '/dashboard/report', description: 'Generate system reports' },
   ];
 
   return (

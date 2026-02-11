@@ -1,23 +1,24 @@
 // src/app/(main)/login/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Input } from '@/components/ui/Input';
-import { PasswordInput } from '@/components/ui/PasswordInput';
-import { Button } from '@/components/ui/Button';
-import { useToastHelpers } from '@/components/ui/Toast';
-import { Checkbox } from '@/components/ui/Checkbox';
+import { useState, useEffect } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Button } from "@/components/ui/Button";
+import { useToastHelpers } from "@/components/ui/Toast";
+import { Checkbox } from "@/components/ui/Checkbox";
+import RIDSRLogo from "@/components/ui/RIDSRLogo";
 
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const { error: showError, success } = useToastHelpers();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +38,7 @@ export default function LoginPage() {
     }
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         redirect: false,
         identifier: identifier.trim(),
         password,
@@ -45,12 +46,13 @@ export default function LoginPage() {
 
       if (result?.error) {
         // Extract error message from NextAuth response
-        const errorMessage = result.error || "Invalid email/worker ID or password";
-        console.error('Login error:', errorMessage);
+        const errorMessage =
+          result.error || "Invalid email/worker ID or password";
+        console.error("Login error:", errorMessage);
         showError(errorMessage);
         setLoading(false);
       } else if (result?.ok) {
-        success('Login successful!');
+        success("Login successful!");
         router.push(callbackUrl);
         router.refresh();
       } else {
@@ -58,8 +60,9 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      console.error('Login exception:', errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      console.error("Login exception:", errorMessage);
       showError(errorMessage);
       setLoading(false);
     }
@@ -69,12 +72,18 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <RIDSRLogo size={43} showText={true} textSize={24} textColor="#1f2937" />
+          <RIDSRLogo
+            size={43}
+            showText={true}
+            textSize={24}
+            textColor="#1f2937"
+          />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to RIDSR
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Access the Rwanda National Integrated Disease Surveillance and Response Platform
+            Access the Rwanda National Integrated Disease Surveillance and
+            Response Platform
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -97,12 +106,12 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between">
-            <Checkbox
-              id="remember-me"
-              label="Remember me"
-            />
+            <Checkbox id="remember-me" label="Remember me" />
             <div className="text-sm">
-              <Link href="/forgot-password" className="font-medium text-blue-700 hover:text-blue-800">
+              <Link
+                href="/forgot-password"
+                className="font-medium text-blue-700 hover:text-blue-800"
+              >
                 Forgot your password?
               </Link>
             </div>
@@ -122,8 +131,11 @@ export default function LoginPage() {
 
         <div className="text-center text-sm text-gray-600">
           <p>
-            Don&apos;t have an account?{' '}
-            <Link href="/register" className="font-medium text-blue-700 hover:text-blue-800">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-blue-700 hover:text-blue-800"
+            >
               Register
             </Link>
           </p>

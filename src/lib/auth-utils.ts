@@ -96,9 +96,9 @@ export async function getEnhancedUserProfile(): Promise<User | null> {
   return {
     id: session.user.id,
     workerId: session.user.workerId,
-    name: session.user.name,
-    email: session.user.email,
-    role: session.user.role,
+    name: session.user.name || '',
+    email: session.user.email || '',
+    role: session.user.role ,
     facilityId: session.user.facilityId,
     district: session.user.district,
     province: session.user.province,
