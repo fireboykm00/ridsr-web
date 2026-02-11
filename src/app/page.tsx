@@ -6,17 +6,17 @@ import StatsSection from '@/features/home/StatsSection';
 import Footer from '@/components/layout/Footer';
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-grow">
-        <HeroSection />
-        <FeaturesSection />
-        <StatsSection />
-      </main>
-      
-      <Footer />
-    </div>
-  );
+    return (
+        <div className="min-h-screen flex flex-col">
+            <Navbar />
+
+            <main className="flex-grow">
+                <HeroSection />
+                <FeaturesSection />
+                <StatsSection />
+            </main>
+
+            <Footer />
+        </div>
+    );
 }

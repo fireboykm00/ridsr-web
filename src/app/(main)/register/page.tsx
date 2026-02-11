@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Input from '@/components/ui/Input';
+import PasswordInput from '@/components/ui/PasswordInput';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { useToastHelpers } from '@/components/ui/Toast';
@@ -59,7 +60,12 @@ export default function RegisterPage() {
       });
 
       if (result?.error) {
-        showError(result.error);
+        // Handle specific error messages
+        if (result.error.includes('CredentialsSignin')) {
+          showError('Invalid email or password. Please try again.');
+        } else {
+          showError(result.error);
+        }
         setLoading(false);
       } else {
         // Registration successful, redirect to dashboard
@@ -67,8 +73,8 @@ export default function RegisterPage() {
         router.push('/dashboard');
         router.refresh();
       }
-    } catch (err) {
-      showError('Registration failed. Please try again.');
+    } catch (err: any) {
+      showError(err.message || 'Registration failed. Please try again.');
       setLoading(false);
       console.error('Registration error:', err);
     }
@@ -118,9 +124,8 @@ export default function RegisterPage() {
             autoComplete="email"
           />
           
-          <Input
+          <PasswordInput
             label="Password"
-            type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
@@ -128,9 +133,8 @@ export default function RegisterPage() {
             autoComplete="new-password"
           />
           
-          <Input
+          <PasswordInput
             label="Confirm Password"
-            type="password"
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}

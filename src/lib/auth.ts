@@ -1,6 +1,15 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { ROLES, UserRole } from "./utils/auth";
+
+// Define the user type
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
 
 // In a real application, you would fetch user data from your database
 async function getUser(email: string, password: string) {
@@ -10,19 +19,19 @@ async function getUser(email: string, password: string) {
       id: "1",
       name: "Admin User",
       email: "admin@ridsr.rw",
-      role: "admin"
+      role: ROLES.ADMIN
     };
   }
-  
+
   if (email.endsWith("@ridsr.rw") && password === "health123") {
     return {
       id: "2",
       name: "Health Worker",
       email: email,
-      role: "health_worker"
+      role: ROLES.HEALTH_WORKER
     };
   }
-  
+
   return null;
 }
 
@@ -34,9 +43,10 @@ export const {
 } = NextAuth({
   providers: [
     Credentials({
+      name: "Credentials",
       credentials: {
-        email: {},
-        password: {}
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         const { email, password } = credentials as {
@@ -45,14 +55,14 @@ export const {
         };
 
         if (!email || !password) {
-          return null;
+          throw new Error("Email and password are required");
         }
 
         // Verify user credentials
         const user = await getUser(email, password);
-        
+
         if (!user) {
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         // In a real app, you would hash passwords and compare them
@@ -63,31 +73,33 @@ export const {
           return user;
         }
 
-        return null;
+        throw new Error("Invalid email or password");
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        (token as any).role = user.role;
-        (token as any).id = user.id;
+        token.role = user.role;
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.role = (token as any).role as string;
-        session.user.id = (token as any).id as string;
+        session.user!.role = token.role as UserRole;
+        session.user!.id = token.id as string;
       }
       return session;
     },
   },
   pages: {
     signIn: "/login",
+    error: "/auth/error", // Custom error page
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  secret: process.env.NEXTAUTH_SECRET,
 });

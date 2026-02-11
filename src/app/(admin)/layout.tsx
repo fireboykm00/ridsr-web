@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 import { auth } from '@/lib/auth';
 import { ROLES } from '@/lib/utils/auth';
 import { redirect } from 'next/navigation';
+import RIDSRLogo from '@/components/ui/RIDSRLogo';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -22,9 +23,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
+              <RIDSRLogo size={43} showText={true} textSize={24} textColor="#1f2937" />
               <span className="ml-2 text-lg font-bold text-gray-900">Admin Panel</span>
             </div>
             <nav className="flex space-x-4">

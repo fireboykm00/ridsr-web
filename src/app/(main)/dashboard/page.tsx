@@ -2,25 +2,17 @@
 'use client';
 
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { useState } from 'react';
-import Sidebar from '@/components/layout/Sidebar';
 import Card from '@/components/ui/Card';
-import { BarChart } from '@/components/ui/BarChart';
-import { PieChart } from '@/components/ui/PieChart';
-import { LineChart } from '@/components/ui/LineChart';
-import { MapVisualization } from '@/components/ui/MapVisualization';
+import BarChart from '@/components/ui/BarChart';
+import PieChart from '@/components/ui/PieChart';
+import LineChart from '@/components/ui/LineChart';
+import MapVisualization from '@/components/ui/MapVisualization';
 import {
-  HomeIcon,
-  DocumentTextIcon,
-  TableCellsIcon,
-  Cog6ToothIcon,
-  UserGroupIcon,
-  ArrowRightOnRectangleIcon
+  BellAlertIcon
 } from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
   const { data: session, status } = useSession();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   if (status === "loading") {
     return (
@@ -48,44 +40,6 @@ const Dashboard = () => {
       </div>
     );
   }
-
-  // Define sidebar items based on user role
-  const sidebarItems = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: <HomeIcon className="h-5 w-5" />,
-    },
-    {
-      name: 'Report Case',
-      href: '/report-case',
-      icon: <DocumentTextIcon className="h-5 w-5" />,
-    },
-    {
-      name: 'Cases',
-      href: '/cases',
-      icon: <TableCellsIcon className="h-5 w-5" />,
-    },
-    {
-      name: 'Profile',
-      href: '/profile',
-      icon: <UserGroupIcon className="h-5 w-5" />,
-    },
-    ...(session.user?.role === 'admin'
-      ? [{
-        name: 'Admin Panel',
-        href: '/admin',
-        icon: <Cog6ToothIcon className="h-5 w-5" />,
-      }]
-      : []
-    ),
-    {
-      name: 'Logout',
-      href: '#',
-      icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />,
-      onClick: () => signOut()
-    }
-  ];
 
   // Sample data for charts
   const diseaseData = [
@@ -115,81 +69,112 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar
-        items={sidebarItems}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Surveillance Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {session.user?.name}</p>
+        </div>
 
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Surveillance Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {session.user?.name}</p>
+        {/* Role-specific content */}
+        {session.user?.role === 'admin' ? (
+          <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start">
+              <BellAlertIcon className="h-5 w-5 text-blue-500 mt-0.5 mr-2" />
+              <div>
+                <h3 className="font-medium text-blue-800">Administrative Dashboard</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  You have administrative privileges. Manage users, configure system settings, and monitor platform activity.
+                </p>
+              </div>
+            </div>
           </div>
+        ) : session.user?.role === 'district_officer' ? (
+          <div className="mb-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-start">
+              <BellAlertIcon className="h-5 w-5 text-yellow-500 mt-0.5 mr-2" />
+              <div>
+                <h3 className="font-medium text-yellow-800">District Officer Dashboard</h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Monitor disease trends in your district, review reports from health facilities, and coordinate response activities.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-8 p-4 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start">
+              <BellAlertIcon className="h-5 w-5 text-green-500 mt-0.5 mr-2" />
+              <div>
+                <h3 className="font-medium text-green-800">Health Worker Dashboard</h3>
+                <p className="text-sm text-green-700 mt-1">
+                  Report cases, monitor local disease trends, and access reference materials.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Cases</h3>
-              <p className="text-3xl font-bold text-gray-900">1,234</p>
-              <p className="text-sm text-green-600 mt-1">+12% from last week</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Active Outbreaks</h3>
-              <p className="text-3xl font-bold text-gray-900">12</p>
-              <p className="text-sm text-red-600 mt-1">3 critical</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Reports This Week</h3>
-              <p className="text-3xl font-bold text-gray-900">89</p>
-              <p className="text-sm text-green-600 mt-1">On track</p>
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Facilities Online</h3>
-              <p className="text-3xl font-bold text-gray-900">456</p>
-              <p className="text-sm text-green-600 mt-1">98% coverage</p>
-            </Card>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Cases</h3>
+            <p className="text-3xl font-bold text-gray-900">1,234</p>
+            <p className="text-sm text-green-600 mt-1">+12% from last week</p>
+          </Card>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Active Outbreaks</h3>
+            <p className="text-3xl font-bold text-gray-900">12</p>
+            <p className="text-sm text-red-600 mt-1">3 critical</p>
+          </Card>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Reports This Week</h3>
+            <p className="text-3xl font-bold text-gray-900">89</p>
+            <p className="text-sm text-green-600 mt-1">On track</p>
+          </Card>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Facilities Online</h3>
+            <p className="text-3xl font-bold text-gray-900">456</p>
+            <p className="text-sm text-green-600 mt-1">98% coverage</p>
+          </Card>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Disease Distribution</h3>
-              <PieChart
-                data={diseaseData}
-                size="md"
-              />
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Trends</h3>
-              <LineChart
-                data={weeklyData}
-                color="blue"
-              />
-            </Card>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Disease Distribution</h3>
+            <PieChart
+              data={diseaseData}
+              size="md"
+            />
+          </Card>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Trends</h3>
+            <LineChart
+              data={weeklyData}
+              color="blue"
+            />
+          </Card>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Cases by Region</h3>
-              <BarChart
-                data={[
-                  { name: 'Kigali', value: 120 },
-                  { name: 'North', value: 95 },
-                  { name: 'South', value: 110 },
-                  { name: 'East', value: 85 },
-                  { name: 'West', value: 130 },
-                ]}
-              />
-            </Card>
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Spread</h3>
-              <MapVisualization
-                regions={provinceData}
-                onRegionClick={(region) => alert(`Clicked on ${region.name}: ${region.value} cases`)}
-              />
-            </Card>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cases by Region</h3>
+            <BarChart
+              data={[
+                { name: 'Kigali', value: 120 },
+                { name: 'North', value: 95 },
+                { name: 'South', value: 110 },
+                { name: 'East', value: 85 },
+                { name: 'West', value: 130 },
+              ]}
+            />
+          </Card>
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Spread</h3>
+            <MapVisualization
+              regions={provinceData}
+              onRegionClick={(region) => alert(`Clicked on ${region.name}: ${region.value} cases`)}
+            />
+          </Card>
         </div>
       </div>
     </div>

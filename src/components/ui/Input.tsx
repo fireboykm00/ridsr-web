@@ -6,10 +6,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   helperText?: string;
   variant?: 'underlined' | 'filled' | 'outlined';
+  containerClassName?: string;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, helperText, variant = 'underlined', className = '', ...props }, ref) => {
+  ({ label, error, helperText, variant = 'underlined', className = '', containerClassName = '', ...props }, ref) => {
     const baseClasses = 'block w-full text-base text-gray-900 placeholder-gray-500 focus:outline-none';
     
     const variantClasses = {
@@ -21,7 +22,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const classes = `${baseClasses} ${variantClasses[variant]} ${className}`;
     
     return (
-      <div className="w-full">
+      <div className={`w-full ${containerClassName}`}>
         {label && (
           <label className={`block text-sm font-medium ${error ? 'text-red-700' : 'text-gray-700'} mb-2`}>
             {label}

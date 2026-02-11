@@ -1,5 +1,6 @@
 // src/components/layout/Footer.tsx
 import Link from 'next/link';
+import RIDSRLogo from '../ui/RIDSRLogo';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -26,10 +27,7 @@ const Footer = () => {
           {/* Company Info */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">RIDSR</span>
+              <RIDSRLogo size={50} showText={true} textSize={24} textColor="#1f2937" />
             </div>
             <p className="text-gray-600 text-sm mb-4">
               Rwanda National Integrated Disease Surveillance and Response Platform

@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Input from '@/components/ui/Input';
+import PasswordInput from '@/components/ui/PasswordInput';
 import Button from '@/components/ui/Button';
 import { useToastHelpers } from '@/components/ui/Toast';
 
@@ -30,7 +31,12 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        showError(result.error);
+        // Handle specific error messages
+        if (result.error.includes('CredentialsSignin')) {
+          showError('Invalid email or password. Please try again.');
+        } else {
+          showError(result.error);
+        }
         setLoading(false);
       } else {
         // Successful sign in
@@ -38,8 +44,8 @@ export default function LoginPage() {
         router.push(callbackUrl);
         router.refresh();
       }
-    } catch (err) {
-      showError('An unexpected error occurred');
+    } catch (err: any) {
+      showError(err.message || 'An unexpected error occurred');
       setLoading(false);
     }
   };
@@ -68,9 +74,8 @@ export default function LoginPage() {
             autoComplete="email"
           />
           
-          <Input
+          <PasswordInput
             label="Password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

@@ -6,6 +6,11 @@ import Card from '@/components/ui/Card';
 import { ArrowTrendingUpIcon, UserGroupIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const AdminDashboard = async () => {
+  const session = await auth();
+  
+  if (!session || session.user?.role !== ROLES.ADMIN) {
+    redirect('/login');
+  }
 
   const stats = [
     {

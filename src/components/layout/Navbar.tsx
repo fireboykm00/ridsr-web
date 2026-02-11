@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import RIDSRLogo from '../ui/RIDSRLogo';
 
 const Navbar = () => {
   const { data: session, status } = useSession();
@@ -33,40 +34,38 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo and Branding */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">RIDSR</span>
-            </Link>
-            <span className="ml-4 text-sm text-gray-600 hidden md:block">
+            <div>
+              <RIDSRLogo size={50} showText={true} textSize={20} textColor="#1f2937" />
+
+            </div>
+            <span className="ml-4 text-sm text-gray-600 hidden lg:block">
               Republic of Rwanda | Ministry of Health
             </span>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {status === "authenticated" 
+            {status === "authenticated"
               ? authenticatedNavLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                ))
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))
               : publicNavLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                ))
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))
             }
-            
+
             {status === "authenticated" ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600 hidden md:block">
@@ -126,7 +125,7 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ))}
-              
+
               {status === "authenticated" ? (
                 <div className="pt-4 flex flex-col space-y-3">
                   <span className="text-sm text-gray-600">

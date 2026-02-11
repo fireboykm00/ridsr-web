@@ -6,15 +6,16 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   // Get the pathname of the request
   const pathname = req.nextUrl.pathname;
-  
+
   // Define public paths that don't require authentication
-  const isPublicPath = 
+  const isPublicPath =
     pathname === "/" ||
-    pathname === "/login" || 
-    pathname === "/register" || 
+    pathname === "/login" ||
+    pathname === "/register" ||
     pathname.startsWith("/about") ||
-    pathname.startsWith("/faq") || 
-    pathname.startsWith("/privacy-policy");
+    pathname.startsWith("/faq") ||
+    pathname.startsWith("/privacy-policy") ||
+    pathname.startsWith("/auth/error"); // Allow access to error page
 
   // If the user is not authenticated and trying to access a protected route
   if (!req.auth && !isPublicPath) {

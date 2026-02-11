@@ -3,6 +3,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import RIDSRLogo from '../ui/RIDSRLogo';
 
 interface SidebarItem {
   name: string;
@@ -73,14 +74,11 @@ const Sidebar: React.FC<SidebarProps> = ({ items, collapsed = false, onToggleCol
         <div className="flex items-center justify-between">
           {!collapsed && (
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">R</span>
-              </div>
-              <span className="text-lg font-bold text-gray-900">RIDSR</span>
+              <RIDSRLogo size={32} showText={true} textSize={16} textColor="#1f2937" />
             </div>
           )}
           {onToggleCollapse && (
-            <button 
+            <button
               onClick={onToggleCollapse}
               className="text-gray-500 hover:text-gray-700 focus:outline-none"
             >
