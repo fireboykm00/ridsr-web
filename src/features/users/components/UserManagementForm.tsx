@@ -67,14 +67,14 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       }
 
       // Facility is only required for health workers and lab technicians
-      const isFacilityRequired = [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role as any);
+      const isFacilityRequired = [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role);
       if (isFacilityRequired && !formData.facilityId) {
         showError('Facility is required for this role');
         return;
       }
 
       // District is required for district officers, health workers, and lab technicians
-      const isDistrictRequired = [USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role as any);
+      const isDistrictRequired = [USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role);
       if (isDistrictRequired && !formData.district) {
         showError('District is required for this role');
         return;
@@ -86,7 +86,14 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       }
 
       if (isEditing && user) {
-        const updateData: any = {
+        const updateData: {
+          name: string;
+          email: string;
+          role: UserRole;
+          district: RwandaDistrictType | undefined;
+          facilityId?: string;
+          password?: string;
+        } = {
           name: formData.name,
           email: formData.email,
           role: formData.role,
@@ -105,7 +112,14 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         await userService.updateUser(user.id, updateData);
         showSuccess('User updated successfully');
       } else {
-        const createData: any = {
+        const createData: {
+          name: string;
+          email: string;
+          role: UserRole;
+          district: RwandaDistrictType | undefined;
+          password: string;
+          facilityId?: string;
+        } = {
           name: formData.name,
           email: formData.email,
           role: formData.role,
@@ -123,8 +137,9 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       }
 
       onSuccess();
-    } catch (error: any) {
-      showError(error.message || `Failed to ${isEditing ? 'update' : 'create'} user`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'create'} user`;
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -187,7 +202,7 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         disabled={loading}
       />
 
-      {[USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role as any) && (
+      {[USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role) && (
         <SearchableSelect
           label="District *"
           value={formData.district}
@@ -199,7 +214,7 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         />
       )}
 
-      {[USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role as any) && (
+      {[USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role) && (
         <SearchableSelect
           label="Facility *"
           value={formData.facilityId}
@@ -223,7 +238,7 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         <Button
           type="submit"
           fullWidth
-          loading={loading}
+          isLoading={loading}
           disabled={loading}
         >
           {isEditing ? 'Update User' : 'Create User'}

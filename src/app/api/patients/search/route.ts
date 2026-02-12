@@ -4,11 +4,11 @@ import { auth } from '@/lib/auth';
 import { searchPatients } from '@/lib/services/server/patientService';
 import { searchSchema } from '@/lib/schemas';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import type { IPatient } from '@/lib/models/Patient';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    // Non-blocking
+    await auth();
 
     const { searchParams } = new URL(request.url);
     const { q } = searchSchema.parse({
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const patients = await searchPatients(q);
 
     // Format for SearchableSelect component
-    const options = patients.map((patient: any) => ({
+    const options = patients.map((patient: IPatient) => ({
       value: patient._id?.toString() || patient.id || '',
       label: `${patient.firstName || ''} ${patient.lastName || ''}${patient.nationalId ? ` (${patient.nationalId})` : ''}`.trim(),
     }));

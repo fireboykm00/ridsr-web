@@ -14,7 +14,6 @@ import {
   UserGroupIcon, 
   DocumentTextIcon, 
   ExclamationTriangleIcon,
-  MapPinIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { Facility, User, Case, USER_ROLES } from '@/types';
@@ -78,12 +77,12 @@ export default function FacilityDetailPage() {
           }
 
           // Load facility cases
-          let facilityCases = [];
+          let facilityCases: Case[] = [];
           try {
             const casesResponse = await fetch(`/api/cases?facilityId=${facilityId}`);
             if (casesResponse.ok) {
               const casesData = await casesResponse.json();
-              facilityCases = casesData.data?.data || casesData.data || [];
+              facilityCases = (casesData.data?.data || casesData.data || []) as Case[];
             }
           } catch (error) {
             console.error('Error loading cases:', error);
@@ -92,8 +91,8 @@ export default function FacilityDetailPage() {
           // Calculate real statistics
           const stats: FacilityStats = {
             totalCases: facilityCases.length,
-            pendingCases: facilityCases.filter((c: any) => c.validationStatus === 'pending').length,
-            validatedCases: facilityCases.filter((c: any) => c.validationStatus === 'validated').length,
+            pendingCases: facilityCases.filter((c) => c.validationStatus === 'pending').length,
+            validatedCases: facilityCases.filter((c) => c.validationStatus === 'validated').length,
             totalStaff: staffData?.length || 0,
             recentCases: facilityCases.slice(0, 5)
           };

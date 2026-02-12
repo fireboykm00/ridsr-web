@@ -1,6 +1,7 @@
 import { Patient, IPatient } from '@/lib/models/Patient';
-import { BaseService } from './baseService';
+import { BaseService, PaginatedResult } from './baseService';
 import { Gender, RwandaDistrictType, RwandaProvinceType } from '@/types';
+import { FilterQuery, UpdateQuery } from 'mongoose';
 
 export interface CreatePatientData {
   nationalId: string;
@@ -59,11 +60,11 @@ class PatientService extends BaseService<IPatient> {
   }
 
   async createPatient(data: CreatePatientData): Promise<IPatient> {
-    const patientData = {
+    const patientData: CreatePatientData = {
       ...data,
       dateOfBirth: new Date(data.dateOfBirth),
     };
-    return this.create(patientData as any);
+    return this.create(patientData);
   }
 
   async getPatientByNationalId(nationalId: string): Promise<IPatient | null> {
@@ -85,8 +86,14 @@ class PatientService extends BaseService<IPatient> {
     }).limit(limit).lean();
   }
 
-  async getPatientsWithFilters(filters: PatientFilters, page?: number, limit?: number): Promise<any> {
-    const query: any = {};
+  async getPatientsWithFilters(
+    filters: PatientFilters,
+    page?: number,
+    limit?: number
+  ): Promise<
+    IPatient[] | (PaginatedResult<IPatient> & { hasNext: boolean; hasPrev: boolean })
+  > {
+    const query: FilterQuery<IPatient> = {};
 
     if (filters.district) {
       query.district = filters.district;
@@ -119,10 +126,10 @@ class PatientService extends BaseService<IPatient> {
       await this.dbConnect();
       const skip = (page - 1) * limit;
       const total = await this.model.countDocuments(query);
-      const data = await this.model.find(query).skip(skip).limit(limit).lean();
+      const paginatedData = await this.model.find(query).skip(skip).limit(limit).lean();
 
       return {
-        data,
+        data: paginatedData,
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -139,7 +146,7 @@ class PatientService extends BaseService<IPatient> {
   }
 
   async updatePatientById(id: string, data: UpdatePatientData): Promise<IPatient | null> {
-    const updateData: any = {};
+    const updateData: UpdateQuery<IPatient> = {};
 
     if (data.firstName) updateData.firstName = data.firstName;
     if (data.lastName) updateData.lastName = data.lastName;

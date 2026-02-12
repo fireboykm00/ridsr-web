@@ -1,61 +1,58 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { NextRequest } from 'next/server';
 import { dbConnect } from '@/lib/services/db';
 import { Facility as FacilityModel } from '@/lib/models';
-import { USER_ROLES } from '@/types';
+import { errorResponse, successResponse } from '@/lib/api/response';
+import { isAuthError, requireAuth, requireRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { UserRole } from '@/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  // Non-blocking
-  // if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
+    await requireAuth(request);
     const { id } = await params;
     await dbConnect();
     const facility = await FacilityModel.findById(id).lean();
-    if (!facility) return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
-    return NextResponse.json(facility);
+    if (!facility) return errorResponse('Facility not found', 404);
+    return successResponse(facility);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('Error fetching facility:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return errorResponse('Internal server error', 500);
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  // Non-blocking
-  // if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
-
   try {
+    await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
     const { id } = await params;
     const data = await request.json();
     await dbConnect();
     const facility = await FacilityModel.findByIdAndUpdate(id, data, { new: true }).lean();
-    if (!facility) return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
-    return NextResponse.json(facility);
+    if (!facility) return errorResponse('Facility not found', 404);
+    return successResponse(facility);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('Error updating facility:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return errorResponse('Internal server error', 500);
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  // Non-blocking
-  // if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
-
   try {
+    await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
     const { id } = await params;
     await dbConnect();
     const facility = await FacilityModel.findByIdAndDelete(id);
-    if (!facility) return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
-    return NextResponse.json({ message: 'Facility deleted' });
+    if (!facility) return errorResponse('Facility not found', 404);
+    return successResponse({ message: 'Facility deleted' });
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('Error deleting facility:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return errorResponse('Internal server error', 500);
   }
 }

@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { facilityService } from '@/lib/services/server/facilityService';
+import type { CreateFacilityData } from '@/lib/services/server/facilityService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { createFacilitySchema, paginationSchema } from '@/lib/schemas';
-import { RwandaDistrictType, RwandaProvinceType, UserRole } from '@/types';
+import { FacilityType, RwandaDistrictType, RwandaProvinceType, UserRole } from '@/types';
 
 const getFacilitiesQuerySchema = z.object({
   district: z.string().optional(),
@@ -14,7 +15,7 @@ const getFacilitiesQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await withAuth(request);
+    const user = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
@@ -22,13 +23,16 @@ export async function GET(request: NextRequest) {
 
     const filters = {
       district: (district || user?.district) as RwandaDistrictType | undefined,
-      type: type as any,
+      type: type as FacilityType | undefined,
       search
     };
     const facilities = await facilityService.getFacilitiesWithFilters(filters, page, limit);
 
     return successResponse(facilities);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Invalid query parameters', 400, error.issues[0].message);
     }
@@ -39,10 +43,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
-
-    // We proceed anyway as requested, but we'll use the user session if available.
-    // If we wanted to be strict we would check hasAccess here.
+    await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
 
     const body = await request.json();
     const validatedData = createFacilitySchema.parse(body);
@@ -59,10 +60,10 @@ export async function POST(request: NextRequest) {
       return districtToProvince[d] || 'kigali_city';
     };
 
-    const facilityData = {
+    const facilityData: CreateFacilityData = {
       name: validatedData.name,
       code: validatedData.code,
-      type: validatedData.type as any,
+      type: validatedData.type as FacilityType,
       district: validatedData.district as RwandaDistrictType,
       province: (validatedData.province || getProvinceFromDistrict(validatedData.district)) as RwandaProvinceType,
       contactPerson: validatedData.contactPerson,
@@ -70,9 +71,12 @@ export async function POST(request: NextRequest) {
       email: validatedData.email
     };
 
-    const facility = await facilityService.createFacility(facilityData as any);
+    const facility = await facilityService.createFacility(facilityData);
     return successResponse(facility, 201);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
     }

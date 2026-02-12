@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { createUserSchema, paginationSchema } from '@/lib/schemas';
@@ -13,9 +13,15 @@ const getUsersQuerySchema = z.object({
   search: z.string().optional(),
 }).merge(paginationSchema.partial());
 
+const omitPassword = <T extends Record<string, unknown>>(user: T): Omit<T, 'password'> => {
+  const { password, ...safeUser } = user;
+  void password;
+  return safeUser;
+};
+
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await withAuth(request);
+    const user = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
@@ -29,8 +35,18 @@ export async function GET(request: NextRequest) {
     };
     const users = await userService.getUsersWithFilters(filters, page, limit);
 
-    return successResponse(users);
+    const safeUsers = Array.isArray(users)
+      ? users.map((user) => omitPassword(user as unknown as Record<string, unknown>))
+      : {
+        ...users,
+        data: users.data.map((user) => omitPassword(user as unknown as Record<string, unknown>)),
+      };
+
+    return successResponse(safeUsers);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Invalid query parameters', 400, error.issues[0].message);
     }
@@ -41,8 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
-    // Proceed as requested by user
+    await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
 
     const body = await request.json();
     const validatedData = createUserSchema.parse(body);
@@ -58,12 +73,16 @@ export async function POST(request: NextRequest) {
     const userData = {
       ...validatedData,
       workerId,
+      role: validatedData.role as UserRole,
       district: validatedData.district as RwandaDistrictType | undefined
     };
 
-    const newUser = await userService.createUser(userData as any);
+    const newUser = await userService.createUser(userData);
     return successResponse(newUser, 201);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
     }

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { dbConnect } from '@/lib/services/db';
 import { User as UserModel } from '@/lib/models';
+import { requireAuth, isAuthError } from '@/lib/api/middleware';
 
 // GET: Search users
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  // Non-blocking
-
   try {
+    await requireAuth(request);
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
 
@@ -28,13 +27,17 @@ export async function GET(request: NextRequest) {
     }).lean();
 
     // Only return necessary fields
-    const filteredUsers = users.map((u: any) => {
-      const { password, ...user } = u;
+    const filteredUsers = users.map((u: Record<string, unknown>) => {
+      const user = { ...u };
+      delete user.password;
       return user;
     });
 
     return NextResponse.json(filteredUsers);
   } catch (error) {
+    if (isAuthError(error)) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     console.error('Error searching users:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

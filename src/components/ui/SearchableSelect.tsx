@@ -36,7 +36,6 @@ const SearchableSelect = <T = string,>({
   isLoading = false,
   isClearable = false,
   placeholder = 'Select...',
-  ...props 
 }: SearchableSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');

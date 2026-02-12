@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import CaseReportForm from '@/components/forms/CaseReportForm';
-import { CaseReportFormData } from '@/types/forms';
 import { USER_ROLES } from '@/types';
 import { facilityService } from '@/lib/services/facilityService';
 
@@ -96,7 +95,7 @@ export default function FacilityCaseReportForm() {
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
           <p className="text-gray-600 mb-6">
-            You don't have permission to report cases for this facility.
+            You don&apos;t have permission to report cases for this facility.
           </p>
           <button
             onClick={() => router.back()}

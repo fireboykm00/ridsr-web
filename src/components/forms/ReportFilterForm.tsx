@@ -5,8 +5,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { RwandaDistrictType, RWANDA_DISTRICTS, CaseStatus } from '@/types';
+import { RwandaDistrictType, RWANDA_DISTRICTS } from '@/types';
 import { DISEASE_CODES } from '@/constants';
 
 interface ReportFilterFormProps {
@@ -25,6 +24,12 @@ interface ReportFilters {
   includeTrends: boolean;
   includeMaps: boolean;
   includeRecommendations: boolean;
+}
+
+interface FacilitySearchResult {
+  id: string;
+  name: string;
+  code: string;
 }
 
 const REPORT_TYPES = [
@@ -77,7 +82,7 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
     try {
       const response = await fetch(`/api/facilities/search?q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      return data.success ? data.data.map((facility: any) => ({
+      return data.success ? (data.data as FacilitySearchResult[]).map((facility) => ({
         value: facility.id,
         label: `${facility.name} (${facility.code})`
       })) : [];

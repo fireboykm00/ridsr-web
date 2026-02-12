@@ -23,7 +23,7 @@ async function createAdminUser() {
       const password = "Admin@123456";
 
       // Update the existing admin user
-      const updatedAdmin = await User.findOneAndUpdate(
+      await User.findOneAndUpdate(
         { email: "admin@ridsr.rw" },
         {
           password: await hashPassword(password),

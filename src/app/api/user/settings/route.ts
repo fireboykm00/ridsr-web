@@ -20,7 +20,7 @@ export async function PUT(request: NextRequest) {
         weeklyReports,
         twoFactorAuth,
       },
-    } as any);
+    });
 
     if (!updatedUser) {
       return errorResponse('Failed to update settings', 500);

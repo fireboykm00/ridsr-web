@@ -9,8 +9,8 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Modal } from '@/components/ui/Modal';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
-import { UserGroupIcon, PlusIcon, TrashIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { USER_ROLES, User, Facility, UserRole, RWANDA_DISTRICTS } from '@/types';
+import { UserGroupIcon, PlusIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { USER_ROLES, User, Facility, RWANDA_DISTRICTS } from '@/types';
 import { userService } from '@/lib/services/userService';
 import { facilityService } from '@/lib/services/facilityService';
 import { UserManagementForm } from '@/features/users/components/UserManagementForm';
@@ -123,7 +123,7 @@ export default function UsersPage() {
     try {
       const updatedUsers = await userService.getAllUsers();
       setUsers(updatedUsers);
-    } catch (error) {
+    } catch {
       showError('Failed to reload users');
     }
   };
@@ -146,7 +146,7 @@ export default function UsersPage() {
 
       const updatedUsers = await userService.getAllUsers();
       setUsers(updatedUsers);
-    } catch (error) {
+    } catch {
       showError(`Failed to ${action} user`);
     }
   };

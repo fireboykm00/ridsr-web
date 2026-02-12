@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { useDebounce } from '@/hooks/useDebounce';
 import { BuildingOfficeIcon, PlusIcon, PencilIcon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { USER_ROLES, Facility, FacilityType, RwandaDistrictType } from '@/types';
+import { USER_ROLES, Facility, CreateFacilityInput, UpdateFacilityInput } from '@/types';
 import { facilityService } from '@/lib/services/facilityService';
 import FacilityManagementForm from '@/components/forms/FacilityManagementForm';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
@@ -58,13 +58,13 @@ export default function FacilityManagementPage() {
     return matchesSearch && matchesType;
   });
 
-  const handleCreateOrUpdate = async (formData: any) => {
+  const handleCreateOrUpdate = async (formData: CreateFacilityInput | UpdateFacilityInput) => {
     try {
       if (editingFacility) {
-        await facilityService.updateFacility(editingFacility.id, formData);
+        await facilityService.updateFacility(editingFacility.id, formData as UpdateFacilityInput);
         showSuccess('Facility updated successfully');
       } else {
-        await facilityService.createFacility(formData);
+        await facilityService.createFacility(formData as CreateFacilityInput);
         showSuccess('Facility created successfully');
       }
       setShowModal(false);
@@ -72,7 +72,7 @@ export default function FacilityManagementPage() {
       // Reload
       const data = await facilityService.getAllFacilities();
       setFacilities(data);
-    } catch (error) {
+    } catch {
       showError(editingFacility ? 'Failed to update facility' : 'Failed to create facility');
     }
   };
@@ -86,7 +86,7 @@ export default function FacilityManagementPage() {
       showSuccess(`Facility ${action}d successfully`);
       const data = await facilityService.getAllFacilities();
       setFacilities(data);
-    } catch (error) {
+    } catch {
       showError(`Failed to ${action} facility`);
     }
   };

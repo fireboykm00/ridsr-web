@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { withAuth } from '@/lib/api/middleware';
+import { isAuthError, requireAuth } from '@/lib/api/middleware';
 import { facilityService } from '@/lib/services/server/facilityService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 
@@ -11,8 +11,7 @@ const searchQuerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await withAuth(request);
-    // Non-blocking
+    await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const { q, limit = 10 } = searchQuerySchema.parse(Object.fromEntries(searchParams.entries()));
@@ -20,6 +19,9 @@ export async function GET(request: NextRequest) {
     const facilities = await facilityService.searchFacilities(q, limit);
     return successResponse(facilities);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Invalid search parameters', 400, error.issues[0].message);
     }

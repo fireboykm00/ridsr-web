@@ -1,7 +1,7 @@
 import { User, IUser } from '@/lib/models/User';
-import { BaseService } from './baseService';
+import { BaseService, PaginatedResult } from './baseService';
 import { UserRole, RwandaDistrictType, RwandaProvinceType } from '@/types';
-import mongoose from 'mongoose';
+import mongoose, { FilterQuery, UpdateQuery } from 'mongoose';
 import { facilityService } from './facilityService';
 import { hashPassword, verifyPassword } from '@/lib/utils/auth';
 
@@ -26,6 +26,12 @@ export interface UpdateUserData {
   district?: RwandaDistrictType;
   province?: RwandaProvinceType;
   isActive?: boolean;
+  settings?: {
+    emailNotifications?: boolean;
+    smsAlerts?: boolean;
+    weeklyReports?: boolean;
+    twoFactorAuth?: boolean;
+  };
 }
 
 export interface UserFilters {
@@ -45,22 +51,22 @@ class UserService extends BaseService<IUser> {
     const hashedPassword = await hashPassword(data.password);
 
     let facilityName = data.facilityName;
-    let facilityObjectId;
+    let facilityObjectId: mongoose.Types.ObjectId | undefined;
     
     if (data.facilityId) {
       // If facilityId is a code (not ObjectId), look it up
       if (data.facilityId.length < 24) {
         const facility = await facilityService.getFacilityByCode(data.facilityId);
         if (facility) {
-          facilityName = (facility as any).name;
-          facilityObjectId = (facility as any)._id;
+          facilityName = facility.name;
+          facilityObjectId = facility._id as mongoose.Types.ObjectId;
         }
       } else {
         facilityObjectId = new mongoose.Types.ObjectId(data.facilityId);
         if (!facilityName) {
           const facility = await facilityService.findById(data.facilityId);
           if (facility) {
-            facilityName = (facility as any).name;
+            facilityName = facility.name;
           }
         }
       }
@@ -90,8 +96,12 @@ class UserService extends BaseService<IUser> {
     return this.updateById(userId, { password: hashedPassword });
   }
 
-  async getUsersWithFilters(filters: UserFilters, page?: number, limit?: number): Promise<any> {
-    const query: any = {};
+  async getUsersWithFilters(
+    filters: UserFilters,
+    page?: number,
+    limit?: number
+  ): Promise<IUser[] | PaginatedResult<IUser>> {
+    const query: FilterQuery<IUser> = {};
 
     if (filters.role) {
       query.role = filters.role;
@@ -145,7 +155,7 @@ class UserService extends BaseService<IUser> {
   }
 
   async updateUserById(id: string, data: UpdateUserData): Promise<IUser | null> {
-    const updateData: any = { ...data };
+    const updateData: UpdateQuery<IUser> = { ...data };
 
     // Handle facilityId - remove if empty/null, otherwise convert
     if (data.facilityId !== undefined) {
@@ -158,9 +168,9 @@ class UserService extends BaseService<IUser> {
         if (data.facilityId.length < 24) {
           const facility = await facilityService.getFacilityByCode(data.facilityId);
           if (facility) {
-            updateData.facilityId = (facility as any)._id;
+            updateData.facilityId = facility._id as mongoose.Types.ObjectId;
             if (!data.facilityName) {
-              updateData.facilityName = (facility as any).name;
+              updateData.facilityName = facility.name;
             }
           }
         } else {
@@ -168,7 +178,7 @@ class UserService extends BaseService<IUser> {
           if (!data.facilityName) {
             const facility = await facilityService.findById(data.facilityId);
             if (facility) {
-              updateData.facilityName = (facility as any).name;
+              updateData.facilityName = facility.name;
             }
           }
         }

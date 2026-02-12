@@ -1,15 +1,14 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
 import { getCases, createCase } from '@/lib/services/server/caseService';
 import { createCaseSchema, paginationSchema } from '@/lib/schemas';
 import { successResponse, errorResponse } from '@/lib/api/response';
-import { DiseaseCode, CaseStatus } from '@/types';
+import { isAuthError, requireAuth } from '@/lib/api/middleware';
+import { CaseStatus, DiseaseCode, Symptom } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    const user = session?.user;
+    const user = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = paginationSchema.parse({
@@ -26,6 +25,9 @@ export async function GET(request: NextRequest) {
     const result = await getCases(filters, page, limit);
     return successResponse(result);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Invalid query parameters', 400, error.issues[0].message);
     }
@@ -36,8 +38,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    const user = session?.user;
+    const user = await requireAuth(request);
 
     const body = await request.json();
     const validated = createCaseSchema.parse(body);
@@ -51,28 +52,28 @@ export async function POST(request: NextRequest) {
       if (!facility) {
         return errorResponse('Facility not found', 404);
       }
-      facilityId = (facility as any)._id?.toString() || facility.id;
+      facilityId = facility._id?.toString();
     }
 
     const caseRecord = await createCase({
       ...validated,
       diseaseCode: validated.diseaseCode as DiseaseCode,
-      symptoms: validated.symptoms as any,
+      symptoms: validated.symptoms as Symptom[],
       onsetDate: new Date(validated.onsetDate),
       facilityId,
       reporterId: user?.id || 'anonymous',
     });
 
-    // Case record from Mongoose might have _id
-    const caseId = (caseRecord as any)._id?.toString() || (caseRecord as any).id;
-
     const responseData = {
-      ...caseRecord.toJSON?.() || caseRecord,
-      id: caseId,
+      ...((typeof caseRecord.toJSON === 'function') ? caseRecord.toJSON() : caseRecord),
+      id: caseRecord._id?.toString(),
     };
 
     return successResponse(responseData, 201);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
     }

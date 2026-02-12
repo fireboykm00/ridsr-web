@@ -53,7 +53,7 @@ export default function AccountPage() {
       setProfileData({
         name: session.user.name || '',
         email: session.user.email || '',
-        phone: (session.user as any).phone || '',
+        phone: '',
       });
     }
   }, [session]);
@@ -152,7 +152,7 @@ export default function AccountPage() {
         const error = await response.json();
         showError(error.message || 'Failed to update profile');
       }
-    } catch (error) {
+    } catch {
       showError('An error occurred while updating profile');
     } finally {
       setLoading(false);
@@ -186,7 +186,7 @@ export default function AccountPage() {
         const error = await response.json();
         showError(error.message || 'Failed to update password');
       }
-    } catch (error) {
+    } catch {
       showError('An error occurred while updating password');
     } finally {
       setLoading(false);
@@ -210,7 +210,7 @@ export default function AccountPage() {
         const error = await response.json();
         showError(error.message || 'Failed to update settings');
       }
-    } catch (error) {
+    } catch {
       showError('An error occurred while updating settings');
     } finally {
       setLoading(false);
@@ -220,12 +220,12 @@ export default function AccountPage() {
   const handleSignOut = async () => {
     try {
       await signOut({ callbackUrl: '/login' });
-    } catch (error) {
+    } catch {
       showError('Error signing out');
     }
   };
 
-  const tabs = [
+  const tabs: Array<{ id: 'profile' | 'password' | 'settings'; label: string; icon: typeof UserIcon }> = [
     { id: 'profile', label: 'Profile', icon: UserIcon },
     { id: 'password', label: 'Password', icon: ShieldCheckIcon },
     { id: 'settings', label: 'Settings', icon: CogIcon },
@@ -256,7 +256,7 @@ export default function AccountPage() {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
+                      onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
                           ? 'bg-blue-50 text-blue-700 border border-blue-200'
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'

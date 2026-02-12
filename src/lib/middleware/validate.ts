@@ -16,7 +16,7 @@ export function withValidation<T>(schema: z.ZodSchema<T>) {
         }
         
         return await handler(req, result.data);
-      } catch (error) {
+      } catch {
         return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
       }
     };

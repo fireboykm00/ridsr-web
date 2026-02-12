@@ -55,7 +55,7 @@ export default function ReportCasePage() {
             Access Denied
           </h1>
           <p className="text-gray-600 mb-6">
-            You don't have permission to report cases. Only health workers, lab technicians, district officers, and administrators can report cases.
+            You don&apos;t have permission to report cases. Only health workers, lab technicians, district officers, and administrators can report cases.
           </p>
           <button
             onClick={() => router.back()}

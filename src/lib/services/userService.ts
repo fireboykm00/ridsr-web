@@ -1,5 +1,14 @@
 import { USER_ROLES, User, UserRole, CreateUserInput, UpdateUserInput, ExtendedSession } from '@/types';
 
+type UserRecord = Partial<User> & { _id?: string; id?: string };
+
+function mapUser(record: UserRecord): User {
+  return {
+    ...record,
+    id: record._id || record.id || '',
+  } as User;
+}
+
 class UserService {
   // Removed getCurrentUser as it depended on server-only auth()
   // The caller should provide the user from useSession (client) or auth() (server)
@@ -28,10 +37,7 @@ class UserService {
     }
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u: any) => ({
-      ...u,
-      id: u._id || u.id
-    })) : [];
+    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
   }
 
   async getUsersByRole(role: UserRole): Promise<User[]> {
@@ -42,10 +48,7 @@ class UserService {
     }
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u: any) => ({
-      ...u,
-      id: u._id || u.id
-    })) : [];
+    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
   }
 
   async getUsersByFacility(facilityId: string): Promise<User[]> {
@@ -56,10 +59,7 @@ class UserService {
     }
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u: any) => ({
-      ...u,
-      id: u._id || u.id
-    })) : [];
+    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
   }
 
   async getUsersByDistrict(district: string): Promise<User[]> {
@@ -70,10 +70,7 @@ class UserService {
     }
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u: any) => ({
-      ...u,
-      id: u._id || u.id
-    })) : [];
+    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
   }
 
   async searchUsers(query: string): Promise<User[]> {
@@ -84,10 +81,7 @@ class UserService {
     }
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u: any) => ({
-      ...u,
-      id: u._id || u.id
-    })) : [];
+    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
   }
 
   async createUser(userData: CreateUserInput): Promise<User> {

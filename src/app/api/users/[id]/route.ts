@@ -13,15 +13,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params;
     await dbConnect();
 
-    // Check permissions - users can view their own profile, admins/national officers can view any
-    // Non-blocking approach: but still keep some logic if possible
-    const canViewUser = !userContext ||
-      userContext.id === id ||
-      userContext.role === USER_ROLES.ADMIN ||
-      userContext.role === USER_ROLES.NATIONAL_OFFICER;
+    const canViewUser =
+      userContext?.id === id ||
+      userContext?.role === USER_ROLES.ADMIN ||
+      userContext?.role === USER_ROLES.NATIONAL_OFFICER;
 
-    // As per user request, we don't strictly block with 401/403 if they just want to "work"
-    // but here it might be sensitive, so I'll just proceed as if they have access.
+    if (!userContext) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!canViewUser) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const user = await UserModel.findById(id).select('-password').lean();
     if (!user) {
@@ -41,14 +44,27 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params;
-    let data = await request.json();
+    let data = (await request.json()) as Record<string, unknown>;
     await dbConnect();
+
+    if (!userContext) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const canEditUser =
+      userContext.id === id ||
+      userContext.role === USER_ROLES.ADMIN ||
+      userContext.role === USER_ROLES.NATIONAL_OFFICER;
+
+    if (!canEditUser) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // If updating own profile, restrict certain fields
     if (userContext && userContext.id === id && userContext.role !== USER_ROLES.ADMIN) {
       // Users can only update their name, email, and password
       const allowedFields = ['name', 'email', 'password'];
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
 
       for (const field of allowedFields) {
         if (data[field] !== undefined) {
@@ -76,15 +92,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     return NextResponse.json(user);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating user:', error);
 
-    if (error.code === 11000) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
       return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
     }
 
-    if (error.name === 'ValidationError') {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'ValidationError') {
+      const validationMessage = 'message' in error ? String(error.message) : 'Validation failed';
+      return NextResponse.json({ error: validationMessage }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -98,6 +115,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params;
     await dbConnect();
+
+    if (!userContext) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const canDeleteUser =
+      userContext.role === USER_ROLES.ADMIN ||
+      userContext.role === USER_ROLES.NATIONAL_OFFICER;
+
+    if (!canDeleteUser) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Prevent self-deletion
     if (userContext && userContext.id === id) {

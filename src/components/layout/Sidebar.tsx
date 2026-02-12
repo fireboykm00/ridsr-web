@@ -14,8 +14,6 @@ import {
   UserCircleIcon,
   BuildingOfficeIcon,
   UserGroupIcon,
-  BellIcon,
-  DocumentIcon,
 } from "@heroicons/react/24/outline";
 
 interface NavItem {

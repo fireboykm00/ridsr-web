@@ -1,16 +1,25 @@
 /**
  * Utility to normalize MongoDB documents by mapping _id to id
  */
-export function normalizeId<T extends { _id?: any; id?: string }>(doc: T): T & { id: string } {
-  if (!doc) return doc as any;
-  
+type IdLike = { toString: () => string } | string;
+
+function toIdString(id: unknown): string {
+  if (!id) return '';
+  if (typeof id === 'string') return id;
+  if (typeof id === 'object' && 'toString' in id && typeof id.toString === 'function') {
+    return id.toString();
+  }
+  return '';
+}
+
+export function normalizeId<T extends { _id?: IdLike; id?: string }>(doc: T): T & { id: string } {
   return {
     ...doc,
-    id: doc._id?.toString() || doc.id || ''
+    id: toIdString(doc._id) || doc.id || ''
   };
 }
 
-export function normalizeIds<T extends { _id?: any; id?: string }>(docs: T[]): Array<T & { id: string }> {
+export function normalizeIds<T extends { _id?: IdLike; id?: string }>(docs: T[]): Array<T & { id: string }> {
   if (!Array.isArray(docs)) return [];
   return docs.map(normalizeId);
 }

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { ValidationStatus, UserRole } from '@/types';
@@ -12,8 +12,7 @@ const validateCaseSchema = z.object({
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await withRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
-    // Non-blocking
+    const user = await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
 
     const { id } = await params;
     const body = await request.json();
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // Update case with validation
     const caseRecord = await caseService.validateCase(
       id,
-      user?.id || 'anonymous',
+      user.id || 'anonymous',
       validationStatus as ValidationStatus
     );
 
@@ -46,6 +45,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       message: `Case ${validationStatus} successfully`
     });
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
     }
@@ -56,8 +58,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await withRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
-    // Non-blocking
+    await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
 
     const { id } = await params;
     const caseRecord = await caseService.findById(id);
@@ -67,15 +68,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const validationInfo = {
-      id: (caseRecord as any)._id,
-      validationStatus: (caseRecord as any).validationStatus,
-      validatorId: (caseRecord as any).validatorId,
-      validationDate: (caseRecord as any).validationDate,
-      canValidate: (caseRecord as any).validationStatus === 'pending'
+      id: caseRecord._id,
+      validationStatus: caseRecord.validationStatus,
+      validatorId: caseRecord.validatorId,
+      validationDate: caseRecord.validationDate,
+      canValidate: caseRecord.validationStatus === 'pending'
     };
 
     return successResponse(validationInfo);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('[API] Error fetching case validation info:', error);
     return errorResponse('Failed to fetch validation info', 500);
   }

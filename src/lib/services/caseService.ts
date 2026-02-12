@@ -1,14 +1,20 @@
 import { USER_ROLES, Case, ExtendedSession, User } from '@/types';
 
+type CaseRecord = Partial<Case> & { _id?: string; id?: string };
+
+function mapCase(record: CaseRecord): Case {
+  return {
+    ...record,
+    id: record._id || record.id || '',
+  } as Case;
+}
+
 export async function getAllCases(): Promise<Case[]> {
   const res = await fetch('/api/cases');
   if (!res.ok) throw new Error('Failed to fetch cases');
   const responseData = await res.json();
   const data = responseData.data?.data || responseData.data || responseData;
-  return Array.isArray(data) ? data.map((c: any) => ({
-    ...c,
-    id: c._id || c.id
-  })) : [];
+  return Array.isArray(data) ? data.map((c) => mapCase(c as CaseRecord)) : [];
 }
 
 export async function getCaseById(id: string): Promise<Case | null> {

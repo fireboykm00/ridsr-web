@@ -2,7 +2,7 @@
 // Mock credentials for development/testing only
 // DO NOT USE IN PRODUCTION
 
-import { USER_ROLES, User, UserRole, RwandaDistrictType } from "@/types";
+import { USER_ROLES, User, RwandaDistrictType } from "@/types";
 
 export const MOCK_CREDENTIALS = {
   ADMIN: { workerId: "ADMIN001", email: "admin@ridsr.rw", password: "admin123" },

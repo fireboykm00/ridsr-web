@@ -1,6 +1,7 @@
 import { Facility, IFacility } from '@/lib/models/Facility';
-import { BaseService } from './baseService';
+import { BaseService, PaginatedResult } from './baseService';
 import { FacilityType, RwandaDistrictType, RwandaProvinceType } from '@/types';
+import { FilterQuery, UpdateQuery } from 'mongoose';
 
 export interface CreateFacilityData {
   name: string;
@@ -60,8 +61,12 @@ class FacilityService extends BaseService<IFacility> {
     }).limit(limit).lean();
   }
 
-  async getFacilitiesWithFilters(filters: FacilityFilters, page?: number, limit?: number): Promise<any> {
-    const query: any = {};
+  async getFacilitiesWithFilters(
+    filters: FacilityFilters,
+    page?: number,
+    limit?: number
+  ): Promise<IFacility[] | PaginatedResult<IFacility>> {
+    const query: FilterQuery<IFacility> = {};
 
     if (filters.type) {
       query.type = filters.type;
@@ -115,7 +120,7 @@ class FacilityService extends BaseService<IFacility> {
   }
 
   async updateFacilityById(id: string, data: UpdateFacilityData): Promise<IFacility | null> {
-    const updateData: any = {};
+    const updateData: UpdateQuery<IFacility> = {};
 
     if (data.name) updateData.name = data.name;
     if (data.code) updateData.code = data.code;

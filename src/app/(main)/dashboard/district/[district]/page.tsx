@@ -47,6 +47,18 @@ interface Alert {
   isRead: boolean;
 }
 
+interface CaseSummary {
+  status?: string;
+  validationStatus?: string;
+}
+
+interface FacilityApiRecord {
+  _id?: string;
+  id?: string;
+  name?: string;
+  type?: string;
+}
+
 const DistrictDashboard = () => {
   const { data: session, status } = useSession();
   const params = useParams();
@@ -80,12 +92,12 @@ const DistrictDashboard = () => {
           // Fetch facilities in district
           const facilitiesResponse = await fetch(`/api/facilities?district=${district}`);
           const facilitiesData = await facilitiesResponse.json();
-          const districtFacilities = facilitiesData.data || [];
+          const districtFacilities: FacilityApiRecord[] = facilitiesData.data || [];
 
           // Fetch cases in district
           const casesResponse = await fetch(`/api/cases?district=${district}`);
           const casesData = await casesResponse.json();
-          const districtCases = casesData.data?.data || [];
+          const districtCases: CaseSummary[] = casesData.data?.data || [];
 
           // Fetch users in district
           const usersResponse = await fetch(`/api/users?district=${district}`);
@@ -97,15 +109,15 @@ const DistrictDashboard = () => {
             totalFacilities: districtFacilities.length,
             totalUsers: districtUsers.length,
             totalCases: districtCases.length,
-            activeCases: districtCases.filter((c: any) => c.status === 'confirmed' || c.status === 'suspected').length,
-            pendingCases: districtCases.filter((c: any) => c.validationStatus === 'pending').length,
+            activeCases: districtCases.filter((c) => c.status === 'confirmed' || c.status === 'suspected').length,
+            pendingCases: districtCases.filter((c) => c.validationStatus === 'pending').length,
             activeAlerts: 0
           });
 
-          setFacilities(districtFacilities.map((facility: any) => ({
+          setFacilities(districtFacilities.map((facility) => ({
             id: facility._id || facility.id,
-            name: facility.name,
-            type: facility.type,
+            name: facility.name || 'Unknown Facility',
+            type: facility.type || 'Unknown',
             totalCases: 0,
             activeCases: 0,
             lastReport: 'N/A',

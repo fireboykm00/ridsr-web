@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
@@ -22,13 +22,6 @@ interface PatientFormData {
   gender: Gender;
   phone: string;
   district: RwandaDistrictType;
-}
-
-interface PaginatedResponse {
-  data: Patient[];
-  total: number;
-  page: number;
-  totalPages: number;
 }
 
 const DISTRICTS = [
@@ -77,7 +70,7 @@ export default function PatientsPage() {
     district: 'gasabo'
   });
 
-  const loadPatients = async () => {
+  const loadPatients = useCallback(async () => {
     if (status !== 'authenticated' || !session) return;
 
     setLoading(true);
@@ -105,11 +98,11 @@ export default function PatientsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, session, currentPage, debouncedSearchTerm, districtFilter, genderFilter, showError]);
 
   useEffect(() => {
     loadPatients();
-  }, [status, session, debouncedSearchTerm, districtFilter, genderFilter, currentPage]);
+  }, [loadPatients]);
 
   const handleAddPatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +137,7 @@ export default function PatientsPage() {
 
       // Refresh the patient list
       loadPatients();
-    } catch (error) {
+    } catch {
       showError('Failed to create patient');
     }
   };

@@ -11,7 +11,7 @@ import { FormFieldset } from '@/components/ui/FormFieldset';
 import { useSession } from 'next-auth/react';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { CaseReportFormData } from '@/types/forms';
-import { DiseaseCode, Patient, Symptom, Facility, RwandaDistrictType } from '@/types';
+import { DiseaseCode, Symptom, Facility } from '@/types';
 import { DISEASE_CODES, COMMON_SYMPTOMS } from '@/constants';
 import { facilityService } from '@/lib/services/facilityService';
 
@@ -73,7 +73,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
       const response = await fetch(`/api/patients/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) throw new Error('Failed to search patients');
 
-      const result = await response.json();
+      await response.json();
       // The API returns the options array directly, not wrapped in a 'data' property
 
       return result.data || [];
@@ -159,7 +159,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
         throw new Error(errorData.message || 'Failed to submit case report');
       }
 
-      const result = await response.json();
+      await response.json();
 
       success('Case report submitted successfully!');
 
@@ -169,6 +169,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
         diseaseCode: '',
         onsetDate: new Date().toISOString().split('T')[0],
         symptoms: [],
+        facilityId: session?.user?.facilityId || '',
       });
     } catch (err) {
       console.error('Error submitting form:', err);

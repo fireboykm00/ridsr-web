@@ -1,7 +1,7 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { USER_ROLES, User, UserRole, RwandaDistrictType, RwandaProvinceType } from "@/types";
+import { User, UserRole, RwandaDistrictType, RwandaProvinceType } from "@/types";
 
 async function getUser(identifier: string, password: string): Promise<User | null> {
   try {

@@ -2,9 +2,9 @@ import { Case, ICase } from '@/lib/models/Case';
 import { Patient } from '@/lib/models/Patient';
 import { Facility } from '@/lib/models/Facility';
 import { User } from '@/lib/models/User';
-import { BaseService } from './baseService';
+import { BaseService, PaginatedResult } from './baseService';
 import { ValidationStatus, OutcomeStatus, CaseStatus, DiseaseCode, Symptom } from '@/types';
-import mongoose from 'mongoose';
+import mongoose, { FilterQuery } from 'mongoose';
 
 export interface CreateCaseData {
   patientId: string;
@@ -63,7 +63,11 @@ class CaseService extends BaseService<ICase> {
     return newCase;
   }
 
-  async getCasesByFacility(facilityId: string, page?: number, limit?: number): Promise<any> {
+  async getCasesByFacility(
+    facilityId: string,
+    page?: number,
+    limit?: number
+  ): Promise<ICase[] | PaginatedResult<ICase>> {
     const filter = { facilityId: new mongoose.Types.ObjectId(facilityId) };
 
     if (page && limit) {
@@ -81,8 +85,12 @@ class CaseService extends BaseService<ICase> {
     return this.findAll({ patientId: new mongoose.Types.ObjectId(patientId) });
   }
 
-  async getCasesWithFilters(filters: CaseFilters, page?: number, limit?: number): Promise<any> {
-    const query: any = {};
+  async getCasesWithFilters(
+    filters: CaseFilters,
+    page?: number,
+    limit?: number
+  ): Promise<ICase[] | PaginatedResult<ICase>> {
+    const query: FilterQuery<ICase> = {};
 
     if (filters.facilityId) {
       query.facilityId = new mongoose.Types.ObjectId(filters.facilityId);
@@ -134,7 +142,7 @@ class CaseService extends BaseService<ICase> {
   }
 
   async getPendingCases(facilityId?: string): Promise<ICase[]> {
-    const filter: any = { validationStatus: 'pending' };
+    const filter: FilterQuery<ICase> = { validationStatus: 'pending' };
     if (facilityId) {
       filter.facilityId = new mongoose.Types.ObjectId(facilityId);
     }

@@ -10,7 +10,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Modal } from '@/components/ui/Modal';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { PencilIcon, ArrowLeftIcon, UserIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-import { Patient, Case, RwandaDistrictType, Gender } from '@/types';
+import { Patient, Case, RwandaDistrictType } from '@/types';
 import { updatePatient } from '@/lib/services/patientService';
 
 const DISTRICTS = [
@@ -24,12 +24,6 @@ const DISTRICTS = [
   { value: 'ngoma', label: 'Ngoma' },
   { value: 'nyagatare', label: 'Nyagatare' },
   { value: 'rwamagana', label: 'Rwamagana' },
-];
-
-const GENDERS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
 ];
 
 interface EditPatientData {

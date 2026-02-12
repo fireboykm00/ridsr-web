@@ -4,8 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Card } from '@/components/ui/Card';
-import { useSession } from 'next-auth/react';
 import { filterPatientsByAccess } from '@/lib/services/patientService';
 
 interface Patient {
@@ -38,7 +36,6 @@ interface PatientListProps {
 }
 
 const PatientList: React.FC<PatientListProps> = ({ patients, onEdit, onDelete, onView }) => {
-  const { data: session } = useSession();
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
 

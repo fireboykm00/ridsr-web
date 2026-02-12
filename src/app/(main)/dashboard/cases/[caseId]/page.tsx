@@ -15,9 +15,7 @@ import {
   UserIcon,
   DocumentTextIcon,
   BeakerIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  XCircleIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { Case, Patient, ValidationStatus, OutcomeStatus, USER_ROLES } from '@/types';
 import { getCaseById, updateCase, canAccessCase } from '@/lib/services/caseService';

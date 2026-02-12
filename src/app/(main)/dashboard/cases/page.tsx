@@ -30,7 +30,6 @@ export default function CaseListPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<CaseFilters>({
     status: 'all',
     disease: '',
@@ -39,8 +38,6 @@ export default function CaseListPage() {
   });
 
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const itemsPerPage = 20;
-
   useEffect(() => {
     const loadCases = async () => {
       if (status === 'authenticated' && session?.user) {
@@ -97,7 +94,6 @@ export default function CaseListPage() {
     }
 
     setFilteredCases(filtered);
-    setCurrentPage(1);
   }, [cases, debouncedSearch, filters]);
 
   const safeFilteredCases = Array.isArray(filteredCases) ? filteredCases : [];

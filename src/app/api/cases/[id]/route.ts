@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { updateCaseSchema } from '@/lib/schemas';
@@ -12,8 +12,7 @@ const updateCaseBodySchema = updateCaseSchema.extend({
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user } = await withAuth(request);
-    // Non-blocking
+    await requireAuth(request);
 
     const { id } = await params;
     const caseRecord = await caseService.findById(id);
@@ -24,6 +23,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return successResponse(caseRecord);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('[API] Error fetching case:', error);
     return errorResponse('Failed to fetch case', 500);
   }
@@ -31,8 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ALL_STAFF as unknown as UserRole[]);
-    // Non-blocking
+    await requireRoles(request, ROLE_PERMISSIONS.ALL_STAFF as unknown as UserRole[]);
 
     const { id } = await params;
     const body = await request.json();
@@ -46,6 +47,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return successResponse(caseRecord);
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
     }
@@ -56,8 +60,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
-    // Non-blocking
+    await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
 
     const { id } = await params;
     const success = await caseService.deleteById(id);
@@ -68,6 +71,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return successResponse({ message: 'Case deleted successfully' });
   } catch (error) {
+    if (isAuthError(error)) {
+      return errorResponse(error.message, error.status);
+    }
     console.error('[API] Error deleting case:', error);
     return errorResponse('Failed to delete case', 500);
   }

@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { Session } from 'next-auth';
 
-export async function withAuth(handler: (req: NextRequest, session: any) => Promise<NextResponse>) {
+export async function withAuth(handler: (req: NextRequest, session: Session) => Promise<NextResponse>) {
   return async (req: NextRequest) => {
     try {
       const session = await auth();
       if (!session?.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      return await handler(req, session);
+      return await handler(req, session as Session);
     } catch (error) {
       console.error('Auth error:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -17,16 +18,16 @@ export async function withAuth(handler: (req: NextRequest, session: any) => Prom
 }
 
 export async function withRole(roles: string[]) {
-  return (handler: (req: NextRequest, session: any) => Promise<NextResponse>) => {
+  return (handler: (req: NextRequest, session: Session) => Promise<NextResponse>) => {
     return async (req: NextRequest) => {
       const session = await auth();
       if (!session?.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      if (!roles.includes(session.user.role)) {
+      if (!session.user.role || !roles.includes(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
-      return await handler(req, session);
+      return await handler(req, session as Session);
     };
   };
 }

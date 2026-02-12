@@ -1,13 +1,12 @@
-import { Document, Model, UpdateQuery } from 'mongoose';
+import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { dbConnect } from '../db';
 
-// Define FilterQuery type locally since it's not exported in newer mongoose versions
-type FilterQuery<T> = {
-  [P in keyof T]?: T[P] | { $regex?: RegExp; $in?: any[]; $gte?: any; $lte?: any; $ne?: any };
-} & {
-  $or?: FilterQuery<T>[];
-  $and?: FilterQuery<T>[];
-};
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
 
 export abstract class BaseService<T extends Document> {
   protected model: Model<T>;
@@ -51,7 +50,7 @@ export abstract class BaseService<T extends Document> {
     filter: FilterQuery<T> = {},
     page: number = 1,
     limit: number = 10
-  ): Promise<{ data: T[]; total: number; page: number; totalPages: number }> {
+  ): Promise<PaginatedResult<T>> {
     await dbConnect();
     const skip = (page - 1) * limit;
     
