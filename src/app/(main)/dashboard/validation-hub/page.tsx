@@ -1,216 +1,294 @@
-// src/app/(main)/dashboard/validation-hub/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
-import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { USER_ROLES } from '@/types';
-import { facilityService } from '@/lib/services/facilityService';
+import { useToastHelpers } from '@/components/ui/Toast';
+import { CheckCircleIcon, XCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { USER_ROLES, Case, ValidationStatus } from '@/types';
 
-interface Case {
-  id: string;
-  patientName: string;
-  disease: string;
-  status: 'suspected' | 'confirmed' | 'resolved' | 'pending_validation' | 'validated' | 'invalidated';
-  date: string;
-  reporter: string;
-  facility: string;
-  district: string;
-  symptoms: string[];
-  sampleId?: string;
-  labResults?: string;
+interface ValidationCase extends Case {
+  patient?: {
+    id: string;
+    nationalId: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender: string;
+    phone: string;
+    district: string;
+  };
+  facility?: {
+    id: string;
+    name: string;
+    code: string;
+    type: string;
+    district: string;
+  };
+  reporter?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
 }
 
-const ValidationHub = () => {
+interface CaseDetailModalProps {
+  case: ValidationCase | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onValidate: (caseId: string, status: ValidationStatus) => void;
+  isValidating: boolean;
+}
+
+function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValidating }: CaseDetailModalProps) {
+  if (!isOpen || !caseItem) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Case Details</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <XCircleIcon className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="space-y-6">
+            {/* Case Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Case Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Case ID</label>
+                  <p className="text-gray-900">{caseItem.id.substring(0, 8)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Disease Code</label>
+                  <p className="text-gray-900">{caseItem.diseaseCode}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Onset Date</label>
+                  <p className="text-gray-900">{new Date(caseItem.onsetDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Report Date</label>
+                  <p className="text-gray-900">{new Date(caseItem.reportDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Patient Information */}
+            {caseItem.patient && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Patient Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Name</label>
+                    <p className="text-gray-900">{caseItem.patient.firstName} {caseItem.patient.lastName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">National ID</label>
+                    <p className="text-gray-900">{caseItem.patient.nationalId}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Date of Birth</label>
+                    <p className="text-gray-900">{new Date(caseItem.patient.dateOfBirth).toLocaleDateString()}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Gender</label>
+                    <p className="text-gray-900 capitalize">{caseItem.patient.gender}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Phone</label>
+                    <p className="text-gray-900">{caseItem.patient.phone}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">District</label>
+                    <p className="text-gray-900 capitalize">{caseItem.patient.district.replace('_', ' ')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Symptoms */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Symptoms</h3>
+              <div className="flex flex-wrap gap-2">
+                {caseItem.symptoms.map((symptom, index) => (
+                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    {symptom}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Facility Information */}
+            {caseItem.facility && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Reporting Facility</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Facility Name</label>
+                    <p className="text-gray-900">{caseItem.facility.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Facility Code</label>
+                    <p className="text-gray-900">{caseItem.facility.code}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Type</label>
+                    <p className="text-gray-900 capitalize">{caseItem.facility.type.replace('_', ' ')}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">District</label>
+                    <p className="text-gray-900 capitalize">{caseItem.facility.district.replace('_', ' ')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Reporter Information */}
+            {caseItem.reporter && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Reported By</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Name</label>
+                    <p className="text-gray-900">{caseItem.reporter.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Role</label>
+                    <p className="text-gray-900 capitalize">{caseItem.reporter.role.replace('_', ' ')}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+            <Button
+              variant="secondary"
+              onClick={onClose}
+              disabled={isValidating}
+            >
+              Close
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => onValidate(caseItem.id, 'rejected')}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              <XCircleIcon className="h-4 w-4" />
+              Reject
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => onValidate(caseItem.id, 'validated')}
+              disabled={isValidating}
+              className="flex items-center gap-2"
+            >
+              <CheckCircleIcon className="h-4 w-4" />
+              Validate
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ValidationHubPage() {
   const { data: session, status } = useSession();
-  const [cases, setCases] = useState<Case[]>([]);
-  const [filteredCases, setFilteredCases] = useState<Case[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState('pending_validation');
+  const { error: showError, success: showSuccess } = useToastHelpers();
+  const [pendingCases, setPendingCases] = useState<ValidationCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCase, setSelectedCase] = useState<ValidationCase | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [validatingCaseId, setValidatingCaseId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadCases = async () => {
+    const loadPendingCases = async () => {
       if (status === 'authenticated' && session) {
+        // Check if user has validation permissions
+        if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as string)) {
+          window.location.href = '/dashboard';
+          return;
+        }
+
         try {
-          // In a real application, this would fetch from the database
-          // For now, we'll generate mock cases based on user's role and location
-          let mockCases: Case[] = [];
-
-          if (session.user?.role === USER_ROLES.LAB_TECHNICIAN && session.user.facilityId) {
-            // Lab technicians see cases that need validation from their facility or nearby
-            mockCases = [
-              {
-                id: 'case-1',
-                patientName: 'John Doe',
-                disease: 'Malaria',
-                status: 'pending_validation',
-                date: '2024-01-25',
-                reporter: 'Health Worker 1',
-                facility: 'Kigali Central Hospital',
-                district: 'Gasabo',
-                symptoms: ['Fever', 'Headache', 'Nausea'],
-                sampleId: 'LAB-2024-001'
-              },
-              {
-                id: 'case-2',
-                patientName: 'Jane Smith',
-                disease: 'Typhoid',
-                status: 'pending_validation',
-                date: '2024-01-24',
-                reporter: 'Health Worker 2',
-                facility: 'Gikondo Health Center',
-                district: 'Gasabo',
-                symptoms: ['Fever', 'Abdominal pain', 'Weakness'],
-                sampleId: 'LAB-2024-002'
-              },
-              {
-                id: 'case-3',
-                patientName: 'Bob Johnson',
-                disease: 'Cholera',
-                status: 'validated',
-                date: '2024-01-23',
-                reporter: 'Health Worker 3',
-                facility: 'Kigali Central Hospital',
-                district: 'Gasabo',
-                symptoms: ['Diarrhea', 'Dehydration'],
-                sampleId: 'LAB-2024-003',
-                labResults: 'Positive for Vibrio cholerae'
-              },
-              {
-                id: 'case-4',
-                patientName: 'Alice Williams',
-                disease: 'Measles',
-                status: 'pending_validation',
-                date: '2024-01-22',
-                reporter: 'Health Worker 4',
-                facility: 'Nyamata Health Center',
-                district: 'Bugesera',
-                symptoms: ['Rash', 'Fever', 'Cough'],
-                sampleId: 'LAB-2024-004'
-              }
-            ];
-          } else if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
-            // District officers see cases in their district that need validation
-            mockCases = [
-              {
-                id: 'case-1',
-                patientName: 'John Doe',
-                disease: 'Malaria',
-                status: 'pending_validation',
-                date: '2024-01-25',
-                reporter: 'Health Worker 1',
-                facility: 'Kigali Central Hospital',
-                district: session.user.district,
-                symptoms: ['Fever', 'Headache', 'Nausea'],
-                sampleId: 'LAB-2024-001'
-              },
-              {
-                id: 'case-2',
-                patientName: 'Jane Smith',
-                disease: 'Typhoid',
-                status: 'validated',
-                date: '2024-01-24',
-                reporter: 'Health Worker 2',
-                facility: 'Gikondo Health Center',
-                district: session.user.district,
-                symptoms: ['Fever', 'Abdominal pain', 'Weakness'],
-                sampleId: 'LAB-2024-002',
-                labResults: 'Positive for Salmonella Typhi'
-              }
-            ];
-          } else if (session.user?.role === USER_ROLES.NATIONAL_OFFICER) {
-            // National officers see all cases that need validation
-            mockCases = [
-              {
-                id: 'case-1',
-                patientName: 'John Doe',
-                disease: 'Malaria',
-                status: 'pending_validation',
-                date: '2024-01-25',
-                reporter: 'Health Worker 1',
-                facility: 'Kigali Central Hospital',
-                district: 'Gasabo',
-                symptoms: ['Fever', 'Headache', 'Nausea'],
-                sampleId: 'LAB-2024-001'
-              },
-              {
-                id: 'case-2',
-                patientName: 'Jane Smith',
-                disease: 'Typhoid',
-                status: 'validated',
-                date: '2024-01-24',
-                reporter: 'Health Worker 2',
-                facility: 'Gikondo Health Center',
-                district: 'Gasabo',
-                symptoms: ['Fever', 'Abdominal pain', 'Weakness'],
-                sampleId: 'LAB-2024-002',
-                labResults: 'Positive for Salmonella Typhi'
-              },
-              {
-                id: 'case-3',
-                patientName: 'Bob Johnson',
-                disease: 'Cholera',
-                status: 'pending_validation',
-                date: '2024-01-23',
-                reporter: 'Health Worker 3',
-                facility: 'Ruhengeri Hospital',
-                district: 'Ruhengeri',
-                symptoms: ['Diarrhea', 'Dehydration'],
-                sampleId: 'LAB-2024-003'
-              }
-            ];
+          const response = await fetch('/api/validation/queue');
+          if (!response.ok) {
+            throw new Error('Failed to fetch validation queue');
           }
-
-          setCases(mockCases);
-          setFilteredCases(mockCases);
+          
+          const result = await response.json();
+          if (result.success) {
+            setPendingCases(result.data.data || []);
+          } else {
+            showError(result.error || 'Failed to load pending cases');
+          }
         } catch (error) {
-          console.error('Error loading cases:', error);
+          console.error('Error loading pending cases:', error);
+          showError('Failed to load pending cases');
         } finally {
-          setIsLoading(false);
+          setLoading(false);
         }
       }
     };
 
-    loadCases();
-  }, [status, session]);
+    loadPendingCases();
+  }, [status, session, showError]);
 
-  // Apply filter when filter changes
-  useEffect(() => {
-    if (filter === 'all') {
-      setFilteredCases(cases);
-    } else {
-      setFilteredCases(cases.filter(caseItem => caseItem.status === filter));
+  const handleViewCase = (caseItem: ValidationCase) => {
+    setSelectedCase(caseItem);
+    setIsModalOpen(true);
+  };
+
+  const handleValidateCase = async (caseId: string, status: ValidationStatus) => {
+    setValidatingCaseId(caseId);
+    
+    try {
+      const response = await fetch(`/api/cases/validate/${caseId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          validationStatus: status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to validate case');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        showSuccess(`Case ${status} successfully`);
+        
+        // Remove the validated case from the list
+        setPendingCases(prev => prev.filter(c => c.id !== caseId));
+        
+        // Close modal if it's open
+        setIsModalOpen(false);
+        setSelectedCase(null);
+      } else {
+        showError(result.error || 'Failed to validate case');
+      }
+    } catch (error) {
+      console.error('Error validating case:', error);
+      showError('Failed to validate case');
+    } finally {
+      setValidatingCaseId(null);
     }
-  }, [filter, cases]);
-
-  const handleValidateCase = (caseId: string) => {
-    // In a real application, this would send the validation to the backend
-    console.log(`Validating case: ${caseId}`);
-    setCases(prevCases =>
-      prevCases.map(caseItem =>
-        caseItem.id === caseId
-          ? { ...caseItem, status: 'validated', labResults: 'Positive for disease pathogen' }
-          : caseItem
-      )
-    );
   };
 
-  const handleInvalidateCase = (caseId: string) => {
-    // In a real application, this would send the invalidation to the backend
-    console.log(`Invalidating case: ${caseId}`);
-    setCases(prevCases =>
-      prevCases.map(caseItem =>
-        caseItem.id === caseId
-          ? { ...caseItem, status: 'invalidated', labResults: 'Negative - not the reported disease' }
-          : caseItem
-      )
-    );
-  };
-
-  if (status === "loading" || isLoading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
@@ -218,215 +296,134 @@ const ValidationHub = () => {
     );
   }
 
-  if (!session) {
+  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as string)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
-            You must be signed in to view this page
-          </p>
-          <a
-            href="/login"
-            className="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors inline-block"
-          >
-            Sign in
-          </a>
+          <p className="text-gray-600">Only district and national officers can access the validation hub</p>
         </div>
       </div>
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending_validation':
-        return 'warning';
-      case 'validated':
-        return 'success';
-      case 'invalidated':
-        return 'default';
-      case 'suspected':
-        return 'secondary';
-      case 'confirmed':
-        return 'danger';
-      case 'resolved':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Validation Hub</h1>
-        <p className="text-gray-600">
-          {session.user?.role === USER_ROLES.LAB_TECHNICIAN
-            ? 'Validate cases with lab results'
-            : session.user?.role === USER_ROLES.DISTRICT_OFFICER
-              ? `Cases requiring validation in ${session.user?.district} district`
-              : 'All cases requiring validation'
-          }
-        </p>
-      </div>
-
-      <Card className="mb-6">
-        <div className="flex flex-wrap gap-4">
-          <button
-            className={`px-4 py-2 rounded-lg ${filter === 'all'
-              ? 'bg-blue-700 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            onClick={() => setFilter('all')}
-          >
-            All Cases
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${filter === 'pending_validation'
-              ? 'bg-yellow-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            onClick={() => setFilter('pending_validation')}
-          >
-            Pending Validation
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${filter === 'validated'
-              ? 'bg-green-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            onClick={() => setFilter('validated')}
-          >
-            Validated
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg ${filter === 'invalidated'
-              ? 'bg-gray-500 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            onClick={() => setFilter('invalidated')}
-          >
-            Invalidated
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Validation Hub</h1>
+          <p className="text-gray-600 mt-2">Review and validate pending disease surveillance cases</p>
         </div>
-      </Card>
 
-      <Card>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHeaderCell>Patient</TableHeaderCell>
-                <TableHeaderCell>Disease</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Date</TableHeaderCell>
-                <TableHeaderCell>Facility</TableHeaderCell>
-                <TableHeaderCell>Sample ID</TableHeaderCell>
-                <TableHeaderCell>Lab Results</TableHeaderCell>
-                <TableHeaderCell>Actions</TableHeaderCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCases.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    No cases found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredCases.map((caseItem) => (
-                  <TableRow key={caseItem.id}>
-                    <TableCell className="font-medium">{caseItem.patientName}</TableCell>
-                    <TableCell>{caseItem.disease}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusColor(caseItem.status)}>
-                        {caseItem.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{caseItem.date}</TableCell>
-                    <TableCell>{caseItem.facility}</TableCell>
-                    <TableCell>{caseItem.sampleId || '-'}</TableCell>
-                    <TableCell>{caseItem.labResults || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {caseItem.status === 'pending_validation' && session.user?.role === USER_ROLES.LAB_TECHNICIAN && (
-                          <>
-                            <Button
-                              variant="success"
-                              size="sm"
-                              onClick={() => handleValidateCase(caseItem.id)}
-                            >
-                              Validate
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleInvalidateCase(caseItem.id)}
-                            >
-                              Invalidate
-                            </Button>
-                          </>
-                        )}
+        <Card className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Pending Cases ({pendingCases.length})
+            </h2>
+          </div>
+
+          {pendingCases.length === 0 ? (
+            <div className="text-center py-12">
+              <CheckCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No pending cases</h3>
+              <p className="text-gray-600">All cases have been validated</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Case ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Patient
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Disease
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Facility
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Report Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {pendingCases.map((caseItem) => (
+                    <tr key={caseItem.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {caseItem.id.substring(0, 8)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {caseItem.patient ? 
+                          `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 
+                          'Unknown'
+                        }
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {caseItem.diseaseCode}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {caseItem.facility?.name || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(caseItem.reportDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <Button
                           variant="secondary"
                           size="sm"
+                          onClick={() => handleViewCase(caseItem)}
+                          className="flex items-center gap-1"
                         >
-                          View Details
+                          <EyeIcon className="h-4 w-4" />
+                          View
                         </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleValidateCase(caseItem.id, 'rejected')}
+                          disabled={validatingCaseId === caseItem.id}
+                          className="flex items-center gap-1"
+                        >
+                          <XCircleIcon className="h-4 w-4" />
+                          Reject
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleValidateCase(caseItem.id, 'validated')}
+                          disabled={validatingCaseId === caseItem.id}
+                          className="flex items-center gap-1"
+                        >
+                          <CheckCircleIcon className="h-4 w-4" />
+                          Validate
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
 
-      {/* Lab Link Interface Section */}
-      <Card className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Lab Results Integration</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="font-medium text-gray-900 mb-2">Upload Lab Results</h3>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <p className="text-gray-600 mb-4">Drag and drop lab result files here</p>
-              <Button variant="primary">
-                Browse Files
-              </Button>
-              <p className="text-xs text-gray-500 mt-2">Supports CSV, Excel, PDF formats</p>
-            </div>
-          </div>
-          <div>
-            <h3 className="font-medium text-gray-900 mb-2">Recent Integrations</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium">Malaria Test Results</p>
-                  <p className="text-sm text-gray-600">Jan 25, 2024 • 45 samples</p>
-                </div>
-                <Badge variant="success">Completed</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium">Typhoid Screening</p>
-                  <p className="text-sm text-gray-600">Jan 24, 2024 • 32 samples</p>
-                </div>
-                <Badge variant="success">Completed</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium">Cholera Confirmation</p>
-                  <p className="text-sm text-gray-600">Jan 23, 2024 • 18 samples</p>
-                </div>
-                <Badge variant="processing">Processing</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <CaseDetailModal
+        case={selectedCase}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedCase(null);
+        }}
+        onValidate={handleValidateCase}
+        isValidating={validatingCaseId !== null}
+      />
     </div>
   );
-};
-
-export default ValidationHub;
+}

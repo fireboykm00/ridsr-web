@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-export function withValidation(schema: z.ZodSchema) {
-  return (handler: (req: NextRequest, data: any) => Promise<NextResponse>) => {
+export function withValidation<T>(schema: z.ZodSchema<T>) {
+  return (handler: (req: NextRequest, data: T) => Promise<NextResponse>) => {
     return async (req: NextRequest) => {
       try {
         const body = await req.json();
@@ -10,7 +10,7 @@ export function withValidation(schema: z.ZodSchema) {
         
         if (!result.success) {
           return NextResponse.json(
-            { error: 'Validation failed', details: result.error.errors },
+            { error: 'Validation failed', details: result.error.issues },
             { status: 400 }
           );
         }

@@ -32,13 +32,16 @@ export default function DashboardClient({ children }: DashboardClientProps) {
     return null;
   }
 
+  // Only render sidebar when session is fully loaded and user is authenticated
+  const sidebar = session?.user ? <Sidebar /> : null;
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className='max-w-64 w-full'>
-        <Sidebar />
+      <div className='w-64 fixed h-screen bg-white z-30'>
+        {sidebar}
       </div>
-      <div className="flex-1">
-        <div className="flex items-center border-b border-gray-200 bg-white p-4 sticky top-0 z-10">
+      <div className="flex-1 md:ml-64">
+        <div className="flex items-center border-b border-gray-200 bg-white p-4 sticky top-0 z-20">
           <Breadcrumb />
         </div>
         <div className="p-6">

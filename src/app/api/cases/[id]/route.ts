@@ -1,56 +1,74 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { dbConnect } from '@/lib/services/db';
-import { Case as CaseModel } from '@/lib/models';
-import { USER_ROLES } from '@/types';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { caseService } from '@/lib/services/server/caseService';
+import { successResponse, errorResponse } from '@/lib/api/response';
+import { updateCaseSchema } from '@/lib/schemas';
+import { UserRole } from '@/types';
+
+const updateCaseBodySchema = updateCaseSchema.extend({
+  onsetDate: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined),
+});
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
+    const { user } = await withAuth(request);
+    // Non-blocking
+
     const { id } = await params;
-    await dbConnect();
-    const caseRecord = await CaseModel.findById(id).lean();
-    if (!caseRecord) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
-    return NextResponse.json(caseRecord);
+    const caseRecord = await caseService.findById(id);
+
+    if (!caseRecord) {
+      return errorResponse('Case not found', 404);
+    }
+
+    return successResponse(caseRecord);
   } catch (error) {
-    console.error('Error fetching case:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[API] Error fetching case:', error);
+    return errorResponse('Failed to fetch case', 500);
   }
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
+    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ALL_STAFF as unknown as UserRole[]);
+    // Non-blocking
+
     const { id } = await params;
-    const data = await request.json();
-    await dbConnect();
-    const caseRecord = await CaseModel.findByIdAndUpdate(id, data, { new: true }).lean();
-    if (!caseRecord) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
-    return NextResponse.json(caseRecord);
+    const body = await request.json();
+    const validatedData = updateCaseBodySchema.parse(body);
+
+    const caseRecord = await caseService.updateById(id, validatedData);
+
+    if (!caseRecord) {
+      return errorResponse('Case not found', 404);
+    }
+
+    return successResponse(caseRecord);
   } catch (error) {
-    console.error('Error updating case:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return errorResponse('Validation failed', 400, error.issues[0].message);
+    }
+    console.error('[API] Error updating case:', error);
+    return errorResponse('Failed to update case', 500);
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth();
-  if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
+    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
+    // Non-blocking
+
     const { id } = await params;
-    await dbConnect();
-    const caseRecord = await CaseModel.findByIdAndDelete(id);
-    if (!caseRecord) return NextResponse.json({ error: 'Case not found' }, { status: 404 });
-    return NextResponse.json({ message: 'Case deleted' });
+    const success = await caseService.deleteById(id);
+
+    if (!success) {
+      return errorResponse('Case not found or could not be deleted', 404);
+    }
+
+    return successResponse({ message: 'Case deleted successfully' });
   } catch (error) {
-    console.error('Error deleting case:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[API] Error deleting case:', error);
+    return errorResponse('Failed to delete case', 500);
   }
 }

@@ -1,20 +1,21 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { Gender, RwandaDistrictType, RwandaProvinceType } from '@/types';
 
 export interface IPatient extends Document {
   nationalId: string;
   firstName: string;
   lastName: string;
   dateOfBirth: Date;
-  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  gender: Gender;
   phone: string;
-  email?: string;
-  address: {
+  address?: {
     street: string;
     sector: string;
-    district: string;
-    province: string;
+    district: RwandaDistrictType;
+    province: RwandaProvinceType;
     country: string;
   };
+  district: RwandaDistrictType;
   occupation?: string;
   emergencyContact?: {
     name: string;
@@ -33,18 +34,18 @@ const PatientSchema = new Schema<IPatient>(
     dateOfBirth: { type: Date, required: true },
     gender: {
       type: String,
-      enum: ['MALE', 'FEMALE', 'OTHER'],
+      enum: ['male', 'female', 'other'],
       required: true,
     },
     phone: { type: String, required: true },
-    email: String,
     address: {
       street: String,
       sector: String,
       district: String,
       province: String,
-      country: String,
+      country: { type: String, default: 'Rwanda' },
     },
+    district: { type: String, required: true },
     occupation: String,
     emergencyContact: {
       name: String,

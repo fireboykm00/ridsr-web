@@ -2,32 +2,71 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Modal } from '@/components/ui/Modal';
 import { useToastHelpers } from '@/components/ui/Toast';
-import { UserGroupIcon, PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { USER_ROLES, Patient } from '@/types';
-import { patientService } from '@/lib/services/patientService';
+import { UserGroupIcon, PlusIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { Patient, RwandaDistrictType, Gender } from '@/types';
+import { createPatient } from '@/lib/services/patientService';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface PatientFormData {
   firstName: string;
   lastName: string;
   nationalId: string;
   dateOfBirth: string;
-  gender: string;
+  gender: Gender;
   phone: string;
-  email: string;
+  district: RwandaDistrictType;
 }
+
+interface PaginatedResponse {
+  data: Patient[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+const DISTRICTS = [
+  { value: 'gasabo', label: 'Gasabo' },
+  { value: 'kicukiro', label: 'Kicukiro' },
+  { value: 'nyarugenge', label: 'Nyarugenge' },
+  { value: 'bugesera', label: 'Bugesera' },
+  { value: 'gatsibo', label: 'Gatsibo' },
+  { value: 'kayonza', label: 'Kayonza' },
+  { value: 'kirehe', label: 'Kirehe' },
+  { value: 'ngoma', label: 'Ngoma' },
+  { value: 'nyagatare', label: 'Nyagatare' },
+  { value: 'rwamagana', label: 'Rwamagana' },
+];
+
+const GENDERS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+];
 
 export default function PatientsPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const { error: showError, success: showSuccess } = useToastHelpers();
+
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [districtFilter, setDistrictFilter] = useState<string | null>(null);
+  const [genderFilter, setGenderFilter] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
   const [formData, setFormData] = useState<PatientFormData>({
     firstName: '',
     lastName: '',
@@ -35,27 +74,42 @@ export default function PatientsPage() {
     dateOfBirth: '',
     gender: 'male',
     phone: '',
-    email: ''
+    district: 'gasabo'
   });
-  const [searchTerm, setSearchTerm] = useState('');
+
+  const loadPatients = async () => {
+    if (status !== 'authenticated' || !session) return;
+
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '10',
+      });
+
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
+      if (districtFilter) params.append('district', districtFilter);
+      if (genderFilter) params.append('gender', genderFilter);
+
+      const response = await fetch(`/api/patients?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch patients');
+
+      const json = await response.json();
+      const result = json.data || json; // Handle wrapped or direct response
+      setPatients(result.data || []);
+      setTotal(result.total || 0);
+      setTotalPages(result.totalPages || 1);
+    } catch (error) {
+      console.error('Error loading patients:', error);
+      showError('Failed to load patients');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      if (status === 'authenticated' && session) {
-        try {
-          // TODO: Fetch from API
-          setPatients([]);
-        } catch (error) {
-          console.error('Error loading patients:', error);
-          showError('Failed to load patients');
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadData();
-  }, [status, session, showError]);
+    loadPatients();
+  }, [status, session, debouncedSearchTerm, districtFilter, genderFilter, currentPage]);
 
   const handleAddPatient = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +120,16 @@ export default function PatientsPage() {
     }
 
     try {
-      // TODO: Call API to create patient
+      await createPatient({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        nationalId: formData.nationalId,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        phone: formData.phone,
+        district: formData.district,
+      });
+
       showSuccess('Patient created successfully');
       setShowModal(false);
       setFormData({
@@ -76,20 +139,28 @@ export default function PatientsPage() {
         dateOfBirth: '',
         gender: 'male',
         phone: '',
-        email: ''
+        district: 'gasabo'
       });
+
+      // Refresh the patient list
+      loadPatients();
     } catch (error) {
       showError('Failed to create patient');
     }
   };
 
-  const filteredPatients = patients.filter(patient =>
-    patient.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.nationalId.includes(searchTerm)
-  );
+  const handleViewPatient = (patientId: string) => {
+    router.push(`/dashboard/patient/${patientId}`);
+  };
 
-  if (status === 'loading' || loading) {
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDistrictFilter(null);
+    setGenderFilter(null);
+    setCurrentPage(1);
+  };
+
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
@@ -114,19 +185,59 @@ export default function PatientsPage() {
           </Button>
         </div>
 
-        {/* Search */}
+        {/* Search and Filters */}
         <Card className="p-6 mb-6">
-          <Input
-            placeholder="Search by name or national ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            variant="outlined"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Input
+              placeholder="Search by name, ID, or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              variant="outlined"
+            />
+
+            <SearchableSelect
+              placeholder="Filter by district"
+              value={districtFilter}
+              onChange={setDistrictFilter}
+              options={DISTRICTS}
+              isClearable
+            />
+
+            <SearchableSelect
+              placeholder="Filter by gender"
+              value={genderFilter}
+              onChange={setGenderFilter}
+              options={GENDERS}
+              isClearable
+            />
+
+            <Button
+              variant="secondary"
+              onClick={clearFilters}
+              className="h-12"
+            >
+              Clear Filters
+            </Button>
+          </div>
         </Card>
+
+        {/* Results Summary */}
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            Showing {patients.length} of {total} patients
+          </p>
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages}
+          </div>
+        </div>
 
         {/* Patients Table */}
         <Card className="p-6">
-          {filteredPatients.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-700"></div>
+            </div>
+          ) : patients.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-600">No patients found</p>
             </div>
@@ -137,27 +248,39 @@ export default function PatientsPage() {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">National ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">DOB</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Gender</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Phone</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPatients.map((patient) => (
-                    <tr key={patient.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900">{patient.firstName} {patient.lastName}</td>
+                  {patients.length > 0 && patients.map((patient, index) => (
+                    <tr key={patient.firstName + index} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-gray-900">
+                        {patient.firstName} {patient.lastName}
+                      </td>
                       <td className="py-3 px-4 text-gray-900">{patient.nationalId}</td>
-                      <td className="py-3 px-4 text-gray-900">{patient.dateOfBirth}</td>
                       <td className="py-3 px-4 text-gray-900 capitalize">{patient.gender}</td>
+                      <td className="py-3 px-4 text-gray-900 capitalize">
+                        {patient.address?.district || patient.district || 'N/A'}
+                      </td>
                       <td className="py-3 px-4 text-gray-900">{patient.phone}</td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          <button className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                            <PencilIcon className="h-4 w-4" />
+                          <button
+                            onClick={() => handleViewPatient(patient._id || patient.id)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                            title="View Details"
+                          >
+                            <EyeIcon className="h-4 w-4" />
                           </button>
-                          <button className="p-2 text-red-600 hover:bg-red-50 rounded">
-                            <TrashIcon className="h-4 w-4" />
+                          <button
+                            onClick={() => handleViewPatient(patient._id || patient.id)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded"
+                            title="Edit Patient"
+                          >
+                            <PencilIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -168,6 +291,41 @@ export default function PatientsPage() {
             </div>
           )}
         </Card>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+              return (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "primary" : "secondary"}
+                  onClick={() => setCurrentPage(page)}
+                  className="w-10"
+                >
+                  {page}
+                </Button>
+              );
+            })}
+
+            <Button
+              variant="secondary"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        )}
 
         {/* Add Patient Modal */}
         <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add New Patient">
@@ -203,12 +361,15 @@ export default function PatientsPage() {
             <SearchableSelect
               label="Gender"
               value={formData.gender}
-              onChange={(value) => setFormData({ ...formData, gender: value })}
-              options={[
-                { value: 'male', label: 'Male' },
-                { value: 'female', label: 'Female' },
-                { value: 'other', label: 'Other' }
-              ]}
+              onChange={(value) => setFormData({ ...formData, gender: value as Gender })}
+              options={GENDERS}
+            />
+
+            <SearchableSelect
+              label="District"
+              value={formData.district}
+              onChange={(value) => setFormData({ ...formData, district: value as RwandaDistrictType })}
+              options={DISTRICTS}
             />
 
             <Input
@@ -216,13 +377,6 @@ export default function PatientsPage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
 
             <div className="flex gap-3 pt-4">

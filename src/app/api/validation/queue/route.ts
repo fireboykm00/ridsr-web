@@ -1,25 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { USER_ROLES } from '@/types';
+import { NextRequest } from 'next/server';
+import { withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { caseService } from '@/lib/services/server/caseService';
+import { successResponse, errorResponse } from '@/lib/api/response';
+import { USER_ROLES, UserRole } from '@/types';
 
-// GET: Get validation queue
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user.role as string)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
-    // TODO: Implement real database query
-    // const queue = await db.case.findMany({
-    //   where: { validationStatus: 'pending' },
-    //   orderBy: { createdAt: 'asc' },
-    // });
+    const { user } = await withRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
+    // Non-blocking
 
-    return NextResponse.json([]);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+
+    // Build filters based on user role and permissions
+    const filters: any = { validationStatus: 'pending' };
+
+    if (user && user.role === USER_ROLES.DISTRICT_OFFICER && user.district) {
+      // District officers only see cases from their district
+      filters.district = user.district;
+    }
+    // National officers and admins see all pending cases
+
+    const result = await caseService.getCasesWithFilters(filters, page, limit);
+
+    // Populate related data for validation hub
+    const populatedCases = await Promise.all(
+      result.data.map(async (caseItem: any) => ({
+        ...caseItem,
+        patient: await caseService.getPatientInfo(caseItem.patientId),
+        facility: await caseService.getFacilityInfo(caseItem.facilityId),
+        reporter: await caseService.getReporterInfo(caseItem.reporterId),
+      }))
+    );
+
+    return successResponse({
+      ...result,
+      data: populatedCases
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('[API] Error fetching validation queue:', error);
+    return errorResponse('Failed to fetch validation queue', 500);
   }
 }

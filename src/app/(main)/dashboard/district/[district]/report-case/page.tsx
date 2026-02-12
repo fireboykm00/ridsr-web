@@ -94,22 +94,50 @@ export default function DistrictCaseReportForm() {
     );
   }
 
+  // Initialize form with default values, will be updated when session loads
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
-    control
+    control,
+    reset
   } = useForm<CaseReportFormData>({
     resolver: zodResolver(caseReportSchema),
     defaultValues: {
-      reporterFacility: session.user?.facilityId || '',
-      reporterRole: session.user?.role || '',
-      district: district, // Pre-fill with the district from the URL
-      reporterName: session.user?.name || '',
-      reporterEmail: session.user?.email || ''
+      patientName: '',
+      nationalId: '',
+      age: 0,
+      gender: 'male',
+      district: district || '', // Pre-fill with the district from the URL
+      sector: '',
+      cell: '',
+      symptoms: [],
+      onsetDate: new Date().toISOString().split('T')[0],
+      diseaseCategory: '',
+      diseaseName: '',
+      pregnancyStatus: '',
+      outcome: 'ongoing',
+      treatmentGiven: '',
+      reporterFacility: '',
+      reporterRole: '',
+      reporterName: '',
+      reporterEmail: ''
     }
   });
+
+  // Update form values when session loads
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      reset({
+        reporterFacility: session.user?.facilityId || '',
+        reporterRole: session.user?.role || '',
+        district: district, // Pre-fill with the district from the URL
+        reporterName: session.user?.name || '',
+        reporterEmail: session.user?.email || ''
+      });
+    }
+  }, [status, session, district, reset]);
 
   const watchedGender = watch('gender');
   const watchedDistrict = watch('district');

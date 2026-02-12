@@ -87,8 +87,6 @@ export type ValidationStatus = 'pending' | 'validated' | 'rejected';
 export type OutcomeStatus = 'recovered' | 'deceased' | 'transferred' | 'unknown';
 export type Gender = 'male' | 'female' | 'other';
 
-export type AlertSeverity = 'low' | 'medium' | 'high' | 'critical';
-export type AlertStatus = 'active' | 'acknowledged' | 'resolved';
 
 export type ReportType =
   | 'daily'
@@ -111,6 +109,43 @@ export type LabResultInterpretation =
   | 'contaminated';
 
 export type PriorityLevel = 'low' | 'normal' | 'high' | 'urgent';
+
+export type DiseaseCode =
+  | 'CHOLERA'
+  | 'MAL01'
+  | 'SARI'
+  | 'AFP'
+  | 'YELLOW_FEVER'
+  | 'RUBELLA'
+  | 'MEASLES'
+  | 'PLAGUE'
+  | 'RABIES'
+  | 'EBOLA'
+  | 'MONKEYPOX'
+  | 'TYPHOID'
+  | 'HEPATITIS_E';
+
+export type Symptom =
+  | 'fever'
+  | 'cough'
+  | 'difficulty_breathing'
+  | 'diarrhea'
+  | 'vomiting'
+  | 'headache'
+  | 'muscle_pain'
+  | 'fatigue'
+  | 'rash'
+  | 'jaundice'
+  | 'bleeding'
+  | 'convulsions'
+  | 'paralysis'
+  | 'sore_throat'
+  | 'abdominal_pain'
+  | 'joint_pain'
+  | 'loss_of_appetite'
+  | 'dehydration'
+  | 'confusion'
+  | 'seizures';
 
 export type FacilityType =
   | 'health_center'
@@ -138,6 +173,7 @@ export interface User {
   email: string;
   role: UserRole;
   facilityId: string;
+  facilityName?: string;
   district?: RwandaDistrictType;
   province?: RwandaProvinceType;
   isActive: boolean;
@@ -152,17 +188,9 @@ export interface Facility {
   type: FacilityType;
   district: RwandaDistrictType;
   province: RwandaProvinceType;
-  address: {
-    street: string;
-    sector: string;
-    district: RwandaDistrictType;
-    province: RwandaProvinceType;
-    country: string;
-  };
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -176,15 +204,16 @@ export interface Patient {
   dateOfBirth: string;
   gender: Gender;
   phone: string;
-  address: {
+  address?: {
     street: string;
     sector: string;
     district: RwandaDistrictType;
     province: RwandaProvinceType;
     country: string;
   };
-  occupation: string;
-  emergencyContact: {
+  district: RwandaDistrictType;
+  occupation?: string;
+  emergencyContact?: {
     name: string;
     phone: string;
     relationship: string;
@@ -197,18 +226,17 @@ export interface Case {
   id: string;
   patientId: string;
   facilityId: string;
-  diseaseCode: string;
-  symptoms: string[];
+  diseaseCode: DiseaseCode;
+  symptoms: Symptom[];
   onsetDate: string;
   reportDate: string;
   reporterId: string;
   validationStatus: ValidationStatus;
+  status: CaseStatus;
+  outcome?: OutcomeStatus;
   validatorId?: string;
   validationDate?: string;
-  outcome?: OutcomeStatus;
   outcomeDate?: string;
-  labResults?: string[];
-  isAlertTriggered: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -231,21 +259,6 @@ export interface LabResult {
   updatedAt: string;
 }
 
-export interface Alert {
-  id: string;
-  title: string;
-  description: string;
-  severity: AlertSeverity;
-  status: AlertStatus;
-  caseId?: string;
-  facilityId?: string;
-  district: RwandaDistrictType;
-  triggerDate: string;
-  resolvedDate?: string;
-  resolvedBy?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface Report {
   id: string;
@@ -269,6 +282,8 @@ export interface Bulletin {
   type: BulletinType;
   status: BulletinStatus;
   recipients: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 
@@ -279,17 +294,12 @@ export interface Bulletin {
 export interface DashboardStats {
   totalCases: number;
   pendingCases: number;
-  confirmedCases: number;
-  resolvedCases: number;
+  validatedCases: number;
+  rejectedCases: number;
   totalFacilities: number;
   totalUsers: number;
   activeOutbreaks: number;
-  weeklyTrends?: Array<{ week: string; count: number }>;
-  diseaseDistribution?: Array<{ disease: string; count: number }>;
-  facilityCaseDistribution?: Array<{ facility: string; cases: number }>;
-  districtCaseDistribution?: Array<{ district: string; cases: number }>;
-  geographicDistribution?: Array<{ region: string; cases: number }>;
-  caseStatusBreakdown?: Array<{ status: string; count: number }>;
+  alerts: number;
 }
 
 
@@ -298,11 +308,13 @@ export interface DashboardStats {
 ====================================================== */
 
 export interface CreateUserInput {
+  workerId: string;
   name: string;
   email: string;
   password: string;
   role: UserRole;
   facilityId?: string;
+  facilityName?: string;
   district?: RwandaDistrictType;
   province?: RwandaProvinceType;
 }
@@ -312,8 +324,56 @@ export interface UpdateUserInput {
   email?: string;
   role?: UserRole;
   facilityId?: string;
+  facilityName?: string;
   district?: RwandaDistrictType;
   province?: RwandaProvinceType;
+  isActive?: boolean;
+}
+
+export interface CreatePatientInput {
+  nationalId: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: Gender;
+  phone: string;
+  address?: {
+    street: string;
+    sector: string;
+    district: RwandaDistrictType;
+    province: RwandaProvinceType;
+    country: string;
+  };
+  district: RwandaDistrictType;
+  occupation?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+}
+
+export interface UpdatePatientInput {
+  nationalId?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  gender?: Gender;
+  phone?: string;
+  address?: {
+    street: string;
+    sector: string;
+    district: RwandaDistrictType;
+    province: RwandaProvinceType;
+    country: string;
+  };
+  district?: RwandaDistrictType;
+  occupation?: string;
+  emergencyContact?: {
+    name?: string;
+    phone?: string;
+    relationship?: string;
+  };
 }
 
 export interface CreateFacilityInput {
@@ -322,17 +382,9 @@ export interface CreateFacilityInput {
   type: FacilityType;
   district: RwandaDistrictType;
   province: RwandaProvinceType;
-  address: {
-    street: string;
-    sector: string;
-    district: RwandaDistrictType;
-    province: RwandaProvinceType;
-    country: string;
-  };
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface UpdateFacilityInput {
@@ -341,17 +393,9 @@ export interface UpdateFacilityInput {
   type?: FacilityType;
   district?: RwandaDistrictType;
   province?: RwandaProvinceType;
-  address?: {
-    street?: string;
-    sector?: string;
-    district?: RwandaDistrictType;
-    province?: RwandaProvinceType;
-    country?: string;
-  };
-  coordinates?: {
-    latitude?: number;
-    longitude?: number;
-  };
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
   isActive?: boolean;
 }
 
@@ -394,6 +438,7 @@ export interface ExtendedSession {
     email: string;
     role: UserRole;
     facilityId: string;
+    facilityName?: string;
     district?: RwandaDistrictType;
     province?: RwandaProvinceType;
   };
@@ -405,17 +450,6 @@ export interface ExtendedSession {
    NAVIGATION
 ====================================================== */
 
-export interface ThresholdRule {
-  id: string;
-  diseaseCode: string;
-  threshold: number;
-  timeWindowHours: number;
-  locationLevel: 'national' | 'province' | 'district' | 'facility';
-  locationId?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface NavItem {
   name: string;

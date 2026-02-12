@@ -1,45 +1,41 @@
-import { auth } from '@/lib/auth';
-import { USER_ROLES, Facility, CreateFacilityInput, RwandaDistrictType, UpdateFacilityInput } from '@/types';
+import { USER_ROLES, Facility, CreateFacilityInput, RwandaDistrictType, UpdateFacilityInput, User, ExtendedSession } from '@/types';
+import { normalizeId, normalizeIds } from '@/lib/utils/normalize';
 
 class FacilityService {
   async getAllFacilities(): Promise<Facility[]> {
     const res = await fetch('/api/facilities');
     if (!res.ok) throw new Error('Failed to fetch facilities');
-    return res.json();
+    const responseData = await res.json();
+    return normalizeIds(responseData.data || responseData);
   }
 
-  async getFacilitiesByDistrict(district: RwandaDistrictType): Promise<Facility[]> {
-    const session = await auth();
-    if (!session) throw new Error('Unauthorized');
+  async getFacilitiesByDistrict(district: RwandaDistrictType, user?: User | ExtendedSession['user']): Promise<Facility[]> {
+    if (user) {
+      if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(user.role)) {
+        throw new Error('Insufficient permissions');
+      }
 
-    if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as string)) {
-      throw new Error('Insufficient permissions');
-    }
-
-    if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district !== district) {
-      throw new Error('Insufficient permissions to access this district');
+      if (user.role === USER_ROLES.DISTRICT_OFFICER && user.district !== district) {
+        throw new Error('Insufficient permissions to access this district');
+      }
     }
 
     const res = await fetch(`/api/facilities?district=${district}`);
     if (!res.ok) throw new Error('Failed to fetch facilities');
-    return res.json();
+    const responseData = await res.json();
+    return normalizeIds(responseData.data || responseData);
   }
 
   async getFacilityById(id: string): Promise<Facility | null> {
-    const session = await auth();
-    if (!session) throw new Error('Unauthorized');
-
+    if (!id || id === 'undefined') return null;
+    
     const res = await fetch(`/api/facilities/${id}`);
     if (!res.ok) return null;
-    return res.json();
+    const responseData = await res.json();
+    return normalizeId(responseData.data || responseData);
   }
 
   async createFacility(facilityData: CreateFacilityInput): Promise<Facility> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can create facilities');
-    }
-
     const res = await fetch('/api/facilities', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -47,15 +43,11 @@ class FacilityService {
     });
 
     if (!res.ok) throw new Error('Failed to create facility');
-    return res.json();
+    const responseData = await res.json();
+    return normalizeId(responseData.data || responseData);
   }
 
   async updateFacility(id: string, facilityData: UpdateFacilityInput): Promise<Facility | null> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can update facilities');
-    }
-
     const res = await fetch(`/api/facilities/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -63,29 +55,23 @@ class FacilityService {
     });
 
     if (!res.ok) return null;
-    return res.json();
+    const responseData = await res.json();
+    return normalizeId(responseData.data || responseData);
   }
 
   async deleteFacility(id: string): Promise<boolean> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can delete facilities');
-    }
-
     const res = await fetch(`/api/facilities/${id}`, { method: 'DELETE' });
     return res.ok;
   }
 
-  async getFacilitiesForUser(): Promise<Facility[]> {
-    const session = await auth();
-    if (!session?.user?.role) throw new Error('Unauthorized');
-
+  async getFacilitiesForUser(user?: User | ExtendedSession['user']): Promise<Facility[]> {
     const allFacilities = await this.getAllFacilities();
+    if (!user) return allFacilities;
 
-    if (session.user.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
-      return allFacilities.filter(f => f.district === session.user.district) as Facility[];
-    } else if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(session.user.role as string) && session.user.facilityId) {
-      return allFacilities.filter(f => f.id === session.user.facilityId) as Facility[];
+    if (user.role === USER_ROLES.DISTRICT_OFFICER && user.district) {
+      return allFacilities.filter(f => f.district === user.district) as Facility[];
+    } else if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(user.role as string) && user.facilityId) {
+      return allFacilities.filter(f => f.id === user.facilityId) as Facility[];
     }
 
     return allFacilities as Facility[];
@@ -94,11 +80,10 @@ class FacilityService {
 
 export const facilityService = new FacilityService();
 
-export async function filterFacilitiesByAccess(facilities: Facility[]): Promise<Facility[]> {
-  const session = await auth();
-  if (!session?.user) return [];
+export function filterFacilitiesByAccess(facilities: Facility[], user?: User | ExtendedSession['user']): Facility[] {
+  if (!user) return facilities;
 
-  const { role, facilityId, district } = session.user;
+  const { role, facilityId, district } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return facilities;
   if (role === USER_ROLES.DISTRICT_OFFICER && district) return facilities.filter(f => f.district === district);
@@ -109,11 +94,10 @@ export async function filterFacilitiesByAccess(facilities: Facility[]): Promise<
   return [];
 }
 
-export async function canAccessFacility(targetFacilityId: string): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user) return false;
+export function canAccessFacility(targetFacilityId: string, user?: User | ExtendedSession['user']): boolean {
+  if (!user) return true;
 
-  const { role, facilityId, district } = session.user;
+  const { role, facilityId, district } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return true;
   if (role === USER_ROLES.DISTRICT_OFFICER && district) return true;

@@ -3,44 +3,31 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
-import { Checkbox } from '@/components/ui/Checkbox';
+import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
-
-interface FacilityAddress {
-  street: string;
-  sector: string;
-  district: string;
-  province: string;
-  country: string;
-}
-
-interface FacilityCoordinates {
-  latitude: number;
-  longitude: number;
-}
+import { FacilityType, RwandaDistrictType, RWANDA_DISTRICTS } from '@/types';
 
 interface FacilityFormData {
   name: string;
   code: string;
-  type: string;
-  districtId: string;
-  provinceId: string;
-  address: FacilityAddress;
-  coordinates: FacilityCoordinates;
+  type: FacilityType;
+  district: RwandaDistrictType;
+  contactPerson: string;
+  phone: string;
+  email: string;
   isActive: boolean;
 }
 
 interface FacilityManagementFormProps {
   onSubmit: (data: FacilityFormData) => void;
   onCancel: () => void;
-  initialData?: FacilityFormData;
+  initialData?: Partial<FacilityFormData>;
   isEditing?: boolean;
 }
 
-const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({ 
-  onSubmit, 
-  onCancel, 
+const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
+  onSubmit,
+  onCancel,
   initialData,
   isEditing = false
 }) => {
@@ -48,30 +35,21 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
     name: initialData?.name || '',
     code: initialData?.code || '',
     type: initialData?.type || 'health_center',
-    districtId: initialData?.districtId || '',
-    provinceId: initialData?.provinceId || '',
-    address: initialData?.address || {
-      street: '',
-      sector: '',
-      district: '',
-      province: '',
-      country: 'Rwanda'
-    },
-    coordinates: initialData?.coordinates || {
-      latitude: 0,
-      longitude: 0
-    },
+    district: initialData?.district || 'gasabo',
+    contactPerson: initialData?.contactPerson || '',
+    phone: initialData?.phone || '',
+    email: initialData?.email || '',
     isActive: initialData?.isActive ?? true
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    const val = type === 'checkbox' ? checked : value;
+    setFormData(prev => ({ ...prev, [name]: val }));
+
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -81,42 +59,18 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
     }
   };
 
-  const handleAddressChange = (field: keyof FacilityAddress, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      address: {
-        ...prev.address,
-        [field]: value
-      }
+  const searchDistricts = async (query: string): Promise<SelectOption[]> => {
+    const districts = Object.entries(RWANDA_DISTRICTS).map(([key, value]) => ({
+      value: value,
+      label: key.charAt(0) + key.slice(1).toLowerCase()
     }));
-    
-    // Clear error when user starts typing
-    if (errors[`address.${field}`]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[`address.${field}`];
-        return newErrors;
-      });
-    }
-  };
 
-  const handleCoordinatesChange = (field: keyof FacilityCoordinates, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      coordinates: {
-        ...prev.coordinates,
-        [field]: parseFloat(value) || 0
-      }
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[`coordinates.${field}`]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[`coordinates.${field}`];
-        return newErrors;
-      });
-    }
+    if (!query.trim()) return districts;
+
+    return districts.filter(d =>
+      d.label.toLowerCase().includes(query.toLowerCase()) ||
+      d.value.toLowerCase().includes(query.toLowerCase())
+    );
   };
 
   const validateForm = (): boolean => {
@@ -128,42 +82,32 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
 
     if (!formData.code.trim()) {
       newErrors.code = 'Facility code is required';
+    } else if (!/^[A-Z0-9]{3,10}$/.test(formData.code)) {
+      newErrors.code = 'Code must be 3-10 uppercase letters/numbers';
     }
 
     if (!formData.type) {
       newErrors.type = 'Facility type is required';
     }
 
-    if (!formData.districtId.trim()) {
-      newErrors.districtId = 'District ID is required';
+    if (!formData.district) {
+      newErrors.district = 'District is required';
     }
 
-    if (!formData.provinceId.trim()) {
-      newErrors.provinceId = 'Province ID is required';
+    if (!formData.contactPerson.trim()) {
+      newErrors.contactPerson = 'Contact person is required';
     }
 
-    if (!formData.address.street.trim()) {
-      newErrors['address.street'] = 'Street address is required';
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^(\+250|0)[0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+      newErrors.phone = 'Invalid Rwanda phone number format';
     }
 
-    if (!formData.address.sector.trim()) {
-      newErrors['address.sector'] = 'Sector is required';
-    }
-
-    if (!formData.address.district.trim()) {
-      newErrors['address.district'] = 'District is required';
-    }
-
-    if (!formData.address.province.trim()) {
-      newErrors['address.province'] = 'Province is required';
-    }
-
-    if (isNaN(formData.coordinates.latitude) || formData.coordinates.latitude === 0) {
-      newErrors['coordinates.latitude'] = 'Valid latitude is required';
-    }
-
-    if (isNaN(formData.coordinates.longitude) || formData.coordinates.longitude === 0) {
-      newErrors['coordinates.longitude'] = 'Valid longitude is required';
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email is invalid';
     }
 
     setErrors(newErrors);
@@ -172,10 +116,8 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
@@ -198,9 +140,10 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
             onChange={handleChange}
             error={errors.name}
             placeholder="Enter facility name"
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
           <Input
             label="Facility Code *"
@@ -208,138 +151,86 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
             value={formData.code}
             onChange={handleChange}
             error={errors.code}
-            placeholder="Enter unique facility code"
+            placeholder="e.g., HC001, HOSP01"
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
           <SearchableSelect
             label="Facility Type *"
-            name="type"
             value={formData.type}
-            onChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+            onChange={(value) => setFormData(prev => ({ ...prev, type: value as FacilityType || 'health_center' }))}
             error={errors.type}
-          >
-            <option value="">Select facility type</option>
-            <option value="health_center">Health Center</option>
-            <option value="hospital">Hospital</option>
-            <option value="clinic">Clinic</option>
-            <option value="dispensary">Dispensary</option>
-            <option value="medical_center">Medical Center</option>
-          </SearchableSelect>
-        </div>
-        
-        <div>
-          <Input
-            label="District ID *"
-            name="districtId"
-            value={formData.districtId}
-            onChange={handleChange}
-            error={errors.districtId}
-            placeholder="Enter district ID"
+            options={[
+              { value: 'health_center', label: 'Health Center' },
+              { value: 'hospital', label: 'Hospital' },
+              { value: 'clinic', label: 'Clinic' },
+              { value: 'dispensary', label: 'Dispensary' },
+              { value: 'medical_center', label: 'Medical Center' },
+            ]}
+            placeholder="Select facility type"
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
-          <Input
-            label="Province ID *"
-            name="provinceId"
-            value={formData.provinceId}
-            onChange={handleChange}
-            error={errors.provinceId}
-            placeholder="Enter province ID"
-          />
-        </div>
-        
-        <div>
-          <Input
-            label="Latitude *"
-            name="latitude"
-            type="number"
-            value={formData.coordinates.latitude}
-            onChange={(e) => handleCoordinatesChange('latitude', e.target.value)}
-            error={errors['coordinates.latitude']}
-            placeholder="Enter latitude (e.g., -1.949956)"
-          />
-        </div>
-        
-        <div>
-          <Input
-            label="Longitude *"
-            name="longitude"
-            type="number"
-            value={formData.coordinates.longitude}
-            onChange={(e) => handleCoordinatesChange('longitude', e.target.value)}
-            error={errors['coordinates.longitude']}
-            placeholder="Enter longitude (e.g., 30.058847)"
-          />
-        </div>
-        
-        <div className="md:col-span-2">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Address Information</h3>
-        </div>
-        
-        <div>
-          <Input
-            label="Street Address *"
-            name="street"
-            value={formData.address.street}
-            onChange={(e) => handleAddressChange('street', e.target.value)}
-            error={errors['address.street']}
-            placeholder="Enter street address"
-          />
-        </div>
-        
-        <div>
-          <Input
-            label="Sector *"
-            name="sector"
-            value={formData.address.sector}
-            onChange={(e) => handleAddressChange('sector', e.target.value)}
-            error={errors['address.sector']}
-            placeholder="Enter sector"
-          />
-        </div>
-        
-        <div>
-          <Input
+          <SearchableSelect
             label="District *"
-            name="district"
-            value={formData.address.district}
-            onChange={(e) => handleAddressChange('district', e.target.value)}
-            error={errors['address.district']}
-            placeholder="Enter district"
+            value={formData.district}
+            onChange={(value) => setFormData(prev => ({ ...prev, district: value as RwandaDistrictType || 'gasabo' }))}
+            onSearch={searchDistricts}
+            error={errors.district}
+            placeholder="Search districts..."
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
           <Input
-            label="Province *"
-            name="province"
-            value={formData.address.province}
-            onChange={(e) => handleAddressChange('province', e.target.value)}
-            error={errors['address.province']}
-            placeholder="Enter province"
+            label="Contact Person *"
+            name="contactPerson"
+            value={formData.contactPerson}
+            onChange={handleChange}
+            error={errors.contactPerson}
+            placeholder="Enter contact person name"
+            disabled={isLoading}
           />
         </div>
-        
+
         <div>
           <Input
-            label="Country"
-            name="country"
-            value={formData.address.country}
-            onChange={(e) => handleAddressChange('country', e.target.value)}
-            placeholder="Enter country"
+            label="Phone Number *"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            error={errors.phone}
+            placeholder="+250 788 123 456"
+            disabled={isLoading}
           />
         </div>
-        
+
+        <div>
+          <Input
+            label="Email *"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            placeholder="facility@example.com"
+            disabled={isLoading}
+          />
+        </div>
+
         <div className="flex items-center pt-6">
           <input
             type="checkbox"
             id="isActive"
             name="isActive"
             checked={formData.isActive}
-            onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+            onChange={handleChange}
+            disabled={isLoading}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
@@ -347,18 +238,18 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
           </label>
         </div>
       </div>
-      
+
       <div className="flex justify-end space-x-4 pt-4">
-        <Button 
-          type="button" 
-          variant="secondary" 
+        <Button
+          type="button"
+          variant="secondary"
           onClick={onCancel}
           disabled={isLoading}
         >
           Cancel
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           variant="primary"
           isLoading={isLoading}
         >

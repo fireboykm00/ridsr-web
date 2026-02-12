@@ -1,17 +1,20 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { ValidationStatus, OutcomeStatus, CaseStatus, DiseaseCode, Symptom } from '@/types';
 
 export interface ICase extends Document {
   patientId: mongoose.Types.ObjectId;
   facilityId: mongoose.Types.ObjectId;
-  diseaseCode: string;
-  symptoms: string[];
+  diseaseCode: DiseaseCode;
+  symptoms: Symptom[];
   onsetDate: Date;
   reportDate: Date;
   reporterId: mongoose.Types.ObjectId;
-  validationStatus: 'PENDING' | 'VALIDATED' | 'REJECTED';
-  isAlertTriggered: boolean;
-  labResults?: string;
-  outcome?: 'RECOVERED' | 'DIED' | 'ONGOING';
+  validationStatus: ValidationStatus;
+  status: CaseStatus;
+  outcome?: OutcomeStatus;
+  validatorId?: mongoose.Types.ObjectId;
+  validationDate?: Date;
+  outcomeDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,15 +30,21 @@ const CaseSchema = new Schema<ICase>(
     reporterId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     validationStatus: {
       type: String,
-      enum: ['PENDING', 'VALIDATED', 'REJECTED'],
-      default: 'PENDING',
+      enum: ['pending', 'validated', 'rejected'],
+      default: 'pending',
     },
-    isAlertTriggered: { type: Boolean, default: false },
-    labResults: String,
+    status: {
+      type: String,
+      enum: ['suspected', 'confirmed', 'resolved', 'invalidated'],
+      default: 'suspected',
+    },
     outcome: {
       type: String,
-      enum: ['RECOVERED', 'DIED', 'ONGOING'],
+      enum: ['recovered', 'deceased', 'transferred', 'unknown'],
     },
+    validatorId: { type: Schema.Types.ObjectId, ref: 'User' },
+    validationDate: { type: Date },
+    outcomeDate: { type: Date },
   },
   { timestamps: true }
 );

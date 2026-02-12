@@ -1,14 +1,15 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
+import { FacilityType, RwandaDistrictType, RwandaProvinceType } from "@/types";
 
 export interface IFacility extends Document {
   name: string;
-  type: 'HOSPITAL' | 'CLINIC' | 'HEALTH_CENTER' | 'LAB';
-  district: string;
-  province: string;
-  coordinates?: { lat: number; lng: number };
-  contactPerson: string;
-  phone: string;
-  email: string;
+  code: string;
+  type: FacilityType;
+  district: RwandaDistrictType;
+  province: RwandaProvinceType;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,23 +18,21 @@ export interface IFacility extends Document {
 const FacilitySchema = new Schema<IFacility>(
   {
     name: { type: String, required: true },
+    code: { type: String, required: true, unique: true },
     type: {
       type: String,
-      enum: ['HOSPITAL', 'CLINIC', 'HEALTH_CENTER', 'LAB'],
       required: true,
     },
     district: { type: String, required: true },
     province: { type: String, required: true },
-    coordinates: {
-      lat: Number,
-      lng: Number,
-    },
-    contactPerson: { type: String, required: true },
-    phone: { type: String, required: true },
-    email: { type: String, required: true },
+    contactPerson: String,
+    phone: String,
+    email: String,
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-export const Facility = mongoose.models.Facility || mongoose.model<IFacility>('Facility', FacilitySchema);
+export const Facility =
+  mongoose.models.Facility ||
+  mongoose.model<IFacility>("Facility", FacilitySchema);

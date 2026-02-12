@@ -1,27 +1,27 @@
 // src/components/forms/UserManagementForm.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/Input';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
-import { USER_ROLES } from '@/types';
+import { USER_ROLES, UserRole, RwandaDistrictType, RWANDA_DISTRICTS } from '@/types';
 
 interface UserFormData {
-  workerId: string;
   name: string;
   email: string;
-  role: string;
-  facilityId: string;
-  districtId?: string;
+  role: UserRole;
+  facilityId?: string;
+  district?: RwandaDistrictType;
   password: string;
   confirmPassword: string;
+  workerId?: string;
 }
 
 interface UserManagementFormProps {
   onSubmit: (data: UserFormData) => void;
   onCancel: () => void;
-  initialData?: UserFormData;
+  initialData?: Partial<UserFormData>;
   isEditing?: boolean;
 }
 
@@ -32,24 +32,36 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
   isEditing = false
 }) => {
   const [formData, setFormData] = useState<UserFormData>({
-    workerId: initialData?.workerId || '',
     name: initialData?.name || '',
     email: initialData?.email || '',
     role: initialData?.role || USER_ROLES.HEALTH_WORKER,
     facilityId: initialData?.facilityId || '',
-    districtId: initialData?.districtId || '',
+    district: initialData?.district || undefined,
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    workerId: initialData?.workerId || ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [facilities, setFacilities] = useState<any[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  useEffect(() => {
+    const loadFacilities = async () => {
+      try {
+        const response = await fetch('/api/facilities');
+        const data = await response.json();
+        setFacilities(data.success ? data.data : []);
+      } catch (error) {
+        console.error('Error loading facilities:', error);
+      }
+    };
+    loadFacilities();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -59,12 +71,28 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
     }
   };
 
+  const searchFacilities = async (query: string): Promise<SelectOption[]> => {
+    if (!query.trim()) {
+      return facilities.map((f: any) => ({
+        value: f.code,
+        label: `${f.name} - ${f.district}`
+      }));
+    }
+    
+    return facilities
+      .filter((f: any) => 
+        f.name.toLowerCase().includes(query.toLowerCase()) ||
+        f.code.toLowerCase().includes(query.toLowerCase()) ||
+        f.district.toLowerCase().includes(query.toLowerCase())
+      )
+      .map((f: any) => ({
+        value: f.code,
+        label: `${f.name} - ${f.district}`
+      }));
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.workerId.trim()) {
-      newErrors.workerId = 'Worker ID is required';
-    }
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -80,16 +108,25 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
       newErrors.role = 'Role is required';
     }
 
-    if (!formData.facilityId.trim()) {
-      newErrors.facilityId = 'Facility ID is required';
+    if ((formData.role === USER_ROLES.DISTRICT_OFFICER || formData.role === USER_ROLES.HEALTH_WORKER || formData.role === USER_ROLES.LAB_TECHNICIAN) && !formData.district) {
+      newErrors.district = 'District is required for this role';
     }
 
-    if (!isEditing && !formData.password) {
-      newErrors.password = 'Password is required';
+    // Only require facility for health workers and lab technicians
+    if ((formData.role === USER_ROLES.HEALTH_WORKER || formData.role === USER_ROLES.LAB_TECHNICIAN) && !formData.facilityId) {
+      newErrors.facilityId = 'Facility is required for this role';
     }
 
-    if (!isEditing && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    if (!isEditing) {
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 8) {
+        newErrors.password = 'Password must be at least 8 characters';
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+      }
     }
 
     setErrors(newErrors);
@@ -98,14 +135,25 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      await onSubmit(formData);
+      // Prepare submit data without workerId initially
+      const submitData: any = { ...formData };
+      
+      // Only include workerId if it exists (for editing existing users)
+      if (submitData.workerId) {
+        // Don't send workerId from form data as API will generate it for new users
+        delete submitData.workerId;
+      }
+      
+      if (isEditing) {
+        delete submitData.password;
+        delete submitData.confirmPassword;
+      }
+      
+      await onSubmit(submitData);
     } catch (error) {
       console.error('Error submitting form:', error);
     } finally {
@@ -118,23 +166,13 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Input
-            label="Worker ID *"
-            name="workerId"
-            value={formData.workerId}
-            onChange={handleChange}
-            error={errors.workerId}
-            placeholder="Enter worker ID (e.g., HW001)"
-          />
-        </div>
-
-        <div>
-          <Input
             label="Full Name *"
             name="name"
             value={formData.name}
             onChange={handleChange}
             error={errors.name}
             placeholder="Enter full name"
+            disabled={isLoading}
           />
         </div>
 
@@ -147,46 +185,63 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
             onChange={handleChange}
             error={errors.email}
             placeholder="Enter email address"
+            disabled={isLoading}
           />
         </div>
 
         <div>
-          <Select
+          <SearchableSelect
             label="Role *"
-            name="role"
             value={formData.role}
-            onChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+            onChange={(value) => setFormData(prev => ({ ...prev, role: value as UserRole || USER_ROLES.HEALTH_WORKER }))}
             error={errors.role}
-          >
-            <option value="">Select a role</option>
-            <option value={USER_ROLES.HEALTH_WORKER}>Health Worker</option>
-            <option value={USER_ROLES.LAB_TECHNICIAN}>Lab Technician</option>
-            <option value={USER_ROLES.DISTRICT_OFFICER}>District Officer</option>
-            <option value={USER_ROLES.NATIONAL_OFFICER}>National Officer</option>
-            <option value={USER_ROLES.ADMIN}>System Administrator</option>
-          </Select>
-        </div>
-
-        <div>
-          <Input
-            label="Facility ID *"
-            name="facilityId"
-            value={formData.facilityId}
-            onChange={handleChange}
-            error={errors.facilityId}
-            placeholder="Enter facility ID"
+            options={[
+              { value: USER_ROLES.HEALTH_WORKER, label: 'Health Worker' },
+              { value: USER_ROLES.LAB_TECHNICIAN, label: 'Lab Technician' },
+              { value: USER_ROLES.DISTRICT_OFFICER, label: 'District Officer' },
+              { value: USER_ROLES.NATIONAL_OFFICER, label: 'National Officer' },
+              { value: USER_ROLES.ADMIN, label: 'System Administrator' },
+            ]}
+            placeholder="Select a role"
+            disabled={isLoading}
           />
         </div>
 
-        <div>
-          <Input
-            label="District ID"
-            name="districtId"
-            value={formData.districtId}
-            onChange={handleChange}
-            placeholder="Enter district ID (optional)"
-          />
-        </div>
+        {(formData.role === USER_ROLES.HEALTH_WORKER || formData.role === USER_ROLES.LAB_TECHNICIAN) && (
+          <div>
+            <SearchableSelect
+              label="Facility *"
+              value={formData.facilityId}
+              onChange={(value) => setFormData(prev => ({ ...prev, facilityId: value || undefined }))}
+              options={facilities.map((f: any) => ({
+                value: f.code,
+                label: `${f.name} - ${f.district}`
+              }))}
+              error={errors.facilityId}
+              placeholder="Select a facility..."
+              isClearable
+              disabled={isLoading}
+            />
+          </div>
+        )}
+
+        {(formData.role === USER_ROLES.DISTRICT_OFFICER || formData.role === USER_ROLES.HEALTH_WORKER || formData.role === USER_ROLES.LAB_TECHNICIAN) && (
+          <div>
+            <SearchableSelect
+              label="District *"
+              value={formData.district}
+              onChange={(value) => setFormData(prev => ({ ...prev, district: value as RwandaDistrictType || undefined }))}
+              options={Object.entries(RWANDA_DISTRICTS).map(([key, value]) => ({
+                value: value,
+                label: key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()
+              }))}
+              error={errors.district}
+              placeholder="Select a district..."
+              isClearable
+              disabled={isLoading}
+            />
+          </div>
+        )}
 
         {!isEditing && (
           <>
@@ -198,7 +253,8 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
                 value={formData.password}
                 onChange={handleChange}
                 error={errors.password}
-                placeholder="Enter password"
+                placeholder="Enter password (min 8 characters)"
+                disabled={isLoading}
               />
             </div>
 
@@ -211,6 +267,7 @@ const UserManagementForm: React.FC<UserManagementFormProps> = ({
                 onChange={handleChange}
                 error={errors.confirmPassword}
                 placeholder="Confirm password"
+                disabled={isLoading}
               />
             </div>
           </>

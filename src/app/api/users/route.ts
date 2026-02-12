@@ -1,46 +1,73 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { dbConnect } from '@/lib/services/db';
-import { User as UserModel } from '@/lib/models';
-import { USER_ROLES } from '@/types';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { userService } from '@/lib/services/server/userService';
+import { successResponse, errorResponse } from '@/lib/api/response';
+import { createUserSchema, paginationSchema } from '@/lib/schemas';
+import { RwandaDistrictType, UserRole } from '@/types';
+
+const getUsersQuerySchema = z.object({
+  facilityId: z.string().optional(),
+  role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']).optional(),
+  district: z.string().optional(),
+  search: z.string().optional(),
+}).merge(paginationSchema.partial());
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
-    await dbConnect();
+    const { user } = await withAuth(request);
+
     const { searchParams } = new URL(request.url);
-    const facilityId = searchParams.get('facilityId');
-    const role = searchParams.get('role');
-    const district = searchParams.get('district');
+    const queryParams = Object.fromEntries(searchParams.entries());
+    const { facilityId, role, district, search, page, limit } = getUsersQuerySchema.parse(queryParams);
 
-    const query: any = {};
-    if (facilityId) query.facilityId = facilityId;
-    if (role) query.role = role;
-    if (district) query.district = district;
+    const filters = {
+      facilityId,
+      role,
+      district: (district || user?.district) as RwandaDistrictType | undefined,
+      search
+    };
+    const users = await userService.getUsersWithFilters(filters, page, limit);
 
-    const users = await UserModel.find(query).lean();
-    return NextResponse.json(users);
+    return successResponse(users);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+    }
+    console.error('[API] Error fetching users:', error);
+    return errorResponse('Failed to fetch users', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    await dbConnect();
-    const data = await request.json();
-    const user = await UserModel.create(data);
-    return NextResponse.json(user.toObject(), { status: 201 });
+    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
+    // Proceed as requested by user
+
+    const body = await request.json();
+    const validatedData = createUserSchema.parse(body);
+
+    // Generate workerId if not provided
+    let workerId = validatedData.workerId;
+    if (!workerId) {
+      const prefix = validatedData.role.substring(0, 2).toUpperCase();
+      const random = Math.floor(1000 + Math.random() * 9000);
+      workerId = `${prefix}${Date.now().toString().slice(-4)}${random}`;
+    }
+
+    const userData = {
+      ...validatedData,
+      workerId,
+      district: validatedData.district as RwandaDistrictType | undefined
+    };
+
+    const newUser = await userService.createUser(userData as any);
+    return successResponse(newUser, 201);
   } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return errorResponse('Validation failed', 400, error.issues[0].message);
+    }
+    console.error('[API] Error creating user:', error);
+    return errorResponse('Failed to create user', 500);
   }
 }

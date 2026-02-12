@@ -1,132 +1,146 @@
-import { auth } from '@/lib/auth';
-import { USER_ROLES, User, UserRole, CreateUserInput, UpdateUserInput } from '@/types';
+import { USER_ROLES, User, UserRole, CreateUserInput, UpdateUserInput, ExtendedSession } from '@/types';
 
 class UserService {
-  async getCurrentUser(): Promise<User | null> {
-    const session = await auth();
-    if (!session?.user) return null;
+  // Removed getCurrentUser as it depended on server-only auth()
+  // The caller should provide the user from useSession (client) or auth() (server)
 
-    return {
-      id: session.user.id,
-      workerId: session.user.workerId,
-      name: session.user.name,
-      email: session.user.email,
-      role: session.user.role,
-      facilityId: session.user.facilityId,
-      district: session.user.district,
-      province: session.user.province,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  }
-
-  async isAdmin(): Promise<boolean> {
-    const user = await this.getCurrentUser();
+  isAdmin(user?: User | ExtendedSession['user']): boolean {
     return user?.role === USER_ROLES.ADMIN;
   }
 
-  async hasRole(role: UserRole): Promise<boolean> {
-    const user = await this.getCurrentUser();
+  hasRole(user: User | ExtendedSession['user'] | undefined, role: UserRole): boolean {
     return user?.role === role;
   }
 
   async getUserById(id: string): Promise<User | null> {
     const res = await fetch(`/api/users/${id}`);
     if (!res.ok) return null;
-    return res.json();
+    const responseData = await res.json();
+    const user = responseData.data || responseData;
+    return user ? { ...user, id: user._id || user.id } : null;
   }
 
   async getAllUsers(): Promise<User[]> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can view all users');
-    }
-
     const res = await fetch('/api/users');
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to fetch users');
+    }
+    const responseData = await res.json();
+    const users = responseData.data || responseData;
+    return Array.isArray(users) ? users.map((u: any) => ({
+      ...u,
+      id: u._id || u.id
+    })) : [];
   }
 
   async getUsersByRole(role: UserRole): Promise<User[]> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can view users by role');
-    }
-
     const res = await fetch(`/api/users?role=${role}`);
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to fetch users');
+    }
+    const responseData = await res.json();
+    const users = responseData.data || responseData;
+    return Array.isArray(users) ? users.map((u: any) => ({
+      ...u,
+      id: u._id || u.id
+    })) : [];
   }
 
   async getUsersByFacility(facilityId: string): Promise<User[]> {
-    const session = await auth();
-    if (!session) throw new Error('Unauthorized');
-
-    if (session.user?.role && ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user.role)) {
-      throw new Error('Insufficient permissions');
-    }
-
     const res = await fetch(`/api/users?facilityId=${facilityId}`);
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to fetch users');
+    }
+    const responseData = await res.json();
+    const users = responseData.data || responseData;
+    return Array.isArray(users) ? users.map((u: any) => ({
+      ...u,
+      id: u._id || u.id
+    })) : [];
   }
 
   async getUsersByDistrict(district: string): Promise<User[]> {
-    const session = await auth();
-    if (!session) throw new Error('Unauthorized');
-
-    if (session.user?.role && ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user.role)) {
-      throw new Error('Insufficient permissions');
-    }
-
-    if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district !== district) {
-      throw new Error('Insufficient permissions to access users from this district');
-    }
-
     const res = await fetch(`/api/users?district=${district}`);
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to fetch users');
+    }
+    const responseData = await res.json();
+    const users = responseData.data || responseData;
+    return Array.isArray(users) ? users.map((u: any) => ({
+      ...u,
+      id: u._id || u.id
+    })) : [];
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    const res = await fetch(`/api/users?search=${encodeURIComponent(query)}`);
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to search users');
+    }
+    const responseData = await res.json();
+    const users = responseData.data || responseData;
+    return Array.isArray(users) ? users.map((u: any) => ({
+      ...u,
+      id: u._id || u.id
+    })) : [];
   }
 
   async createUser(userData: CreateUserInput): Promise<User> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can create users');
-    }
-
     const res = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
 
-    if (!res.ok) throw new Error('Failed to create user');
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to create user');
+    }
+
+    const responseData = await res.json();
+    const user = responseData.data || responseData;
+    return { ...user, id: user._id || user.id };
   }
 
   async updateUser(id: string, userData: UpdateUserInput): Promise<User | null> {
-    const session = await auth();
-    if (!session) throw new Error('Unauthorized');
-
     const res = await fetch(`/api/users/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
     });
 
-    if (!res.ok) return null;
-    return res.json();
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to update user');
+    }
+
+    const responseData = await res.json();
+    const user = responseData.data || responseData;
+    return user ? { ...user, id: user._id || user.id } : null;
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const session = await auth();
-    if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-      throw new Error('Only administrators can delete users');
+    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to delete user');
     }
 
-    const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-    return res.ok;
+    return true;
+  }
+
+  async deactivateUser(id: string): Promise<User | null> {
+    return this.updateUser(id, { isActive: false });
+  }
+
+  async activateUser(id: string): Promise<User | null> {
+    return this.updateUser(id, { isActive: true });
   }
 }
 

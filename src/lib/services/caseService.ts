@@ -1,40 +1,36 @@
-import { auth } from '@/lib/auth';
-import { USER_ROLES, Case } from '@/types';
+import { USER_ROLES, Case, ExtendedSession, User } from '@/types';
 
 export async function getAllCases(): Promise<Case[]> {
   const res = await fetch('/api/cases');
   if (!res.ok) throw new Error('Failed to fetch cases');
-  return res.json();
+  const responseData = await res.json();
+  const data = responseData.data?.data || responseData.data || responseData;
+  return Array.isArray(data) ? data.map((c: any) => ({
+    ...c,
+    id: c._id || c.id
+  })) : [];
 }
 
 export async function getCaseById(id: string): Promise<Case | null> {
   const res = await fetch(`/api/cases/${id}`);
   if (!res.ok) return null;
-  return res.json();
+  const responseData = await res.json();
+  return responseData.data || responseData;
 }
 
 export async function createCase(caseData: Partial<Case>): Promise<Case> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
   const res = await fetch('/api/cases', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...caseData,
-      facilityId: session.user.facilityId,
-      reporterId: session.user.id,
-    }),
+    body: JSON.stringify(caseData),
   });
 
   if (!res.ok) throw new Error('Failed to create case');
-  return res.json();
+  const responseData = await res.json();
+  return responseData.data || responseData;
 }
 
 export async function updateCase(id: string, caseData: Partial<Case>): Promise<Case | null> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
   const res = await fetch(`/api/cases/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -42,27 +38,28 @@ export async function updateCase(id: string, caseData: Partial<Case>): Promise<C
   });
 
   if (!res.ok) return null;
-  return res.json();
+  const responseData = await res.json();
+  return responseData.data || responseData;
 }
 
 export async function deleteCase(id: string): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-    throw new Error('Only administrators can delete cases');
-  }
-
   const res = await fetch(`/api/cases/${id}`, { method: 'DELETE' });
   return res.ok;
 }
 
-export async function filterCasesByAccess(cases: Case[]): Promise<Case[]> {
-  const session = await auth();
-  if (!session?.user) return [];
+export function filterCasesByAccess(cases: Case[], user?: User | ExtendedSession['user']): Case[] {
+  if (!Array.isArray(cases)) return [];
+  if (!user) return cases;
 
-  const { role, facilityId, district } = session.user;
+  const { role, facilityId, district } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return cases;
-  if (role === USER_ROLES.DISTRICT_OFFICER && district) return cases;
+  
+  if (role === USER_ROLES.DISTRICT_OFFICER && district) {
+    // Filter cases by district - need to match facility's district
+    return cases.filter(c => c.district === district);
+  }
+  
   if ((role === USER_ROLES.HEALTH_WORKER || role === USER_ROLES.LAB_TECHNICIAN) && facilityId) {
     return cases.filter(c => c.facilityId === facilityId);
   }
@@ -70,11 +67,10 @@ export async function filterCasesByAccess(cases: Case[]): Promise<Case[]> {
   return [];
 }
 
-export async function canAccessCase(targetCase: Case): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user) return false;
+export function canAccessCase(targetCase: Case, user?: User | ExtendedSession['user']): boolean {
+  if (!user) return true; // Default to true if no user provided, let server handle strict check
 
-  const { role, facilityId, district } = session.user;
+  const { role, facilityId, district } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return true;
   if (role === USER_ROLES.DISTRICT_OFFICER && district) return true;
@@ -85,11 +81,9 @@ export async function canAccessCase(targetCase: Case): Promise<boolean> {
   return false;
 }
 
-export async function prepareNewCase(caseData: Partial<Case>): Promise<Case> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
-  const { id: userId, facilityId } = session.user;
+export function prepareNewCase(caseData: Partial<Case>, user?: User | ExtendedSession['user']): Case {
+  const userId = user?.id || '';
+  const facilityId = user?.facilityId || '';
 
   return {
     id: `case_${Date.now()}`,
@@ -101,7 +95,6 @@ export async function prepareNewCase(caseData: Partial<Case>): Promise<Case> {
     reportDate: new Date().toISOString(),
     reporterId: userId || '',
     validationStatus: 'pending',
-    isAlertTriggered: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...caseData

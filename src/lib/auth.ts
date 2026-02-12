@@ -1,25 +1,38 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { USER_ROLES, User, UserRole } from "@/types";
-import { getMockUser } from "./auth-mock";
+import { USER_ROLES, User, UserRole, RwandaDistrictType, RwandaProvinceType } from "@/types";
 
-// TODO: Replace with real database authentication
 async function getUser(identifier: string, password: string): Promise<User | null> {
-  // For development: use mock credentials
-  if (process.env.NODE_ENV === "development") {
-    return getMockUser(identifier, password);
+  try {
+    // For server-side fetch in Next.js, we need to use absolute URL
+    const baseUrl = process.env.NEXTAUTH_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000');
+
+    const url = `${baseUrl}/api/auth/login`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password })
+    });
+
+    if (!response.ok) {
+      // Log the error for debugging but return null to prevent credential errors
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Authentication API error:", errorData);
+      return null;
+    }
+
+    const userData = await response.json();
+    return userData;
+  } catch (error) {
+    console.error("Authentication error:", error);
+    // Return null to prevent credential errors from leaking information
+    return null;
   }
-
-  // TODO: In production, query database:
-  // const user = await db.user.findUnique({
-  //   where: { email: identifier }
-  // });
-  // if (user && await verifyPassword(password, user.passwordHash)) {
-  //   return user;
-  // }
-
-  return null;
 }
 
 export const {
@@ -75,6 +88,7 @@ export const {
         token.id = user.id;
         token.workerId = user.workerId;
         token.facilityId = user.facilityId;
+        token.facilityName = user.facilityName;
         token.district = user.district;
         token.province = user.province;
       }
@@ -86,8 +100,9 @@ export const {
         session.user!.id = token.id as string;
         session.user!.workerId = token.workerId as string;
         session.user!.facilityId = token.facilityId as string;
-        session.user!.district = token.district as string;
-        session.user!.province = token.province as string;
+        session.user!.facilityName = token.facilityName as string;
+        session.user!.district = token.district as RwandaDistrictType;
+        session.user!.province = token.province as RwandaProvinceType;
       }
       return session;
     },

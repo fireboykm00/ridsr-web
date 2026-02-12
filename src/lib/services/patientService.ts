@@ -1,22 +1,24 @@
-import { auth } from '@/lib/auth';
-import { USER_ROLES, Patient, RwandaDistrictType } from '@/types';
+import { USER_ROLES, Patient, RwandaDistrictType, User, ExtendedSession } from '@/types';
+import { normalizeId, normalizeIds } from '@/lib/utils/normalize';
 
 export async function getAllPatients(): Promise<Patient[]> {
   const res = await fetch('/api/patients');
   if (!res.ok) throw new Error('Failed to fetch patients');
-  return res.json();
+  const responseData = await res.json();
+  const data = responseData.data || responseData;
+  return normalizeIds(Array.isArray(data) ? data : []);
 }
 
 export async function getPatientById(id: string): Promise<Patient | null> {
+  if (!id || id === 'undefined') return null;
+  
   const res = await fetch(`/api/patients/${id}`);
   if (!res.ok) return null;
-  return res.json();
+  const responseData = await res.json();
+  return normalizeId(responseData.data || responseData);
 }
 
 export async function createPatient(patientData: Partial<Patient>): Promise<Patient> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
   const res = await fetch('/api/patients', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,13 +26,11 @@ export async function createPatient(patientData: Partial<Patient>): Promise<Pati
   });
 
   if (!res.ok) throw new Error('Failed to create patient');
-  return res.json();
+  const responseData = await res.json();
+  return normalizeId(responseData.data || responseData);
 }
 
 export async function updatePatient(id: string, patientData: Partial<Patient>): Promise<Patient | null> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
   const res = await fetch(`/api/patients/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -38,24 +38,53 @@ export async function updatePatient(id: string, patientData: Partial<Patient>): 
   });
 
   if (!res.ok) return null;
-  return res.json();
+  const responseData = await res.json();
+  return normalizeId(responseData.data || responseData);
 }
 
 export async function deletePatient(id: string): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-    throw new Error('Only administrators can delete patients');
-  }
-
   const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
   return res.ok;
 }
 
-export async function filterPatientsByAccess(patients: Patient[]): Promise<Patient[]> {
-  const session = await auth();
-  if (!session?.user) return [];
+export async function searchPatients(query: string): Promise<Patient[]> {
+  const res = await fetch(`/api/patients?q=${encodeURIComponent(query)}`);
+  if (!res.ok) throw new Error('Failed to search patients');
+  const responseData = await res.json();
+  const data = responseData.data || responseData;
+  return normalizeIds(Array.isArray(data) ? data : []);
+}
 
-  const { role } = session.user;
+export async function getPatientsWithFilters(filters: {
+  search?: string;
+  district?: string;
+  gender?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  data: Patient[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> {
+  const params = new URLSearchParams();
+
+  if (filters.search) params.append('search', filters.search);
+  if (filters.district) params.append('district', filters.district);
+  if (filters.gender) params.append('gender', filters.gender);
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.limit) params.append('limit', filters.limit.toString());
+
+  const res = await fetch(`/api/patients?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch patients');
+  return res.json();
+}
+
+export function filterPatientsByAccess(patients: Patient[], user?: User | ExtendedSession['user']): Patient[] {
+  if (!Array.isArray(patients)) return [];
+  if (!user) return patients;
+
+  const { role } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return patients;
   if (role === USER_ROLES.DISTRICT_OFFICER) return patients;
@@ -64,11 +93,10 @@ export async function filterPatientsByAccess(patients: Patient[]): Promise<Patie
   return [];
 }
 
-export async function canAccessPatient(targetPatient: Patient): Promise<boolean> {
-  const session = await auth();
-  if (!session?.user) return false;
+export function canAccessPatient(targetPatient: Patient, user?: User | ExtendedSession['user']): boolean {
+  if (!user) return true;
 
-  const { role } = session.user;
+  const { role } = user;
 
   if (role === USER_ROLES.ADMIN || role === USER_ROLES.NATIONAL_OFFICER) return true;
   if (role === USER_ROLES.DISTRICT_OFFICER) return true;
@@ -77,10 +105,7 @@ export async function canAccessPatient(targetPatient: Patient): Promise<boolean>
   return false;
 }
 
-export async function prepareNewPatient(patientData: Partial<Patient>): Promise<Patient> {
-  const session = await auth();
-  if (!session?.user) throw new Error('User not authenticated');
-
+export function prepareNewPatient(patientData: Partial<Patient>): Patient {
   return {
     id: `patient_${Date.now()}`,
     nationalId: patientData.nationalId || '',
@@ -96,6 +121,7 @@ export async function prepareNewPatient(patientData: Partial<Patient>): Promise<
       province: 'kigali_city',
       country: 'Rwanda'
     },
+    district: patientData.district || 'gasabo' as RwandaDistrictType,
     occupation: patientData.occupation || '',
     emergencyContact: patientData.emergencyContact || {
       name: '',

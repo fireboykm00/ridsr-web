@@ -1,14 +1,16 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { UserRole, USER_ROLES, RwandaDistrictType, RwandaProvinceType } from '@/types';
 
 export interface IUser extends Document {
   workerId: string;
   name: string;
   email: string;
   password: string;
-  role: 'ADMIN' | 'NATIONAL_OFFICER' | 'DISTRICT_OFFICER' | 'HEALTH_WORKER' | 'LAB_TECHNICIAN';
+  role: UserRole;
   facilityId?: mongoose.Types.ObjectId;
-  district?: string;
-  province?: string;
+  facilityName?: string;
+  district?: RwandaDistrictType;
+  province?: RwandaProvinceType;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -22,10 +24,11 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ['ADMIN', 'NATIONAL_OFFICER', 'DISTRICT_OFFICER', 'HEALTH_WORKER', 'LAB_TECHNICIAN'],
+      enum: Object.values(USER_ROLES),
       required: true,
     },
     facilityId: { type: Schema.Types.ObjectId, ref: 'Facility' },
+    facilityName: String,
     district: String,
     province: String,
     isActive: { type: Boolean, default: true },

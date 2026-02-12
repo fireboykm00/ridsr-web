@@ -35,6 +35,11 @@ const Sidebar: React.FC = () => {
     return null;
   }
 
+  // Ensure user role is available before proceeding
+  if (!session.user.role) {
+    return null;
+  }
+
   const getDashboardUrl = (): string => {
     if (session.user && session.user.role) {
       switch (session.user.role) {
@@ -100,34 +105,21 @@ const Sidebar: React.FC = () => {
       ],
     },
     {
-      name: "Validation",
+      name: "Validate Cases",
       href: "/dashboard/validation",
       icon: <DocumentTextIcon className="w-5 h-5" />,
       roles: [
         USER_ROLES.ADMIN,
         USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+      ],
+    },
+    {
+      name: "Lab Results",
+      href: "/dashboard/validation-hub",
+      icon: <DocumentTextIcon className="w-5 h-5" />,
+      roles: [
         USER_ROLES.LAB_TECHNICIAN,
-        USER_ROLES.DISTRICT_OFFICER,
-      ],
-    },
-    {
-      name: "Alerts",
-      href: "/dashboard/alert",
-      icon: <BellIcon className="w-5 h-5" />,
-      roles: [
-        USER_ROLES.ADMIN,
-        USER_ROLES.NATIONAL_OFFICER,
-        USER_ROLES.DISTRICT_OFFICER,
-      ],
-    },
-    {
-      name: "Reports",
-      href: "/dashboard/report",
-      icon: <DocumentIcon className="w-5 h-5" />,
-      roles: [
-        USER_ROLES.ADMIN,
-        USER_ROLES.NATIONAL_OFFICER,
-        USER_ROLES.DISTRICT_OFFICER,
       ],
     },
     {
@@ -180,9 +172,10 @@ const Sidebar: React.FC = () => {
     },
   ];
 
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(session.user.role),
-  );
+  // Only filter if session is loaded and user role is available
+  const filteredNavItems = session?.user?.role
+    ? navItems.filter((item) => item.roles.includes(session.user.role))
+    : [];
 
   return (
     <div className="">

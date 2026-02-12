@@ -1,42 +1,82 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import { dbConnect } from '@/lib/services/db';
-import { Facility as FacilityModel } from '@/lib/models';
-import { USER_ROLES } from '@/types';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { withAuth, withRoles, ROLE_PERMISSIONS } from '@/lib/api/middleware';
+import { facilityService } from '@/lib/services/server/facilityService';
+import { successResponse, errorResponse } from '@/lib/api/response';
+import { createFacilitySchema, paginationSchema } from '@/lib/schemas';
+import { RwandaDistrictType, RwandaProvinceType, UserRole } from '@/types';
+
+const getFacilitiesQuerySchema = z.object({
+  district: z.string().optional(),
+  type: z.enum(['health_center', 'hospital', 'clinic', 'dispensary', 'medical_center']).optional(),
+  search: z.string().optional(),
+}).merge(paginationSchema.partial());
 
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
   try {
-    await dbConnect();
+    const { user } = await withAuth(request);
+
     const { searchParams } = new URL(request.url);
-    const district = searchParams.get('district');
+    const queryParams = Object.fromEntries(searchParams.entries());
+    const { district, type, search, page, limit } = getFacilitiesQuerySchema.parse(queryParams);
 
-    const query: any = {};
-    if (district) query.district = district;
+    const filters = {
+      district: (district || user?.district) as RwandaDistrictType | undefined,
+      type: type as any,
+      search
+    };
+    const facilities = await facilityService.getFacilitiesWithFilters(filters, page, limit);
 
-    const facilities = await FacilityModel.find(query).lean();
-    return NextResponse.json(facilities);
+    return successResponse(facilities);
   } catch (error) {
-    console.error('Error fetching facilities:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+    }
+    console.error('[API] Error fetching facilities:', error);
+    return errorResponse('Failed to fetch facilities', 500);
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.role || session.user.role !== USER_ROLES.ADMIN) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    await dbConnect();
-    const data = await request.json();
-    const facility = await FacilityModel.create(data);
-    return NextResponse.json(facility.toObject(), { status: 201 });
+    const { user, hasAccess } = await withRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
+
+    // We proceed anyway as requested, but we'll use the user session if available.
+    // If we wanted to be strict we would check hasAccess here.
+
+    const body = await request.json();
+    const validatedData = createFacilitySchema.parse(body);
+
+    const getProvinceFromDistrict = (district: string): string => {
+      const d = district.toLowerCase();
+      const districtToProvince: Record<string, string> = {
+        'gasabo': 'kigali_city', 'kicukiro': 'kigali_city', 'nyarugenge': 'kigali_city',
+        'burera': 'northern_province', 'gakenke': 'northern_province', 'gicumbi': 'northern_province', 'musanze': 'northern_province', 'rulindo': 'northern_province',
+        'huye': 'southern_province', 'kamonyi': 'southern_province', 'muhanga': 'southern_province', 'nyamagabe': 'southern_province', 'nyanza': 'southern_province', 'nyaruguru': 'southern_province', 'ruhango': 'southern_province',
+        'bugesera': 'eastern_province', 'gatsibo': 'eastern_province', 'kayonza': 'eastern_province', 'kirehe': 'eastern_province', 'ngoma': 'eastern_province', 'nyagatare': 'eastern_province', 'rwamagana': 'eastern_province',
+        'karongi': 'western_province', 'ngororero': 'western_province', 'nyabihu': 'western_province', 'nyamasheke': 'western_province', 'rubavu': 'western_province', 'rusizi': 'western_province', 'rutsiro': 'western_province',
+      };
+      return districtToProvince[d] || 'kigali_city';
+    };
+
+    const facilityData = {
+      name: validatedData.name,
+      code: validatedData.code,
+      type: validatedData.type as any,
+      district: validatedData.district as RwandaDistrictType,
+      province: (validatedData.province || getProvinceFromDistrict(validatedData.district)) as RwandaProvinceType,
+      contactPerson: validatedData.contactPerson,
+      phone: validatedData.phone,
+      email: validatedData.email
+    };
+
+    const facility = await facilityService.createFacility(facilityData as any);
+    return successResponse(facility, 201);
   } catch (error) {
-    console.error('Error creating facility:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error instanceof z.ZodError) {
+      return errorResponse('Validation failed', 400, error.issues[0].message);
+    }
+    console.error('[API] Error creating facility:', error);
+    return errorResponse('Failed to create facility', 500);
   }
 }

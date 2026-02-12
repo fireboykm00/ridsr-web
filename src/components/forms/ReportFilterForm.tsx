@@ -3,9 +3,11 @@
 
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/Input';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { RwandaDistrictType, RWANDA_DISTRICTS, CaseStatus } from '@/types';
+import { DISEASE_CODES } from '@/constants';
 
 interface ReportFilterFormProps {
   onSubmit: (filters: ReportFilters) => void;
@@ -15,10 +17,11 @@ interface ReportFilterFormProps {
 interface ReportFilters {
   reportType: string;
   facilityId?: string;
-  districtId?: string;
+  district?: RwandaDistrictType;
   startDate: string;
   endDate: string;
-  diseaseCodes: string[];
+  diseaseCode?: string;
+  status?: string;
   includeTrends: boolean;
   includeMaps: boolean;
   includeRecommendations: boolean;
@@ -36,18 +39,11 @@ const REPORT_TYPES = [
   { value: 'annual_national', label: 'Annual National Report' },
 ];
 
-const DISEASE_CODES = [
-  { value: 'CHOLERA', label: 'Cholera' },
-  { value: 'MAL01', label: 'Malaria' },
-  { value: 'SARI', label: 'Severe Acute Respiratory Illness' },
-  { value: 'AFP', label: 'Acute Flaccid Paralysis' },
-  { value: 'YELLOW_FEVER', label: 'Yellow Fever' },
-  { value: 'RUBELLA', label: 'Rubella' },
-  { value: 'MEASLES', label: 'Measles' },
-  { value: 'PLAGUE', label: 'Plague' },
-  { value: 'RABIES', label: 'Rabies' },
-  { value: 'EBOLA', label: 'Ebola Virus Disease' },
-  { value: 'MONKEYPOX', label: 'Monkeypox' },
+const STATUS_OPTIONS = [
+  { value: 'suspected', label: 'Suspected' },
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'invalidated', label: 'Invalidated' },
 ];
 
 const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel }) => {
@@ -55,22 +51,18 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
     reportType: 'daily_facility',
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
-    diseaseCodes: [],
     includeTrends: true,
     includeMaps: true,
     includeRecommendations: true,
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-    
-    setFilters(prev => ({ ...prev, [name]: val }));
-    
-    // Clear error when user starts typing
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -80,20 +72,33 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
     }
   };
 
-  const handleDiseaseChange = (diseaseCode: string) => {
-    setFilters(prev => {
-      if (prev.diseaseCodes.includes(diseaseCode)) {
-        return {
-          ...prev,
-          diseaseCodes: prev.diseaseCodes.filter(code => code !== diseaseCode)
-        };
-      } else {
-        return {
-          ...prev,
-          diseaseCodes: [...prev.diseaseCodes, diseaseCode]
-        };
-      }
-    });
+  const searchFacilities = async (query: string): Promise<SelectOption[]> => {
+    if (!query.trim()) return [];
+    try {
+      const response = await fetch(`/api/facilities/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      return data.success ? data.data.map((facility: any) => ({
+        value: facility.id,
+        label: `${facility.name} (${facility.code})`
+      })) : [];
+    } catch (error) {
+      console.error('Error searching facilities:', error);
+      return [];
+    }
+  };
+
+  const searchDistricts = async (query: string): Promise<SelectOption[]> => {
+    const districts = Object.entries(RWANDA_DISTRICTS).map(([key, value]) => ({
+      value: value,
+      label: key.charAt(0) + key.slice(1).toLowerCase()
+    }));
+
+    if (!query.trim()) return districts;
+
+    return districts.filter(d =>
+      d.label.toLowerCase().includes(query.toLowerCase()) ||
+      d.value.toLowerCase().includes(query.toLowerCase())
+    );
   };
 
   const validateForm = (): boolean => {
@@ -121,7 +126,7 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -140,42 +145,60 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Select
+          <SearchableSelect
             label="Report Type *"
-            name="reportType"
             value={filters.reportType}
-            onChange={(value) => setFilters(prev => ({ ...prev, reportType: value }))}
+            onChange={(value) => setFilters(prev => ({ ...prev, reportType: value || '' }))}
             error={errors.reportType}
-          >
-            <option value="">Select a report type</option>
-            {REPORT_TYPES.map(type => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-        
-        <div>
-          <Input
-            label="Facility ID"
-            name="facilityId"
-            value={filters.facilityId || ''}
-            onChange={handleChange}
-            placeholder="Filter by facility (optional)"
+            options={REPORT_TYPES}
+            placeholder="Select a report type"
           />
         </div>
-        
+
         <div>
-          <Input
-            label="District ID"
-            name="districtId"
-            value={filters.districtId || ''}
-            onChange={handleChange}
-            placeholder="Filter by district (optional)"
+          <SearchableSelect
+            label="Facility"
+            value={filters.facilityId}
+            onChange={(value) => setFilters(prev => ({ ...prev, facilityId: value || undefined }))}
+            onSearch={searchFacilities}
+            placeholder="Search facilities..."
+            isClearable
           />
         </div>
-        
+
+        <div>
+          <SearchableSelect
+            label="District"
+            value={filters.district}
+            onChange={(value) => setFilters(prev => ({ ...prev, district: value as RwandaDistrictType || undefined }))}
+            onSearch={searchDistricts}
+            placeholder="Search districts..."
+            isClearable
+          />
+        </div>
+
+        <div>
+          <SearchableSelect
+            label="Disease"
+            value={filters.diseaseCode}
+            onChange={(value) => setFilters(prev => ({ ...prev, diseaseCode: value || undefined }))}
+            options={DISEASE_CODES.map(d => ({ value: d.code, label: d.name }))}
+            placeholder="Select disease..."
+            isClearable
+          />
+        </div>
+
+        <div>
+          <SearchableSelect
+            label="Status"
+            value={filters.status}
+            onChange={(value) => setFilters(prev => ({ ...prev, status: value || undefined }))}
+            options={STATUS_OPTIONS}
+            placeholder="Select status..."
+            isClearable
+          />
+        </div>
+
         <div>
           <Input
             label="Start Date *"
@@ -186,7 +209,7 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
             error={errors.startDate}
           />
         </div>
-        
+
         <div>
           <Input
             label="End Date *"
@@ -198,79 +221,20 @@ const ReportFilterForm: React.FC<ReportFilterFormProps> = ({ onSubmit, onCancel 
           />
         </div>
       </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Disease Codes
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {DISEASE_CODES.map(disease => (
-            <div key={disease.value} className="flex items-center">
-              <Checkbox
-                id={disease.value}
-                checked={filters.diseaseCodes.includes(disease.value)}
-                onChange={() => handleDiseaseChange(disease.value)}
-              />
-              <label htmlFor={disease.value} className="ml-2 block text-sm text-gray-700">
-                {disease.label}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Include in Report</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center">
-            <Checkbox
-              id="includeTrends"
-              name="includeTrends"
-              checked={filters.includeTrends}
-              onChange={(checked) => setFilters(prev => ({ ...prev, includeTrends: checked }))}
-            />
-            <label htmlFor="includeTrends" className="ml-2 block text-sm text-gray-900">
-              Trends Analysis
-            </label>
-          </div>
-          
-          <div className="flex items-center">
-            <Checkbox
-              id="includeMaps"
-              name="includeMaps"
-              checked={filters.includeMaps}
-              onChange={(checked) => setFilters(prev => ({ ...prev, includeMaps: checked }))}
-            />
-            <label htmlFor="includeMaps" className="ml-2 block text-sm text-gray-900">
-              Geographic Maps
-            </label>
-          </div>
-          
-          <div className="flex items-center">
-            <Checkbox
-              id="includeRecommendations"
-              name="includeRecommendations"
-              checked={filters.includeRecommendations}
-              onChange={(checked) => setFilters(prev => ({ ...prev, includeRecommendations: checked }))}
-            />
-            <label htmlFor="includeRecommendations" className="ml-2 block text-sm text-gray-900">
-              Recommendations
-            </label>
-          </div>
-        </div>
-      </div>
-      
+
+  
+
       <div className="flex justify-end space-x-4 pt-4">
-        <Button 
-          type="button" 
-          variant="secondary" 
+        <Button
+          type="button"
+          variant="secondary"
           onClick={onCancel}
           disabled={isLoading}
         >
           Cancel
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           variant="primary"
           isLoading={isLoading}
         >

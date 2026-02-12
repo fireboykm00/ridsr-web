@@ -136,13 +136,31 @@ export async function canAccessDistrict(district: string): Promise<boolean> {
   return false;
 }
 
-// Accessible facilities - TODO: Fetch from database
 export async function getAccessibleFacilities(): Promise<Facility[]> {
   const session = await auth();
   if (!session?.user) return [];
 
-  // TODO: Fetch from database based on user role and location
-  return [];
+  // Fetch from API based on user role and location
+  try {
+    const response = await fetch('/api/facilities');
+    if (!response.ok) return [];
+    
+    const facilities: Facility[] = await response.json();
+    
+    // Filter based on user permissions
+    if (session.user.role === USER_ROLES.ADMIN || session.user.role === USER_ROLES.NATIONAL_OFFICER) {
+      return facilities;
+    } else if (session.user.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
+      return facilities.filter(f => f.district === session.user.district);
+    } else if (session.user.facilityId) {
+      return facilities.filter(f => f.id === session.user.facilityId);
+    }
+    
+    return facilities;
+  } catch (error) {
+    console.error('Error fetching accessible facilities:', error);
+    return [];
+  }
 }
 
 // Resource permission
