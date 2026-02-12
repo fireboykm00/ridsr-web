@@ -15,6 +15,7 @@ import {
   BuildingOfficeIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
+import RIDSRLogo from "../ui/RIDSRLogo";
 
 interface NavItem {
   name: string;
@@ -46,6 +47,8 @@ const Sidebar: React.FC = () => {
           return "/dashboard/national";
         case USER_ROLES.DISTRICT_OFFICER:
           return `/dashboard/district/${session.user.district || "default"}`;
+        case USER_ROLES.LAB_TECHNICIAN:
+          return "/dashboard/validation-hub";
         default:
           return `/dashboard/facility/${session.user.facilityId || "default"}`;
       }
@@ -99,7 +102,6 @@ const Sidebar: React.FC = () => {
         USER_ROLES.NATIONAL_OFFICER,
         USER_ROLES.DISTRICT_OFFICER,
         USER_ROLES.HEALTH_WORKER,
-        USER_ROLES.LAB_TECHNICIAN,
       ],
     },
     {
@@ -116,9 +118,7 @@ const Sidebar: React.FC = () => {
       name: "Lab Results",
       href: "/dashboard/validation-hub",
       icon: <DocumentTextIcon className="w-5 h-5" />,
-      roles: [
-        USER_ROLES.LAB_TECHNICIAN,
-      ],
+      roles: [USER_ROLES.LAB_TECHNICIAN],
     },
     {
       name: "Users",
@@ -208,9 +208,8 @@ const Sidebar: React.FC = () => {
         `}
       >
         <nav className="h-full flex flex-col">
-          <div className="p-5 border-b border-gray-200">
-            <h1 className="text-xl font-bold text-gray-800">RIDSR</h1>
-            <p className="text-xs text-gray-500 mt-1">Rwanda IDSR System</p>
+          <div className="p-4 border-b border-gray-200">
+            <RIDSRLogo size={50} textSize={30} />
           </div>
 
           <ul className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
@@ -227,9 +226,10 @@ const Sidebar: React.FC = () => {
                       }}
                       className={`
                         w-full flex items-center px-4 py-2 rounded-lg transition-colors
-                        ${isActive
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
+                        ${
+                          isActive
+                            ? "bg-blue-50 text-blue-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >
@@ -242,9 +242,10 @@ const Sidebar: React.FC = () => {
                       onClick={() => setIsOpen(false)}
                       className={`
                         flex items-center px-4 py-2 rounded-lg transition-colors
-                        ${isActive
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
+                        ${
+                          isActive
+                            ? "bg-blue-50 text-blue-700 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >

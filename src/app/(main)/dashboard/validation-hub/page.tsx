@@ -40,9 +40,10 @@ interface CaseDetailModalProps {
   onClose: () => void;
   onValidate: (caseId: string, status: ValidationStatus) => void;
   isValidating: boolean;
+  canValidate: boolean;
 }
 
-function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValidating }: CaseDetailModalProps) {
+function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValidating, canValidate }: CaseDetailModalProps) {
   if (!isOpen || !caseItem) return null;
 
   return (
@@ -177,24 +178,28 @@ function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValida
             >
               Close
             </Button>
-            <Button
-              variant="danger"
-              onClick={() => onValidate(caseItem.id, 'rejected')}
-              disabled={isValidating}
-              className="flex items-center gap-2"
-            >
-              <XCircleIcon className="h-4 w-4" />
-              Reject
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => onValidate(caseItem.id, 'validated')}
-              disabled={isValidating}
-              className="flex items-center gap-2"
-            >
-              <CheckCircleIcon className="h-4 w-4" />
-              Validate
-            </Button>
+            {canValidate && (
+              <>
+                <Button
+                  variant="danger"
+                  onClick={() => onValidate(caseItem.id, 'rejected')}
+                  disabled={isValidating}
+                  className="flex items-center gap-2"
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                  Reject
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => onValidate(caseItem.id, 'validated')}
+                  disabled={isValidating}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircleIcon className="h-4 w-4" />
+                  Validate
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -210,12 +215,13 @@ export default function ValidationHubPage() {
   const [selectedCase, setSelectedCase] = useState<ValidationCase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [validatingCaseId, setValidatingCaseId] = useState<string | null>(null);
+  const canValidateCases = [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session?.user?.role as string);
 
   useEffect(() => {
     const loadPendingCases = async () => {
       if (status === 'authenticated' && session) {
-        // Check if user has validation permissions
-        if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as string)) {
+        // Check if user has validation-hub access
+        if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string)) {
           window.location.href = '/dashboard';
           return;
         }
@@ -228,7 +234,11 @@ export default function ValidationHubPage() {
           
           const result = await response.json();
           if (result.success) {
-            setPendingCases(result.data.data || []);
+            const normalizedCases = (result.data.data || []).map((caseItem: ValidationCase & { _id?: string }) => ({
+              ...caseItem,
+              id: caseItem.id || caseItem._id || '',
+            }));
+            setPendingCases(normalizedCases);
           } else {
             showError(result.error || 'Failed to load pending cases');
           }
@@ -250,6 +260,7 @@ export default function ValidationHubPage() {
   };
 
   const handleValidateCase = async (caseId: string, status: ValidationStatus) => {
+    if (!canValidateCases) return;
     setValidatingCaseId(caseId);
     
     try {
@@ -296,12 +307,12 @@ export default function ValidationHubPage() {
     );
   }
 
-  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as string)) {
+  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Only district and national officers can access the validation hub</p>
+          <p className="text-gray-600">You do not have permission to access the validation hub</p>
         </div>
       </div>
     );
@@ -384,26 +395,30 @@ export default function ValidationHubPage() {
                           <EyeIcon className="h-4 w-4" />
                           View
                         </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleValidateCase(caseItem.id, 'rejected')}
-                          disabled={validatingCaseId === caseItem.id}
-                          className="flex items-center gap-1"
-                        >
-                          <XCircleIcon className="h-4 w-4" />
-                          Reject
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleValidateCase(caseItem.id, 'validated')}
-                          disabled={validatingCaseId === caseItem.id}
-                          className="flex items-center gap-1"
-                        >
-                          <CheckCircleIcon className="h-4 w-4" />
-                          Validate
-                        </Button>
+                        {canValidateCases && (
+                          <>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleValidateCase(caseItem.id, 'rejected')}
+                              disabled={validatingCaseId === caseItem.id}
+                              className="flex items-center gap-1"
+                            >
+                              <XCircleIcon className="h-4 w-4" />
+                              Reject
+                            </Button>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleValidateCase(caseItem.id, 'validated')}
+                              disabled={validatingCaseId === caseItem.id}
+                              className="flex items-center gap-1"
+                            >
+                              <CheckCircleIcon className="h-4 w-4" />
+                              Validate
+                            </Button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -423,6 +438,7 @@ export default function ValidationHubPage() {
         }}
         onValidate={handleValidateCase}
         isValidating={validatingCaseId !== null}
+        canValidate={canValidateCases}
       />
     </div>
   );

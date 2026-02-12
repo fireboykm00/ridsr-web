@@ -10,7 +10,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Modal } from '@/components/ui/Modal';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { UserGroupIcon, PlusIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
-import { Patient, RwandaDistrictType, Gender } from '@/types';
+import { Patient, RwandaDistrictType, Gender, USER_ROLES } from '@/types';
 import { createPatient } from '@/lib/services/patientService';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -59,6 +59,7 @@ export default function PatientsPage() {
   const [total, setTotal] = useState(0);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const canAccessPatients = session?.user?.role !== USER_ROLES.LAB_TECHNICIAN;
 
   const [formData, setFormData] = useState<PatientFormData>({
     firstName: '',
@@ -72,6 +73,10 @@ export default function PatientsPage() {
 
   const loadPatients = useCallback(async () => {
     if (status !== 'authenticated' || !session) return;
+    if (session.user?.role === USER_ROLES.LAB_TECHNICIAN) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -157,6 +162,19 @@ export default function PatientsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
+
+  if (status === 'authenticated' && !canAccessPatients) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">
+            Lab technicians do not have access to the patients page.
+          </p>
+        </div>
       </div>
     );
   }

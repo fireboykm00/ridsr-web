@@ -36,6 +36,7 @@ export default function CaseDetailPage() {
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
   const [validationStatus, setValidationStatus] = useState<ValidationStatus>('pending');
   const [outcome, setOutcome] = useState<OutcomeStatus>('recovered');
+  const resolvedCaseId = caseData?.id || (caseData as (Case & { _id?: string }) | null)?._id || caseId;
 
   const userCanValidate = session?.user && canValidateCase({
     id: session.user.id,
@@ -79,8 +80,8 @@ export default function CaseDetailPage() {
           // Load patient data
           const patientResponse = await fetch(`/api/patients/${caseDetails.patientId}`);
           if (patientResponse.ok) {
-            const patient = await patientResponse.json();
-            setPatientData(patient);
+            const patientJson = await patientResponse.json();
+            setPatientData((patientJson.data || patientJson) as Patient);
           }
         } catch (error) {
           console.error('Error loading case:', error);
@@ -99,7 +100,7 @@ export default function CaseDetailPage() {
 
     setUpdating(true);
     try {
-      const updatedCase = await updateCase(caseData.id, {
+      const updatedCase = await updateCase(resolvedCaseId, {
         validationStatus
       });
 
@@ -123,7 +124,7 @@ export default function CaseDetailPage() {
 
     setUpdating(true);
     try {
-      const updatedCase = await updateCase(caseData.id, {
+      const updatedCase = await updateCase(resolvedCaseId, {
         outcome
       });
 
@@ -204,8 +205,8 @@ export default function CaseDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Case #{caseData.id.substring(0, 8)}
+              <h1 className="text-3xl font-bold text-gray-900">
+              Case #{resolvedCaseId.substring(0, 8)}
             </h1>
             <p className="text-gray-600">Case Details and Management</p>
           </div>

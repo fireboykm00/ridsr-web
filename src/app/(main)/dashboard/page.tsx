@@ -18,6 +18,8 @@ export default function Dashboard() {
         router.replace('/dashboard/national');
       } else if (role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
         router.replace(`/dashboard/district/${session.user.district}`);
+      } else if (role === USER_ROLES.LAB_TECHNICIAN) {
+        router.replace('/dashboard/validation-hub');
       } else {
         router.replace('/dashboard/facility');
       }

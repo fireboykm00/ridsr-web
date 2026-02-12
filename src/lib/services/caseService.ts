@@ -1,4 +1,5 @@
 import { USER_ROLES, Case, ExtendedSession, User } from '@/types';
+import { normalizeId } from '@/lib/utils/normalize';
 
 type CaseRecord = Partial<Case> & { _id?: string; id?: string };
 
@@ -21,7 +22,7 @@ export async function getCaseById(id: string): Promise<Case | null> {
   const res = await fetch(`/api/cases/${id}`);
   if (!res.ok) return null;
   const responseData = await res.json();
-  return responseData.data || responseData;
+  return normalizeId(responseData.data || responseData) as Case;
 }
 
 export async function createCase(caseData: Partial<Case>): Promise<Case> {
@@ -33,7 +34,7 @@ export async function createCase(caseData: Partial<Case>): Promise<Case> {
 
   if (!res.ok) throw new Error('Failed to create case');
   const responseData = await res.json();
-  return responseData.data || responseData;
+  return normalizeId(responseData.data || responseData) as Case;
 }
 
 export async function updateCase(id: string, caseData: Partial<Case>): Promise<Case | null> {
@@ -45,7 +46,7 @@ export async function updateCase(id: string, caseData: Partial<Case>): Promise<C
 
   if (!res.ok) return null;
   const responseData = await res.json();
-  return responseData.data || responseData;
+  return normalizeId(responseData.data || responseData) as Case;
 }
 
 export async function deleteCase(id: string): Promise<boolean> {

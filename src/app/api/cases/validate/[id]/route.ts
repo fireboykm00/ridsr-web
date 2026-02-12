@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
-import { ValidationStatus, UserRole } from '@/types';
+import { ValidationStatus, UserRole, USER_ROLES } from '@/types';
 
 const validateCaseSchema = z.object({
   validationStatus: z.enum(['validated', 'rejected']),
@@ -12,7 +12,8 @@ const validateCaseSchema = z.object({
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
+    const allowedRoles = [...ROLE_PERMISSIONS.MANAGEMENT, USER_ROLES.LAB_TECHNICIAN] as unknown as UserRole[];
+    const user = await requireRoles(request, allowedRoles);
 
     const { id } = await params;
     const body = await request.json();
@@ -26,6 +27,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (existingCase.validationStatus !== 'pending') {
       return errorResponse('Case has already been validated', 400);
+    }
+
+    // Lab technicians can only validate cases from their own facility.
+    if (
+      user.role === USER_ROLES.LAB_TECHNICIAN &&
+      (!user.facilityId || existingCase.facilityId?.toString?.() !== user.facilityId)
+    ) {
+      return errorResponse('Forbidden', 403);
     }
 
     // Update case with validation
@@ -58,7 +67,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
+    const allowedRoles = [...ROLE_PERMISSIONS.MANAGEMENT, USER_ROLES.LAB_TECHNICIAN] as unknown as UserRole[];
+    await requireRoles(request, allowedRoles);
 
     const { id } = await params;
     const caseRecord = await caseService.findById(id);

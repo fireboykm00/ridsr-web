@@ -8,7 +8,8 @@ import type { ICase } from '@/lib/models/Case';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireRoles(request, ROLE_PERMISSIONS.MANAGEMENT as unknown as UserRole[]);
+    const allowedRoles = [...ROLE_PERMISSIONS.MANAGEMENT, USER_ROLES.LAB_TECHNICIAN] as unknown as UserRole[];
+    const user = await requireRoles(request, allowedRoles);
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -21,6 +22,10 @@ export async function GET(request: NextRequest) {
       // District officers only see cases from their district
       filters.district = user.district;
     }
+    if (user && user.role === USER_ROLES.LAB_TECHNICIAN && user.facilityId) {
+      // Lab technicians only see pending cases from their own facility.
+      filters.facilityId = user.facilityId;
+    }
     // National officers and admins see all pending cases
 
     const result = await caseService.getCasesWithFilters(filters, page, limit);
@@ -32,6 +37,7 @@ export async function GET(request: NextRequest) {
     const populatedCases = await Promise.all(
       paginatedResult.data.map(async (caseItem) => ({
         ...caseItem,
+        id: caseItem._id?.toString?.() || (caseItem as unknown as { id?: string }).id || '',
         patient: await caseService.getPatientInfo(caseItem.patientId),
         facility: await caseService.getFacilityInfo(caseItem.facilityId),
         reporter: await caseService.getReporterInfo(caseItem.reporterId),
