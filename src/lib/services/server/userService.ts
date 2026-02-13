@@ -7,8 +7,10 @@ import { hashPassword, verifyPassword } from '@/lib/utils/auth';
 
 export interface CreateUserData {
   workerId: string;
+  nationalId: string;
   name: string;
   email: string;
+  phone: string;
   password: string;
   role: UserRole;
   facilityId?: string;
@@ -18,8 +20,11 @@ export interface CreateUserData {
 }
 
 export interface UpdateUserData {
+  workerId?: string;
+  nationalId?: string;
   name?: string;
   email?: string;
+  phone?: string;
   role?: UserRole;
   facilityId?: string;
   facilityName?: string;
@@ -118,8 +123,11 @@ class UserService extends BaseService<IUser> {
     if (filters.search) {
       const searchRegex = new RegExp(filters.search, 'i');
       query.$or = [
+        { workerId: searchRegex },
+        { nationalId: searchRegex },
         { name: searchRegex },
-        { email: searchRegex }
+        { email: searchRegex },
+        { phone: searchRegex }
       ];
     }
 
@@ -194,8 +202,11 @@ class UserService extends BaseService<IUser> {
 
     return this.model.find({
       $or: [
+        { workerId: searchRegex },
+        { nationalId: searchRegex },
         { name: searchRegex },
-        { email: searchRegex }
+        { email: searchRegex },
+        { phone: searchRegex }
       ],
       isActive: true
     }).limit(limit).lean();

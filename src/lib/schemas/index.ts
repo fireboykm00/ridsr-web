@@ -9,8 +9,10 @@ const dateStringSchema = z.string().refine(
 // User schemas
 export const createUserSchema = z.object({
   workerId: z.string().optional(),
+  nationalId: z.string().min(5).max(20),
   name: z.string().min(2),
   email: z.string().email(),
+  phone: z.string().min(10),
   password: z.string().min(6),
   role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']),
   facilityId: z.string().optional(),
@@ -19,8 +21,11 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
+  workerId: z.string().optional(),
+  nationalId: z.string().min(5).max(20).optional(),
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
+  phone: z.string().min(10).optional(),
   role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']).optional(),
   facilityId: z.string().optional(),
   district: z.string().optional(),

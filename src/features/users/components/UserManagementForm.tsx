@@ -11,8 +11,10 @@ import { userService } from '@/lib/services/userService';
 import { facilityService } from '@/lib/services/facilityService';
 
 interface UserFormData {
+  nationalId: string;
   name: string;
   email: string;
+  phone: string;
   role: UserRole;
   workerId?: string;
   facilityId?: string;
@@ -31,8 +33,10 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
   const [loading, setLoading] = useState(false);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [formData, setFormData] = useState<UserFormData>({
+    nationalId: user?.nationalId || '',
     name: user?.name || '',
     email: user?.email || '',
+    phone: user?.phone || '',
     workerId: user?.workerId || '',
     role: user?.role || USER_ROLES.HEALTH_WORKER,
     facilityId: user?.facilityId || '',
@@ -61,8 +65,8 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
     setLoading(true);
 
     try {
-      if (!formData.name || !formData.email) {
-        showError('Please fill in required fields (Name, Email)');
+      if (!formData.name || !formData.email || !formData.phone || !formData.nationalId) {
+        showError('Please fill in required fields (Name, Email, Phone, National ID)');
         return;
       }
 
@@ -87,18 +91,27 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
 
       if (isEditing && user) {
         const updateData: {
+          workerId?: string;
+          nationalId: string;
           name: string;
           email: string;
+          phone: string;
           role: UserRole;
           district: RwandaDistrictType | undefined;
           facilityId?: string;
           password?: string;
         } = {
+          nationalId: formData.nationalId,
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           role: formData.role,
           district: formData.district
         };
+
+        if (formData.workerId?.trim()) {
+          updateData.workerId = formData.workerId.trim();
+        }
 
         // Only include facilityId if it has a value
         if (formData.facilityId) {
@@ -113,19 +126,28 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         showSuccess('User updated successfully');
       } else {
         const createData: {
+          workerId?: string;
+          nationalId: string;
           name: string;
           email: string;
+          phone: string;
           role: UserRole;
           district: RwandaDistrictType | undefined;
           password: string;
           facilityId?: string;
         } = {
+          nationalId: formData.nationalId,
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           role: formData.role,
           district: formData.district,
           password: formData.password!
         };
+
+        if (formData.workerId?.trim()) {
+          createData.workerId = formData.workerId.trim();
+        }
 
         // Only include facilityId if it has a value
         if (formData.facilityId) {
@@ -182,16 +204,30 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         disabled={loading}
       />
 
-      {isEditing && (
-        <Input
-          label="Worker ID"
-          value={formData.workerId || ''}
-          onChange={(e) => setFormData({ ...formData, workerId: e.target.value })}
-          required
-          disabled={loading}
-          placeholder="e.g. HW-12345"
-        />
-      )}
+      <Input
+        label="Phone"
+        value={formData.phone}
+        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+        required
+        disabled={loading}
+        placeholder="e.g. +2507XXXXXXXX"
+      />
+
+      <Input
+        label="National ID"
+        value={formData.nationalId}
+        onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+        required
+        disabled={loading}
+      />
+
+      <Input
+        label="Worker ID (optional)"
+        value={formData.workerId || ''}
+        onChange={(e) => setFormData({ ...formData, workerId: e.target.value })}
+        disabled={loading}
+        placeholder="Auto-generated if blank"
+      />
 
       <SearchableSelect
         label="Role"

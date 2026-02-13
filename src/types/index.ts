@@ -170,8 +170,10 @@ export type BulletinStatus =
 export interface User {
   id: string;
   workerId: string;
+  nationalId: string;
   name: string;
   email: string;
+  phone: string;
   role: UserRole;
   facilityId: string;
   facilityName?: string;
@@ -309,9 +311,11 @@ export interface DashboardStats {
 ====================================================== */
 
 export interface CreateUserInput {
-  workerId: string;
+  workerId?: string;
+  nationalId: string;
   name: string;
   email: string;
+  phone: string;
   password: string;
   role: UserRole;
   facilityId?: string;
@@ -321,8 +325,11 @@ export interface CreateUserInput {
 }
 
 export interface UpdateUserInput {
+  workerId?: string;
+  nationalId?: string;
   name?: string;
   email?: string;
+  phone?: string;
   role?: UserRole;
   facilityId?: string;
   facilityName?: string;

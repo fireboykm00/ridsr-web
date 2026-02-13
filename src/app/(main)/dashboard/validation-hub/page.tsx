@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { CheckCircleIcon, XCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
-import { USER_ROLES, Case, ValidationStatus } from '@/types';
+import { USER_ROLES, Case, ValidationStatus, UserRole, LabResultInterpretation } from '@/types';
 
 interface ValidationCase extends Case {
   patient?: {
@@ -34,31 +34,102 @@ interface ValidationCase extends Case {
   };
 }
 
+interface CaseLabResult {
+  id?: string;
+  _id?: string;
+  testType: string;
+  testName: string;
+  testDate: string;
+  resultValue: string;
+  interpretation: LabResultInterpretation;
+  resultUnit?: string;
+  referenceRange?: string;
+  technicianId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface LabResultForm {
+  testType: string;
+  testName: string;
+  testDate: string;
+  resultValue: string;
+  interpretation: LabResultInterpretation;
+  resultUnit: string;
+  referenceRange: string;
+}
+
+const INITIAL_FORM: LabResultForm = {
+  testType: '',
+  testName: '',
+  testDate: '',
+  resultValue: '',
+  interpretation: 'equivocal',
+  resultUnit: '',
+  referenceRange: '',
+};
+
+const HUB_ROLES: UserRole[] = [
+  USER_ROLES.ADMIN,
+  USER_ROLES.NATIONAL_OFFICER,
+  USER_ROLES.DISTRICT_OFFICER,
+  USER_ROLES.LAB_TECHNICIAN,
+];
+
+async function readApiError(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = await response.json();
+    return payload?.message || payload?.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 interface CaseDetailModalProps {
-  case: ValidationCase | null;
+  caseItem: ValidationCase | null;
   isOpen: boolean;
   onClose: () => void;
   onValidate: (caseId: string, status: ValidationStatus) => void;
   isValidating: boolean;
   canValidate: boolean;
+  canSubmitLabResult: boolean;
+  labResults: CaseLabResult[];
+  loadingLabResults: boolean;
+  submittingLabResult: boolean;
+  form: LabResultForm;
+  setForm: Dispatch<SetStateAction<LabResultForm>>;
+  onSubmitLabResult: () => void;
 }
 
-function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValidating, canValidate }: CaseDetailModalProps) {
+function CaseDetailModal({
+  caseItem,
+  isOpen,
+  onClose,
+  onValidate,
+  isValidating,
+  canValidate,
+  canSubmitLabResult,
+  labResults,
+  loadingLabResults,
+  submittingLabResult,
+  form,
+  setForm,
+  onSubmitLabResult,
+}: CaseDetailModalProps) {
   if (!isOpen || !caseItem) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-gray-500/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[92vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Case Details</h2>
+            <h2 className="text-xl font-bold text-gray-900">Submit Lab Results</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <XCircleIcon className="h-6 w-6" />
             </button>
           </div>
 
           <div className="space-y-6">
-            {/* Case Information */}
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Case Information</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -81,101 +152,92 @@ function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValida
               </div>
             </div>
 
-            {/* Patient Information */}
-            {caseItem.patient && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Patient Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Name</label>
-                    <p className="text-gray-900">{caseItem.patient.firstName} {caseItem.patient.lastName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">National ID</label>
-                    <p className="text-gray-900">{caseItem.patient.nationalId}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Date of Birth</label>
-                    <p className="text-gray-900">{new Date(caseItem.patient.dateOfBirth).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Gender</label>
-                    <p className="text-gray-900 capitalize">{caseItem.patient.gender}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Phone</label>
-                    <p className="text-gray-900">{caseItem.patient.phone}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">District</label>
-                    <p className="text-gray-900 capitalize">{caseItem.patient.district.replace('_', ' ')}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Symptoms */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Symptoms</h3>
-              <div className="flex flex-wrap gap-2">
-                {caseItem.symptoms.map((symptom, index) => (
-                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {symptom}
-                  </span>
-                ))}
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Lab Results</h3>
+              {loadingLabResults ? (
+                <p className="text-gray-600 text-sm">Loading lab results...</p>
+              ) : labResults.length === 0 ? (
+                <p className="text-gray-600 text-sm">No lab results yet for this case.</p>
+              ) : (
+                <div className="space-y-2">
+                  {labResults.map((result, index) => (
+                    <div key={result.id || result._id || index} className="p-3 bg-gray-50 rounded-md text-sm">
+                      <p className="font-medium text-gray-900">{result.testName} ({result.testType})</p>
+                      <p className="text-gray-700">
+                        {result.resultValue} {result.resultUnit || ''} - {result.interpretation}
+                      </p>
+                      <p className="text-gray-500 text-xs">{new Date(result.testDate).toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Facility Information */}
-            {caseItem.facility && (
+            {canSubmitLabResult && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Reporting Facility</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Facility Name</label>
-                    <p className="text-gray-900">{caseItem.facility.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Facility Code</label>
-                    <p className="text-gray-900">{caseItem.facility.code}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Type</label>
-                    <p className="text-gray-900 capitalize">{caseItem.facility.type.replace('_', ' ')}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">District</label>
-                    <p className="text-gray-900 capitalize">{caseItem.facility.district.replace('_', ' ')}</p>
-                  </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Submit Lab Result</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Required: test type, test name, test date, result value, interpretation.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Test Type *"
+                    value={form.testType}
+                    onChange={(e) => setForm((prev) => ({ ...prev, testType: e.target.value }))}
+                  />
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Test Name *"
+                    value={form.testName}
+                    onChange={(e) => setForm((prev) => ({ ...prev, testName: e.target.value }))}
+                  />
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    type="datetime-local"
+                    value={form.testDate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, testDate: e.target.value }))}
+                  />
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Result Value *"
+                    value={form.resultValue}
+                    onChange={(e) => setForm((prev) => ({ ...prev, resultValue: e.target.value }))}
+                  />
+                  <select
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    value={form.interpretation}
+                    onChange={(e) => setForm((prev) => ({ ...prev, interpretation: e.target.value as LabResultInterpretation }))}
+                  >
+                    <option value="positive">positive</option>
+                    <option value="negative">negative</option>
+                    <option value="equivocal">equivocal</option>
+                    <option value="contaminated">contaminated</option>
+                  </select>
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Result Unit (optional)"
+                    value={form.resultUnit}
+                    onChange={(e) => setForm((prev) => ({ ...prev, resultUnit: e.target.value }))}
+                  />
+                  <input
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Reference Range (optional)"
+                    value={form.referenceRange}
+                    onChange={(e) => setForm((prev) => ({ ...prev, referenceRange: e.target.value }))}
+                  />
                 </div>
-              </div>
-            )}
-
-            {/* Reporter Information */}
-            {caseItem.reporter && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Reported By</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Name</label>
-                    <p className="text-gray-900">{caseItem.reporter.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Role</label>
-                    <p className="text-gray-900 capitalize">{caseItem.reporter.role.replace('_', ' ')}</p>
-                  </div>
+                <div className="mt-3">
+                  <Button onClick={onSubmitLabResult} disabled={submittingLabResult}>
+                    {submittingLabResult ? 'Submitting...' : 'Submit Lab Result'}
+                  </Button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Action Buttons */}
           <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
-            <Button
-              variant="secondary"
-              onClick={onClose}
-              disabled={isValidating}
-            >
+            <Button variant="secondary" onClick={onClose} disabled={isValidating}>
               Close
             </Button>
             {canValidate && (
@@ -210,90 +272,155 @@ function CaseDetailModal({ case: caseItem, isOpen, onClose, onValidate, isValida
 export default function ValidationHubPage() {
   const { data: session, status } = useSession();
   const { error: showError, success: showSuccess } = useToastHelpers();
+
   const [pendingCases, setPendingCases] = useState<ValidationCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState<ValidationCase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [validatingCaseId, setValidatingCaseId] = useState<string | null>(null);
-  const canValidateCases = !!(session?.user && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user.role));
+
+  const [labResults, setLabResults] = useState<CaseLabResult[]>([]);
+  const [loadingLabResults, setLoadingLabResults] = useState(false);
+  const [submittingLabResult, setSubmittingLabResult] = useState(false);
+  const [labForm, setLabForm] = useState<LabResultForm>(INITIAL_FORM);
+
+  const currentRole = session?.user?.role as UserRole | undefined;
+  const canAccessHub = !!currentRole && HUB_ROLES.includes(currentRole);
+  const canValidateCases = !!currentRole && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(currentRole);
+  const canSubmitLabResult = !!currentRole && [USER_ROLES.LAB_TECHNICIAN, USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(currentRole);
+
+  const loadPendingCases = useCallback(async () => {
+    try {
+      const response = await fetch('/api/validation/queue?tab=pending');
+      if (!response.ok) {
+        throw new Error(await readApiError(response, 'Failed to fetch validation queue'));
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || result.error || 'Failed to load pending cases');
+      }
+
+      const normalizedCases = (result.data.data || []).map((caseItem: ValidationCase & { _id?: string }) => ({
+        ...caseItem,
+        id: caseItem.id || caseItem._id || '',
+      }));
+      setPendingCases(normalizedCases);
+    } catch (error) {
+      console.error('Error loading pending cases:', error);
+      showError(error instanceof Error ? error.message : 'Failed to load pending cases');
+    }
+  }, [showError]);
 
   useEffect(() => {
-    const loadPendingCases = async () => {
-      if (status === 'authenticated' && session) {
-        // Check if user has validation-hub access
-        if (!session.user?.role || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user.role as any))) {
-          window.location.href = '/dashboard';
-          return;
-        }
-
-        try {
-          const response = await fetch('/api/validation/queue');
-          if (!response.ok) {
-            throw new Error('Failed to fetch validation queue');
-          }
-          
-          const result = await response.json();
-          if (result.success) {
-            const normalizedCases = (result.data.data || []).map((caseItem: ValidationCase & { _id?: string }) => ({
-              ...caseItem,
-              id: caseItem.id || caseItem._id || '',
-            }));
-            setPendingCases(normalizedCases);
-          } else {
-            showError(result.error || 'Failed to load pending cases');
-          }
-        } catch (error) {
-          console.error('Error loading pending cases:', error);
-          showError('Failed to load pending cases');
-        } finally {
-          setLoading(false);
-        }
+    const init = async () => {
+      if (status !== 'authenticated' || !session) {
+        return;
       }
+
+      if (!canAccessHub) {
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      setLoading(true);
+      await loadPendingCases();
+      setLoading(false);
     };
 
-    loadPendingCases();
-  }, [status, session, showError]);
+    void init();
+  }, [status, session, canAccessHub, loadPendingCases]);
 
-  const handleViewCase = (caseItem: ValidationCase) => {
-    setSelectedCase(caseItem);
-    setIsModalOpen(true);
+  const loadCaseLabResults = async (caseId: string) => {
+    setLoadingLabResults(true);
+    try {
+      const response = await fetch(`/api/cases/${caseId}/lab-results`);
+      if (!response.ok) {
+        throw new Error(await readApiError(response, 'Failed to load lab results'));
+      }
+      const result = await response.json();
+      const data = result?.data || [];
+      setLabResults(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading lab results:', error);
+      showError(error instanceof Error ? error.message : 'Failed to load lab results');
+      setLabResults([]);
+    } finally {
+      setLoadingLabResults(false);
+    }
   };
 
-  const handleValidateCase = async (caseId: string, status: ValidationStatus) => {
+  const handleViewCase = async (caseItem: ValidationCase) => {
+    setSelectedCase(caseItem);
+    setIsModalOpen(true);
+    setLabForm(INITIAL_FORM);
+    await loadCaseLabResults(caseItem.id);
+  };
+
+  const handleSubmitLabResult = async () => {
+    if (!selectedCase) return;
+
+    if (!labForm.testType || !labForm.testName || !labForm.testDate || !labForm.resultValue || !labForm.interpretation) {
+      showError('Please fill all required lab result fields');
+      return;
+    }
+
+    setSubmittingLabResult(true);
+    try {
+      const response = await fetch(`/api/cases/${selectedCase.id}/lab-results`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testType: labForm.testType,
+          testName: labForm.testName,
+          testDate: new Date(labForm.testDate).toISOString(),
+          resultValue: labForm.resultValue,
+          interpretation: labForm.interpretation,
+          resultUnit: labForm.resultUnit || undefined,
+          referenceRange: labForm.referenceRange || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response, 'Failed to submit lab result'));
+      }
+
+      showSuccess('Lab result submitted successfully');
+      setLabForm(INITIAL_FORM);
+      await loadCaseLabResults(selectedCase.id);
+      await loadPendingCases();
+    } catch (error) {
+      console.error('Error submitting lab result:', error);
+      showError(error instanceof Error ? error.message : 'Failed to submit lab result');
+    } finally {
+      setSubmittingLabResult(false);
+    }
+  };
+
+  const handleValidateCase = async (caseId: string, validationStatus: ValidationStatus) => {
     if (!canValidateCases) return;
     setValidatingCaseId(caseId);
-    
+
     try {
       const response = await fetch(`/api/cases/validate/${caseId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          validationStatus: status,
-        }),
+        body: JSON.stringify({ validationStatus }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to validate case');
+        throw new Error(await readApiError(response, 'Failed to validate case'));
       }
 
-      const result = await response.json();
-      if (result.success) {
-        showSuccess(`Case ${status} successfully`);
-        
-        // Remove the validated case from the list
-        setPendingCases(prev => prev.filter(c => c.id !== caseId));
-        
-        // Close modal if it's open
-        setIsModalOpen(false);
-        setSelectedCase(null);
-      } else {
-        showError(result.error || 'Failed to validate case');
-      }
+      showSuccess(`Case ${validationStatus} successfully`);
+      setPendingCases((prev) => prev.filter((c) => c.id !== caseId));
+      setIsModalOpen(false);
+      setSelectedCase(null);
     } catch (error) {
       console.error('Error validating case:', error);
-      showError('Failed to validate case');
+      showError(error instanceof Error ? error.message : 'Failed to validate case');
     } finally {
       setValidatingCaseId(null);
     }
@@ -307,7 +434,7 @@ export default function ValidationHubPage() {
     );
   }
 
-  if (!session?.user?.role || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user.role as any))) {
+  if (!canAccessHub) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
@@ -323,77 +450,48 @@ export default function ValidationHubPage() {
       <div className="p-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Validation Hub</h1>
-          <p className="text-gray-600 mt-2">Review and validate pending disease surveillance cases</p>
+          <p className="text-gray-600 mt-2">Review cases and submit laboratory results</p>
+          <p className="text-gray-500 text-sm mt-1">After lab result submission, a case moves from pending to in-review queue.</p>
         </div>
 
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Pending Cases ({pendingCases.length})
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900">Pending Cases ({pendingCases.length})</h2>
           </div>
 
           {pendingCases.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No pending cases</h3>
-              <p className="text-gray-600">All cases have been validated</p>
+              <p className="text-gray-600">All pending cases are processed</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Case ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Patient
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Disease
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Facility
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Report Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Case ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disease</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pendingCases.map((caseItem) => (
                     <tr key={caseItem.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {caseItem.id.substring(0, 8)}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{caseItem.id.substring(0, 8)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {caseItem.patient ? 
-                          `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 
-                          'Unknown'
-                        }
+                        {caseItem.patient ? `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {caseItem.diseaseCode}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {caseItem.facility?.name || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(caseItem.reportDate).toLocaleDateString()}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{caseItem.diseaseCode}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{caseItem.facility?.name || 'Unknown'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleViewCase(caseItem)}
-                          className="flex items-center gap-1"
-                        >
+                        <Button variant="secondary" size="sm" onClick={() => void handleViewCase(caseItem)} className="flex items-center gap-1">
                           <EyeIcon className="h-4 w-4" />
-                          View
+                          Submit Results
                         </Button>
                         {canValidateCases && (
                           <>
@@ -430,15 +528,24 @@ export default function ValidationHubPage() {
       </div>
 
       <CaseDetailModal
-        case={selectedCase}
+        caseItem={selectedCase}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setSelectedCase(null);
+          setLabResults([]);
+          setLabForm(INITIAL_FORM);
         }}
         onValidate={handleValidateCase}
         isValidating={validatingCaseId !== null}
         canValidate={canValidateCases}
+        canSubmitLabResult={canSubmitLabResult}
+        labResults={labResults}
+        loadingLabResults={loadingLabResults}
+        submittingLabResult={submittingLabResult}
+        form={labForm}
+        setForm={setLabForm}
+        onSubmitLabResult={handleSubmitLabResult}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { requireAuth, requireRoles, isAuthError } from '@/lib/api/middleware';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { createUserSchema, paginationSchema } from '@/lib/schemas';
-import { RwandaDistrictType, UserRole, USER_ROLES } from '@/types';
+import { RwandaDistrictType, RwandaProvinceType, UserRole, USER_ROLES } from '@/types';
 
 const getUsersQuerySchema = z.object({
   facilityId: z.string().optional(),
@@ -86,6 +86,9 @@ export async function POST(request: NextRequest) {
     }
     if (error instanceof z.ZodError) {
       return errorResponse('Validation failed', 400, error.issues[0].message);
+    }
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
+      return errorResponse('Duplicate user data', 400, 'Worker ID, email, or national ID already exists');
     }
     console.error('[API] Error creating user:', error);
     return errorResponse('Failed to create user', 500);

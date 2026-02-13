@@ -3,8 +3,19 @@ import { Patient } from '@/lib/models/Patient';
 import { Facility } from '@/lib/models/Facility';
 import { User } from '@/lib/models/User';
 import { BaseService, PaginatedResult } from './baseService';
-import { ValidationStatus, OutcomeStatus, CaseStatus, DiseaseCode, Symptom } from '@/types';
+import {
+  ValidationStatus,
+  OutcomeStatus,
+  CaseStatus,
+  DiseaseCode,
+  Symptom,
+  LabResult,
+  LabResultInterpretation,
+  USER_ROLES,
+  UserRole,
+} from '@/types';
 import mongoose, { FilterQuery } from 'mongoose';
+import { dbConnect } from '../db';
 
 export interface CreateCaseData {
   patientId: string;
@@ -37,6 +48,19 @@ export interface CaseFilters {
   dateTo?: Date;
   district?: string;
 }
+
+interface ActionActor {
+  id?: string;
+  role?: UserRole;
+  facilityId?: string;
+}
+
+type LabResultInput = Pick<
+  LabResult,
+  'testType' | 'testName' | 'testDate' | 'resultValue' | 'interpretation' | 'resultUnit' | 'referenceRange'
+>;
+
+type LabResultPatch = Partial<LabResultInput>;
 
 class CaseService extends BaseService<ICase> {
   constructor() {
@@ -147,6 +171,180 @@ class CaseService extends BaseService<ICase> {
       filter.facilityId = new mongoose.Types.ObjectId(facilityId);
     }
     return this.findAll(filter);
+  }
+
+  private toIdString(value: unknown): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && 'toString' in value && typeof value.toString === 'function') {
+      return value.toString();
+    }
+    return '';
+  }
+
+  private toIso(value: unknown): string {
+    if (!value) return '';
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'string') return value;
+    return '';
+  }
+
+  private assertCaseScope(caseRecord: ICase, actor: ActionActor) {
+    if (actor.role === USER_ROLES.LAB_TECHNICIAN) {
+      if (!actor.facilityId || this.toIdString(caseRecord.facilityId) !== actor.facilityId) {
+        throw new Error('FORBIDDEN');
+      }
+    }
+  }
+
+  private normalizeLabResult(
+    source: Record<string, unknown>,
+    caseId: string,
+    facilityId: string
+  ): LabResult {
+    const id = this.toIdString(source._id) || this.toIdString(source.id);
+    return {
+      id,
+      caseId,
+      facilityId,
+      testType: String(source.testType || ''),
+      testName: String(source.testName || ''),
+      testDate: this.toIso(source.testDate),
+      resultValue: String(source.resultValue || ''),
+      interpretation: (source.interpretation || 'equivocal') as LabResultInterpretation,
+      resultUnit: source.resultUnit ? String(source.resultUnit) : undefined,
+      referenceRange: source.referenceRange ? String(source.referenceRange) : undefined,
+      technicianId: this.toIdString(source.technicianId),
+      validatedBy: source.validatedBy ? this.toIdString(source.validatedBy) : undefined,
+      validatedAt: source.validatedAt ? this.toIso(source.validatedAt) : undefined,
+      createdAt: this.toIso(source.createdAt),
+      updatedAt: this.toIso(source.updatedAt),
+    };
+  }
+
+  async getCaseLabResults(caseId: string, actor: ActionActor): Promise<LabResult[]> {
+    const caseRecord = await this.findById(caseId);
+    if (!caseRecord) {
+      throw new Error('NOT_FOUND');
+    }
+
+    this.assertCaseScope(caseRecord, actor);
+
+    const caseRecordAny = caseRecord as unknown as { labResults?: Record<string, unknown>[]; facilityId?: unknown; _id?: unknown };
+    const results = Array.isArray(caseRecordAny.labResults) ? caseRecordAny.labResults : [];
+    const normalizedCaseId = this.toIdString(caseRecordAny._id) || caseId;
+    const normalizedFacilityId = this.toIdString(caseRecordAny.facilityId);
+
+    return results.map((result) => this.normalizeLabResult(result, normalizedCaseId, normalizedFacilityId));
+  }
+
+  async addCaseLabResult(caseId: string, result: LabResultInput, actor: ActionActor): Promise<LabResult> {
+    await dbConnect();
+    const caseRecord = await Case.findById(caseId);
+    if (!caseRecord) {
+      throw new Error('NOT_FOUND');
+    }
+
+    this.assertCaseScope(caseRecord as unknown as ICase, actor);
+
+    if (!actor.id) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    const caseDoc = caseRecord as unknown as {
+      _id: mongoose.Types.ObjectId;
+      facilityId: mongoose.Types.ObjectId;
+      labResults?: unknown[];
+      save: () => Promise<unknown>;
+    };
+
+    if (!Array.isArray(caseDoc.labResults)) {
+      caseDoc.labResults = [];
+    }
+
+    caseDoc.labResults.push({
+      testType: result.testType.trim(),
+      testName: result.testName.trim(),
+      testDate: new Date(result.testDate),
+      resultValue: result.resultValue.trim(),
+      interpretation: result.interpretation,
+      resultUnit: result.resultUnit?.trim() || undefined,
+      referenceRange: result.referenceRange?.trim() || undefined,
+      technicianId: new mongoose.Types.ObjectId(actor.id),
+    });
+
+    await caseDoc.save();
+    const created = caseDoc.labResults[caseDoc.labResults.length - 1] as Record<string, unknown>;
+    return this.normalizeLabResult(created, caseDoc._id.toString(), caseDoc.facilityId.toString());
+  }
+
+  async updateCaseLabResult(
+    caseId: string,
+    resultId: string,
+    patch: LabResultPatch,
+    actor: ActionActor
+  ): Promise<LabResult> {
+    await dbConnect();
+    const caseRecord = await Case.findById(caseId);
+    if (!caseRecord) {
+      throw new Error('NOT_FOUND');
+    }
+
+    this.assertCaseScope(caseRecord as unknown as ICase, actor);
+
+    const caseDoc = caseRecord as unknown as {
+      _id: mongoose.Types.ObjectId;
+      facilityId: mongoose.Types.ObjectId;
+      labResults?: Array<{ _id?: mongoose.Types.ObjectId; [key: string]: unknown }>;
+      save: () => Promise<unknown>;
+    };
+    if (!Array.isArray(caseDoc.labResults) || caseDoc.labResults.length === 0) {
+      throw new Error('NOT_FOUND');
+    }
+
+    const target = caseDoc.labResults.find((item) => this.toIdString(item._id) === resultId);
+    if (!target) {
+      throw new Error('NOT_FOUND');
+    }
+
+    if (patch.testType !== undefined) target.testType = patch.testType.trim();
+    if (patch.testName !== undefined) target.testName = patch.testName.trim();
+    if (patch.testDate !== undefined) target.testDate = new Date(patch.testDate);
+    if (patch.resultValue !== undefined) target.resultValue = patch.resultValue.trim();
+    if (patch.interpretation !== undefined) target.interpretation = patch.interpretation;
+    if (patch.resultUnit !== undefined) target.resultUnit = patch.resultUnit?.trim() || undefined;
+    if (patch.referenceRange !== undefined) target.referenceRange = patch.referenceRange?.trim() || undefined;
+
+    await caseDoc.save();
+    return this.normalizeLabResult(target as unknown as Record<string, unknown>, caseDoc._id.toString(), caseDoc.facilityId.toString());
+  }
+
+  async applyCaseDecision(
+    caseId: string,
+    decision: { validationStatus: 'validated' | 'rejected'; status?: 'confirmed' | 'invalidated' },
+    actor: ActionActor
+  ): Promise<ICase> {
+    await dbConnect();
+    const caseRecord = await Case.findById(caseId);
+    if (!caseRecord) {
+      throw new Error('NOT_FOUND');
+    }
+
+    this.assertCaseScope(caseRecord as unknown as ICase, actor);
+
+    if (!actor.id) {
+      throw new Error('UNAUTHORIZED');
+    }
+
+    caseRecord.validationStatus = decision.validationStatus;
+    caseRecord.validatorId = new mongoose.Types.ObjectId(actor.id);
+    caseRecord.validationDate = new Date();
+    if (decision.status) {
+      caseRecord.status = decision.status;
+    }
+
+    await caseRecord.save();
+    return caseRecord.toObject() as ICase;
   }
 
   // Helper methods for validation hub

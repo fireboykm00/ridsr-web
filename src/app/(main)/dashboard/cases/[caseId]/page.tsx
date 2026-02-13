@@ -17,9 +17,20 @@ import {
   BeakerIcon,
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
-import { Case, Patient, ValidationStatus, OutcomeStatus, USER_ROLES } from '@/types';
+import { Case, Patient, ValidationStatus, OutcomeStatus, USER_ROLES, UserRole } from '@/types';
 import { getCaseById, updateCase, canAccessCase } from '@/lib/services/caseService';
 import { canValidateCase } from '@/lib/middleware/rbac';
+
+interface CaseLabResult {
+  id?: string;
+  _id?: string;
+  testType: string;
+  testName: string;
+  testDate: string;
+  resultValue: string;
+  resultUnit?: string;
+  interpretation: string;
+}
 
 export default function CaseDetailPage() {
   const { data: session, status } = useSession();
@@ -30,7 +41,9 @@ export default function CaseDetailPage() {
 
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [patientData, setPatientData] = useState<Patient | null>(null);
+  const [labResults, setLabResults] = useState<CaseLabResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingLabResults, setLoadingLabResults] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [showOutcomeModal, setShowOutcomeModal] = useState(false);
@@ -51,7 +64,7 @@ export default function CaseDetailPage() {
     USER_ROLES.DISTRICT_OFFICER,
     USER_ROLES.ADMIN,
     USER_ROLES.NATIONAL_OFFICER
-  ].includes(session.user.role as any);
+  ].includes(session.user.role as UserRole);
 
   useEffect(() => {
     const loadCaseData = async () => {
@@ -78,16 +91,27 @@ export default function CaseDetailPage() {
             setOutcome(caseDetails.outcome);
           }
 
-          // Load patient data
-          const patientResponse = await fetch(`/api/patients/${caseDetails.patientId}`);
+          // Load patient and lab result data
+          const [patientResponse, labResultsResponse] = await Promise.all([
+            fetch(`/api/patients/${caseDetails.patientId}`),
+            fetch(`/api/cases/${caseId}/lab-results`),
+          ]);
           if (patientResponse.ok) {
             const patientJson = await patientResponse.json();
             setPatientData((patientJson.data || patientJson) as Patient);
+          }
+          if (labResultsResponse.ok) {
+            const labJson = await labResultsResponse.json();
+            const data = labJson.data || [];
+            setLabResults(Array.isArray(data) ? data : []);
+          } else {
+            setLabResults([]);
           }
         } catch (error) {
           console.error('Error loading case:', error);
           showError('Failed to load case details');
         } finally {
+          setLoadingLabResults(false);
           setLoading(false);
         }
       }
@@ -351,6 +375,33 @@ export default function CaseDetailPage() {
                 </div>
               ) : (
                 <p className="text-gray-600 text-sm">No symptoms recorded</p>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Lab Results</h3>
+              {loadingLabResults ? (
+                <p className="text-gray-600 text-sm">Loading lab results...</p>
+              ) : labResults.length > 0 ? (
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {labResults.map((result, index) => (
+                    <div
+                      key={result.id || result._id || `lab-result-${index}`}
+                      className="rounded-md bg-gray-50 p-3"
+                    >
+                      <p className="text-sm font-medium text-gray-900">
+                        {result.testName} ({result.testType})
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {result.resultValue} {result.resultUnit || ''} - {result.interpretation}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(result.testDate).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 text-sm">No lab results recorded for this case</p>
               )}
             </div>
           </div>

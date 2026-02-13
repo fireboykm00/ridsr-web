@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { auth } from '@/lib/auth';
 import { dbConnect } from '@/lib/services/db';
 import { User as UserModel } from '@/lib/models';
 import { USER_ROLES } from '@/types';
+import { facilityService } from '@/lib/services/server/facilityService';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -62,8 +64,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // If updating own profile, restrict certain fields
     if (userContext && userContext.id === id && userContext.role !== USER_ROLES.ADMIN) {
-      // Users can only update their name, email, and password
-      const allowedFields = ['name', 'email', 'password'];
+      // Users can only update their profile identity/contact fields.
+      const allowedFields = ['name', 'email', 'phone', 'password'];
       const updateData: Record<string, unknown> = {};
 
       for (const field of allowedFields) {
@@ -77,6 +79,25 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Hash password if provided
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 12);
+    }
+
+    // Accept facility code (e.g. HC00055) or ObjectId.
+    if (Object.prototype.hasOwnProperty.call(data, 'facilityId')) {
+      const rawFacility = data.facilityId;
+      if (typeof rawFacility === 'string') {
+        const trimmed = rawFacility.trim();
+        if (!trimmed) {
+          data.facilityId = null;
+          data.facilityName = null;
+        } else if (!mongoose.Types.ObjectId.isValid(trimmed)) {
+          const facility = await facilityService.getFacilityByCode(trimmed);
+          if (!facility?._id) {
+            return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
+          }
+          data.facilityId = facility._id;
+          data.facilityName = facility.name;
+        }
+      }
     }
 
     // Add updatedAt timestamp
@@ -96,7 +117,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     console.error('Error updating user:', error);
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
+      return NextResponse.json({ error: 'Email, Worker ID, or National ID already exists' }, { status: 400 });
     }
 
     if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'ValidationError') {

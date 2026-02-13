@@ -3,8 +3,10 @@ import { UserRole, USER_ROLES, RwandaDistrictType, RwandaProvinceType } from '@/
 
 export interface IUser extends Document {
   workerId: string;
+  nationalId: string;
   name: string;
   email: string;
+  phone: string;
   password: string;
   role: UserRole;
   facilityId?: mongoose.Types.ObjectId;
@@ -19,8 +21,10 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     workerId: { type: String, required: true, unique: true },
+    nationalId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
     password: { type: String, required: true },
     role: {
       type: String,

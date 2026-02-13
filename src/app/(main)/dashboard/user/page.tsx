@@ -101,7 +101,9 @@ export default function UsersPage() {
     const matchesSearch = !debouncedSearchTerm ||
       user.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      (user.workerId && user.workerId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+      (user.workerId && user.workerId.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
+      (user.nationalId && user.nationalId.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
+      (user.phone && user.phone.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
 
     const matchesRole = !filters.role || user.role === filters.role;
     const matchesFacility = !filters.facility || user.facilityId === filters.facility;
@@ -252,7 +254,7 @@ export default function UsersPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Input
-                placeholder="Search by name, email, or worker ID..."
+                placeholder="Search by name, email, phone, worker ID, or national ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 variant="outlined"
@@ -300,7 +302,10 @@ export default function UsersPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Worker ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">National ID</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">Email</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Phone</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">Role</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">Facility</th>
                   <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
@@ -314,7 +319,10 @@ export default function UsersPage() {
                   return (
                     <tr key={user.id + user.workerId} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-900">{user.name}</td>
+                      <td className="py-3 px-4 text-gray-900">{user.workerId || '-'}</td>
+                      <td className="py-3 px-4 text-gray-900">{user.nationalId || '-'}</td>
                       <td className="py-3 px-4 text-gray-900">{user.email}</td>
+                      <td className="py-3 px-4 text-gray-900">{user.phone || '-'}</td>
                       <td className="py-3 px-4 text-gray-900 capitalize">
                         {user.role.replace(/_/g, ' ').toLowerCase()}
                       </td>
