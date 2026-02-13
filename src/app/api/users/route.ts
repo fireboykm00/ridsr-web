@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
+import { requireAuth, requireRoles, isAuthError } from '@/lib/api/middleware';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { createUserSchema, paginationSchema } from '@/lib/schemas';
-import { RwandaDistrictType, UserRole } from '@/types';
+import { RwandaDistrictType, UserRole, USER_ROLES } from '@/types';
 
 const getUsersQuerySchema = z.object({
   facilityId: z.string().optional(),
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
+    await requireRoles(request, [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER] as unknown as UserRole[]);
 
     const body = await request.json();
     const validatedData = createUserSchema.parse(body);

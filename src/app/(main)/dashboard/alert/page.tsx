@@ -60,11 +60,11 @@ export default function AlertsPage() {
 
   const getSeverityVariant = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'destructive';
+      case 'critical': return 'danger'; // Using 'danger' instead of 'destructive'
       case 'high': return 'warning';
       case 'medium': return 'secondary';
-      case 'low': return 'outline';
-      default: return 'outline';
+      case 'low': return 'default';
+      default: return 'default';
     }
   };
 

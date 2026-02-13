@@ -1,7 +1,7 @@
 // src/components/ui/Button.tsx
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger' | 'outline' | 'destructive' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,7 +35,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-transparent border border-blue-700 text-blue-700 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300',
       tertiary: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
       ghost: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
-      danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500'
+      danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
+      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:border-gray-200 disabled:text-gray-400',
+      destructive: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
+      success: 'bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 focus:ring-green-500'
     };
     
     const widthClass = fullWidth ? 'w-full' : '';

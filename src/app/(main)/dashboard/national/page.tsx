@@ -12,7 +12,7 @@ import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
   MapPinIcon,
-  ChartBarIcon
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { USER_ROLES } from '@/types';
 
@@ -37,7 +37,7 @@ export default function NationalDashboard() {
     alerts: 0,
     totalFacilities: 0,
     totalUsers: 0,
-    activeOutbreaks: 0
+    activeOutbreaks: 0,
   });
   const [trendData, setTrendData] = useState([]);
   const [diseaseData, setDiseaseData] = useState([]);
@@ -45,39 +45,35 @@ export default function NationalDashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (status === 'authenticated' && session?.user) {
-        const hasAccess = session.user.role === USER_ROLES.ADMIN || session.user.role === USER_ROLES.NATIONAL_OFFICER;
-        if (!hasAccess) {
-          window.location.href = '/dashboard';
-          return;
+      if (status !== 'authenticated' || !session?.user) return;
+
+      const hasAccess =
+        session.user.role === USER_ROLES.ADMIN || session.user.role === USER_ROLES.NATIONAL_OFFICER;
+      if (!hasAccess) {
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      try {
+        const [statsRes, trendRes, diseaseRes] = await Promise.all([
+          fetch('/api/dashboard?type=national'),
+          fetch('/api/dashboard?type=trend&days=30'),
+          fetch('/api/dashboard?type=diseases'),
+        ]);
+
+        if (statsRes.ok) {
+          setStats(await statsRes.json());
         }
-
-        try {
-          const [statsRes, trendRes, diseaseRes] = await Promise.all([
-            fetch('/api/dashboard?type=national'),
-            fetch('/api/dashboard?type=trend&days=30'),
-            fetch('/api/dashboard?type=diseases')
-          ]);
-
-          if (statsRes.ok) {
-            const data = await statsRes.json();
-            setStats(data);
-          }
-
-          if (trendRes.ok) {
-            const data = await trendRes.json();
-            setTrendData(data);
-          }
-
-          if (diseaseRes.ok) {
-            const data = await diseaseRes.json();
-            setDiseaseData(data);
-          }
-        } catch (error) {
-          console.error('Error loading dashboard data:', error);
-        } finally {
-          setLoading(false);
+        if (trendRes.ok) {
+          setTrendData(await trendRes.json());
         }
+        if (diseaseRes.ok) {
+          setDiseaseData(await diseaseRes.json());
+        }
+      } catch (error) {
+        console.error('Error loading national dashboard:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -87,7 +83,7 @@ export default function NationalDashboard() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700" />
       </div>
     );
   }
@@ -97,7 +93,7 @@ export default function NationalDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don&apos;t have permission to view this page</p>
+          <p className="text-gray-600">You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -105,140 +101,100 @@ export default function NationalDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <MapPinIcon className="h-6 w-6 text-blue-700" />
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">National Dashboard</h1>
-          <p className="text-gray-600">Overview of disease surveillance across Rwanda</p>
+      <section className="rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="uppercase tracking-[0.2em] text-xs text-blue-700 mb-2">National Command Center</p>
+            <h1 className="text-3xl font-bold text-gray-900">Rwanda Surveillance Overview</h1>
+            <p className="text-gray-600 mt-2">Live signal across cases, facilities, users, and validation throughput.</p>
+          </div>
+          <MapPinIcon className="h-12 w-12 text-blue-500" />
         </div>
-      </div>
+      </section>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
-              <DocumentTextIcon className="h-6 w-6 text-blue-700" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Total Cases</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalCases}</p>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Card className="p-5">
+          <p className="text-sm text-gray-500">Total Cases</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalCases}</p>
+          <p className="text-xs text-gray-500 mt-1">{stats.pendingCases} pending review</p>
         </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-100">
-              <BuildingOfficeIcon className="h-6 w-6 text-green-700" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Facilities</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalFacilities}</p>
-            </div>
-          </div>
+        <Card className="p-5">
+          <p className="text-sm text-gray-500">Facilities</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalFacilities}</p>
+          <p className="text-xs text-gray-500 mt-1">Nationwide reporting units</p>
         </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-yellow-100">
-              <ExclamationTriangleIcon className="h-6 w-6 text-yellow-700" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Active Alerts</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats.alerts}</p>
-            </div>
-          </div>
+        <Card className="p-5">
+          <p className="text-sm text-gray-500">Active Alerts</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.alerts}</p>
+          <p className="text-xs text-gray-500 mt-1">Escalation signals</p>
         </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-purple-100">
-              <UserGroupIcon className="h-6 w-6 text-purple-700" />
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">System Users</h3>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalUsers}</p>
-            </div>
-          </div>
+        <Card className="p-5">
+          <p className="text-sm text-gray-500">Users</p>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+          <p className="text-xs text-gray-500 mt-1">Active surveillance staff</p>
         </Card>
       </div>
 
-      {/* Case Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Pending Cases</h3>
-            <span className="text-2xl font-bold text-yellow-600">{stats.pendingCases}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-yellow-600 h-2 rounded-full" 
-              style={{ width: `${stats.totalCases > 0 ? (stats.pendingCases / stats.totalCases) * 100 : 0}%` }}
-            ></div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Validated Cases</h3>
-            <span className="text-2xl font-bold text-green-600">{stats.validatedCases}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-green-600 h-2 rounded-full" 
-              style={{ width: `${stats.totalCases > 0 ? (stats.validatedCases / stats.totalCases) * 100 : 0}%` }}
-            ></div>
-          </div>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Rejected Cases</h3>
-            <span className="text-2xl font-bold text-red-600">{stats.rejectedCases}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-red-600 h-2 rounded-full" 
-              style={{ width: `${stats.totalCases > 0 ? (stats.rejectedCases / stats.totalCases) * 100 : 0}%` }}
-            ></div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ChartBarIcon className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Cases Trend (30 Days)</h3>
+            <ChartBarIcon className="h-5 w-5 text-cyan-700" />
+            <h3 className="text-lg font-semibold text-gray-900">30-Day Trend</h3>
           </div>
           <LineChart data={trendData} />
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ChartBarIcon className="h-5 w-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Cases by Disease</h3>
+            <DocumentTextIcon className="h-5 w-5 text-blue-700" />
+            <h3 className="text-lg font-semibold text-gray-900">Disease Mix</h3>
           </div>
           <BarChart data={diseaseData} />
         </Card>
       </div>
 
-      {/* Case Status Distribution */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <ChartBarIcon className="h-5 w-5 text-purple-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Case Status Distribution</h3>
-        </div>
-        <PieChart 
-          data={[
-            { name: 'Pending', value: stats.pendingCases, color: '#EAB308' },
-            { name: 'Validated', value: stats.validatedCases, color: '#16A34A' },
-            { name: 'Rejected', value: stats.rejectedCases, color: '#DC2626' }
-          ]} 
-        />
-      </Card>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ExclamationTriangleIcon className="h-5 w-5 text-amber-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Validation Distribution</h3>
+          </div>
+          <PieChart
+            data={[
+              { name: 'Pending', value: stats.pendingCases, color: '#F59E0B' },
+              { name: 'Validated', value: stats.validatedCases, color: '#10B981' },
+              { name: 'Rejected', value: stats.rejectedCases, color: '#EF4444' },
+            ]}
+          />
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Operational Snapshot</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-gray-700">
+                <BuildingOfficeIcon className="h-5 w-5 text-blue-700" />
+                Facility reporting coverage
+              </div>
+              <span className="font-semibold text-gray-900">{stats.totalFacilities}</span>
+            </div>
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-gray-700">
+                <UserGroupIcon className="h-5 w-5 text-indigo-700" />
+                Surveillance workforce
+              </div>
+              <span className="font-semibold text-gray-900">{stats.totalUsers}</span>
+            </div>
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-gray-700">
+                <DocumentTextIcon className="h-5 w-5 text-cyan-700" />
+                Open case volume
+              </div>
+              <span className="font-semibold text-gray-900">{stats.pendingCases}</span>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

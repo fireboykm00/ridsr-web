@@ -14,6 +14,7 @@ import {
   UserCircleIcon,
   BuildingOfficeIcon,
   UserGroupIcon,
+  MapPinIcon,
 } from "@heroicons/react/24/outline";
 import RIDSRLogo from "../ui/RIDSRLogo";
 
@@ -77,7 +78,6 @@ const Sidebar: React.FC = () => {
         USER_ROLES.HEALTH_WORKER,
         USER_ROLES.LAB_TECHNICIAN,
         USER_ROLES.DISTRICT_OFFICER,
-        USER_ROLES.NATIONAL_OFFICER,
         USER_ROLES.ADMIN,
       ],
     },
@@ -119,6 +119,12 @@ const Sidebar: React.FC = () => {
       href: "/dashboard/validation-hub",
       icon: <DocumentTextIcon className="w-5 h-5" />,
       roles: [USER_ROLES.LAB_TECHNICIAN],
+    },
+    {
+      name: "Districts",
+      href: "/dashboard/district",
+      icon: <MapPinIcon className="w-5 h-5" />,
+      roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
     },
     {
       name: "Users",
