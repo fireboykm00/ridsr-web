@@ -40,7 +40,7 @@ export default function DistrictsPage() {
     const role = session.user.role;
     const district = session.user.district;
 
-    if ([USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(role as string)) {
+    if (session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user.role as any)) {
       // allowed on this page
     } else if (district) {
       router.replace(`/dashboard/district/${district}`);
@@ -111,7 +111,7 @@ export default function DistrictsPage() {
     );
   }
 
-  if (!session?.user || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user.role as string)) {
+  if (!session?.user || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user.role as any))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">

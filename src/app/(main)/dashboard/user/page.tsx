@@ -65,9 +65,9 @@ export default function UsersPage() {
 
         try {
           let usersData, facilitiesData;
-          
+
           // District officers only see their district
-          if (session.user.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
+          if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
             [usersData, facilitiesData] = await Promise.all([
               userService.getUsersByDistrict(session.user.district),
               facilityService.getFacilitiesByDistrict(session.user.district)
@@ -78,8 +78,10 @@ export default function UsersPage() {
               userService.getAllUsers(),
               facilityService.getAllFacilities()
             ]);
+
+
           }
-          
+
           setUsers(usersData);
           setFacilities(facilitiesData);
         } catch (error) {
@@ -259,28 +261,28 @@ export default function UsersPage() {
               <SearchableSelect
                 placeholder="Filter by role"
                 value={filters.role}
-                onChange={(value) => setFilters({ ...filters, role: value })}
+                onChange={(value) => setFilters({ ...filters, role: value || '' })}
                 options={roleOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by facility"
                 value={filters.facility}
-                onChange={(value) => setFilters({ ...filters, facility: value })}
+                onChange={(value) => setFilters({ ...filters, facility: value || '' })}
                 options={facilityOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by district"
                 value={filters.district}
-                onChange={(value) => setFilters({ ...filters, district: value })}
+                onChange={(value) => setFilters({ ...filters, district: value || '' })}
                 options={districtOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by status"
                 value={filters.status}
-                onChange={(value) => setFilters({ ...filters, status: value })}
+                onChange={(value) => setFilters({ ...filters, status: value || '' })}
                 options={statusOptions}
               />
             </div>
@@ -308,7 +310,7 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {paginatedUsers.map((user) => {
-                  const facility = facilities.find(f => f.code === user.facilityId);
+                  const facility = facilities.find(f => f.id === user.facilityId);
                   return (
                     <tr key={user.id + user.workerId} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-900">{user.name}</td>
@@ -324,8 +326,8 @@ export default function UsersPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${user.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                           }`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -342,8 +344,8 @@ export default function UsersPage() {
                           <button
                             onClick={() => handleDeactivateUser(user.id)}
                             className={`p-2 rounded ${user.isActive
-                                ? 'text-orange-600 hover:bg-orange-50'
-                                : 'text-green-600 hover:bg-green-50'
+                              ? 'text-orange-600 hover:bg-orange-50'
+                              : 'text-green-600 hover:bg-green-50'
                               }`}
                             title={user.isActive ? 'Deactivate user' : 'Activate user'}
                           >

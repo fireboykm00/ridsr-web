@@ -258,7 +258,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Email</p>
-                  <p className="text-gray-900 font-medium">{patient.email || 'Not provided'}</p>
+                  <p className="text-gray-900 font-medium">Not provided</p>
                 </div>
               </div>
             </Card>
@@ -359,7 +359,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                     <div key={caseItem.id} className="border-l-4 border-blue-200 pl-3 py-2">
                       <div className="flex items-center justify-between">
                         <p className="font-medium text-sm text-gray-900">
-                          {caseItem.disease || 'Unknown Disease'}
+                          {caseItem.diseaseCode || 'Unknown Disease'}
                         </p>
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           caseItem.status === 'confirmed' ? 'bg-red-100 text-red-800' :
@@ -376,7 +376,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                   ))}
                   {cases.length > 5 && (
                     <Link 
-                      href={`/dashboard/cases?patientId=${params.patientId}`}
+                      href={`/dashboard/cases?patientId=${patientId}`}
                       className="text-blue-600 hover:underline text-sm"
                     >
                       View all {cases.length} cases

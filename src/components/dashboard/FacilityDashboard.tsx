@@ -93,11 +93,11 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Weekly Case Trends</h3>
           <div className="h-80">
-            <LineChart 
-              data={data.weeklyTrends} 
-              dataKey="count" 
-              categories={['count']} 
-              index="week" 
+            <LineChart
+              data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
+              dataKey="value"
+              categories={['value']}
+              index="name"
             />
           </div>
         </Card>
@@ -105,10 +105,10 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Disease Distribution</h3>
           <div className="h-80">
-            <BarChart 
-              data={data.diseaseDistribution} 
-              dataKey="disease" 
-              categories={['count']} 
+            <BarChart
+              data={data.diseaseDistribution.map(item => ({ name: item.disease, value: item.count }))}
+              dataKey="name"
+              categories={['value']}
             />
           </div>
         </Card>
@@ -118,10 +118,10 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Case Status Breakdown</h3>
           <div className="h-80">
-            <PieChart 
-              data={data.caseStatusBreakdown} 
-              category="count" 
-              index="status" 
+            <PieChart
+              data={data.caseStatusBreakdown.map(item => ({ name: item.status, value: item.count }))}
+              category="value"
+              index="name"
             />
           </div>
         </Card>

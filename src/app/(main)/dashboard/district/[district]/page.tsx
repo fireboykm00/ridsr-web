@@ -81,11 +81,11 @@ export default function DistrictDetailPage() {
       if (status !== 'authenticated' || !session?.user) return;
 
       const role = session.user.role;
-      const canAccess = [
+      const canAccess = session.user?.role && [
         USER_ROLES.ADMIN,
         USER_ROLES.NATIONAL_OFFICER,
         USER_ROLES.DISTRICT_OFFICER,
-      ].includes(role as string);
+      ].includes(session.user.role as any);
 
       if (!canAccess) {
         router.replace('/dashboard');

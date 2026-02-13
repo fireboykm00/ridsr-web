@@ -94,12 +94,12 @@ export async function getEnhancedUserProfile(): Promise<User | null> {
   if (!session?.user) return null;
 
   return {
-    id: session.user.id,
-    workerId: session.user.workerId,
+    id: session.user.id || '',
+    workerId: session.user.workerId || '',
     name: session.user.name || '',
     email: session.user.email || '',
-    role: session.user.role ,
-    facilityId: session.user.facilityId,
+    role: session.user.role || USER_ROLES.HEALTH_WORKER,
+    facilityId: session.user.facilityId || '',
     district: session.user.district,
     province: session.user.province,
     isActive: true,

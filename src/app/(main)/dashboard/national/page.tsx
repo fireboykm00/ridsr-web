@@ -161,9 +161,9 @@ export default function NationalDashboard() {
           </div>
           <PieChart
             data={[
-              { name: 'Pending', value: stats.pendingCases, color: '#F59E0B' },
-              { name: 'Validated', value: stats.validatedCases, color: '#10B981' },
-              { name: 'Rejected', value: stats.rejectedCases, color: '#EF4444' },
+              { name: 'Pending', value: stats.pendingCases },
+              { name: 'Validated', value: stats.validatedCases },
+              { name: 'Rejected', value: stats.rejectedCases },
             ]}
           />
         </Card>

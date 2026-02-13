@@ -41,7 +41,7 @@ export default function DistrictCaseReportPage() {
     USER_ROLES.ADMIN,
     USER_ROLES.NATIONAL_OFFICER,
     USER_ROLES.DISTRICT_OFFICER,
-  ].includes(role as string);
+  ].includes(role as any);
 
   const districtMatches =
     role !== USER_ROLES.DISTRICT_OFFICER || session.user?.district === district;

@@ -34,7 +34,7 @@ export type RwandaProvinceType =
   typeof RWANDA_PROVINCES[keyof typeof RWANDA_PROVINCES];
 
 export const RWANDA_DISTRICTS = {
-  // Kigali City
+  // City of Kigali
   GASABO: 'gasabo',
   KICUKIRO: 'kicukiro',
   NYARUGENGE: 'nyarugenge',
@@ -47,6 +47,7 @@ export const RWANDA_DISTRICTS = {
   RULINDO: 'rulindo',
 
   // Southern Province
+  GISAGARA: 'gisagara',
   HUYE: 'huye',
   KAMONYI: 'kamonyi',
   MUHANGA: 'muhanga',

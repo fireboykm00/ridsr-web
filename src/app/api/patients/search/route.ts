@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     // Format for SearchableSelect component
     const options = patients.map((patient: IPatient) => ({
-      value: patient._id?.toString() || patient.id || '',
+      value: patient._id.toString() || '',
       label: `${patient.firstName || ''} ${patient.lastName || ''}${patient.nationalId ? ` (${patient.nationalId})` : ''}`.trim(),
     }));
 

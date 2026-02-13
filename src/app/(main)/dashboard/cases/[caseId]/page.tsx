@@ -38,7 +38,7 @@ export default function CaseDetailPage() {
   const [outcome, setOutcome] = useState<OutcomeStatus>('recovered');
   const resolvedCaseId = caseData?.id || (caseData as (Case & { _id?: string }) | null)?._id || caseId;
 
-  const userCanValidate = session?.user && canValidateCase({
+  const userCanValidate = session?.user && session.user.id && session.user.role && canValidateCase({
     id: session.user.id,
     role: session.user.role,
     facilityId: session.user.facilityId,
@@ -49,8 +49,9 @@ export default function CaseDetailPage() {
     USER_ROLES.HEALTH_WORKER,
     USER_ROLES.LAB_TECHNICIAN,
     USER_ROLES.DISTRICT_OFFICER,
-    USER_ROLES.ADMIN
-  ].includes(session.user.role);
+    USER_ROLES.ADMIN,
+    USER_ROLES.NATIONAL_OFFICER
+  ].includes(session.user.role as any);
 
   useEffect(() => {
     const loadCaseData = async () => {

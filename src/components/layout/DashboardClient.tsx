@@ -37,7 +37,7 @@ export default function DashboardClient({ children }: DashboardClientProps) {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className='w-64 fixed h-screen bg-white z-30'>
+      <div className='fixed h-screen bg-white z-30'>
         {sidebar}
       </div>
       <div className="flex-1 md:ml-64">

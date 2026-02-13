@@ -215,13 +215,13 @@ export default function ValidationHubPage() {
   const [selectedCase, setSelectedCase] = useState<ValidationCase | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [validatingCaseId, setValidatingCaseId] = useState<string | null>(null);
-  const canValidateCases = [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session?.user?.role as string);
+  const canValidateCases = !!(session?.user && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user.role));
 
   useEffect(() => {
     const loadPendingCases = async () => {
       if (status === 'authenticated' && session) {
         // Check if user has validation-hub access
-        if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string)) {
+        if (!session.user?.role || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user.role as any))) {
           window.location.href = '/dashboard';
           return;
         }
@@ -307,7 +307,7 @@ export default function ValidationHubPage() {
     );
   }
 
-  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user?.role as string)) {
+  if (!session?.user?.role || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER, USER_ROLES.LAB_TECHNICIAN].includes(session.user.role as any))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">

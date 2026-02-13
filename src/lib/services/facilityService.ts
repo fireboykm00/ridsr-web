@@ -28,7 +28,7 @@ class FacilityService {
 
   async getFacilityById(id: string): Promise<Facility | null> {
     if (!id || id === 'undefined') return null;
-    
+
     const res = await fetch(`/api/facilities/${id}`);
     if (!res.ok) return null;
     const responseData = await res.json();

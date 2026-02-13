@@ -45,7 +45,8 @@ export default function ReportCasePage() {
     USER_ROLES.LAB_TECHNICIAN,
     USER_ROLES.DISTRICT_OFFICER,
     USER_ROLES.ADMIN,
-  ].includes(session.user?.role as string);
+    USER_ROLES.NATIONAL_OFFICER
+  ].includes(session.user?.role as any);
 
   if (!canReportCases) {
     return (

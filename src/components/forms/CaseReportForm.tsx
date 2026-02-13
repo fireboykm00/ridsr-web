@@ -52,6 +52,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
     const loadFacilities = async () => {
       try {
         const allFacilities = await facilityService.getAllFacilities();
+
         setFacilities(allFacilities);
       } catch (error) {
         console.error('Error loading facilities:', error);
@@ -62,7 +63,9 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
       }
     };
 
+
     loadFacilities();
+
   }, []);
 
   const searchPatients = async (query: string): Promise<SelectOption<string>[]> => {
@@ -73,7 +76,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
       const response = await fetch(`/api/patients/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) throw new Error('Failed to search patients');
 
-      await response.json();
+      let result = await response.json();
       // The API returns the options array directly, not wrapped in a 'data' property
 
       return result.data || [];
@@ -212,30 +215,32 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         <FormFieldset legend="Case Information">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <SearchableSelect<string>
-                label="Facility *"
-                value={formData.facilityId}
-                onChange={(value) => {
-                  setFormData(prev => ({ ...prev, facilityId: value || '' }));
-                  if (errors.facilityId) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.facilityId;
-                      return newErrors;
-                    });
-                  }
-                }}
-                options={facilities.map(facility => ({
-                  value: facility.code,
-                  label: `${facility.name} - ${facility.district}`
-                }))}
-                error={errors.facilityId}
-                placeholder={facilities.length > 0 ? "Select a facility..." : "Loading facilities..."}
-                isClearable
-                isLoading={facilities.length === 0}
-              />
-            </div>
+            {session?.user?.role !== "lab_technician" &&
+              <div>
+                <SearchableSelect<string>
+                  label="Facility *"
+                  value={formData.facilityId}
+                  onChange={(value) => {
+                    setFormData(prev => ({ ...prev, facilityId: value || '' }));
+                    if (errors.facilityId) {
+                      setErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.facilityId;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  options={facilities.map(facility => ({
+                    value: facility.code,
+                    label: `${facility.name} - ${facility.district}`
+                  }))}
+                  error={errors.facilityId}
+                  placeholder={facilities.length > 0 ? "Select a facility..." : "Loading facilities..."}
+                  isClearable
+                  isLoading={facilities.length === 0}
+                />
+              </div>
+            }
 
             <div>
               <SearchableSelect<string>

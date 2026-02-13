@@ -94,11 +94,11 @@ const DistrictDashboard: React.FC<DistrictDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Weekly Case Trends</h3>
           <div className="h-80">
-            <LineChart 
-              data={data.weeklyTrends} 
-              dataKey="count" 
-              categories={['count']} 
-              index="week" 
+            <LineChart
+              data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
+              dataKey="value"
+              categories={['value']}
+              index="name"
             />
           </div>
         </Card>
@@ -106,10 +106,10 @@ const DistrictDashboard: React.FC<DistrictDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Cases by Facility</h3>
           <div className="h-80">
-            <BarChart 
-              data={data.facilityCaseDistribution} 
-              dataKey="facility" 
-              categories={['cases']} 
+            <BarChart
+              data={data.facilityCaseDistribution.map(item => ({ name: item.facility, value: item.cases }))}
+              dataKey="name"
+              categories={['value']}
             />
           </div>
         </Card>
@@ -119,8 +119,8 @@ const DistrictDashboard: React.FC<DistrictDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Geographic Distribution</h3>
           <div className="h-80">
-            <MapVisualization 
-              data={data.geographicDistribution} 
+            <MapVisualization
+              data={data.geographicDistribution.map(item => ({ district: item.region, value: item.cases }))}
             />
           </div>
         </Card>

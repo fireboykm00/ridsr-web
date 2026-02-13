@@ -95,11 +95,11 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Weekly Case Trends</h3>
           <div className="h-80">
-            <LineChart 
-              data={data.weeklyTrends} 
-              dataKey="count" 
-              categories={['count']} 
-              index="week" 
+            <LineChart
+              data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
+              dataKey="value"
+              categories={['value']}
+              index="name"
             />
           </div>
         </Card>
@@ -107,10 +107,10 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Disease Distribution</h3>
           <div className="h-80">
-            <BarChart 
-              data={data.diseaseDistribution} 
-              dataKey="disease" 
-              categories={['count']} 
+            <BarChart
+              data={data.diseaseDistribution.map(item => ({ name: item.disease, value: item.count }))}
+              dataKey="name"
+              categories={['value']}
             />
           </div>
         </Card>
@@ -120,10 +120,10 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Cases by District</h3>
           <div className="h-80">
-            <BarChart 
-              data={data.districtCaseDistribution} 
-              dataKey="district" 
-              categories={['cases']} 
+            <BarChart
+              data={data.districtCaseDistribution.map(item => ({ name: item.district, value: item.cases }))}
+              dataKey="name"
+              categories={['value']}
             />
           </div>
         </Card>
@@ -131,8 +131,8 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Geographic Distribution</h3>
           <div className="h-80">
-            <MapVisualization 
-              data={data.geographicDistribution} 
+            <MapVisualization
+              data={data.geographicDistribution.map(item => ({ district: item.region, value: item.cases }))}
             />
           </div>
         </Card>

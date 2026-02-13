@@ -28,7 +28,7 @@ export default function ValidationPage() {
       if (status === 'authenticated' && session) {
         try {
           // Only allow authorized roles to access this page
-          if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as USER_ROLES)) {
+          if (![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as any)) {
             router.push('/dashboard');
             return;
           }
@@ -83,7 +83,7 @@ export default function ValidationPage() {
     );
   }
 
-  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as USER_ROLES)) {
+  if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as any)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">

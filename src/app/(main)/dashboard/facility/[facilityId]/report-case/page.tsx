@@ -74,7 +74,7 @@ export default function FacilityCaseReportForm() {
     if (userRole === USER_ROLES.ADMIN) return true;
 
     // Health workers and lab technicians can only report for their own facility
-    if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(userRole as string)) {
+    if ([USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(userRole as any)) {
       return userFacilityId === facilityId;
     }
 

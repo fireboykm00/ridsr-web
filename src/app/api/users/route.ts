@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
       ...validatedData,
       workerId,
       role: validatedData.role as UserRole,
-      district: validatedData.district as RwandaDistrictType | undefined
+      district: validatedData.district as RwandaDistrictType | undefined,
+      province: validatedData.province as RwandaProvinceType | undefined
     };
 
     const newUser = await userService.createUser(userData);

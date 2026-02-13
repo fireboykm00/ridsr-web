@@ -57,7 +57,7 @@ export function canValidateCase(user: UserContext): boolean {
     USER_ROLES.ADMIN,
     USER_ROLES.NATIONAL_OFFICER,
     USER_ROLES.DISTRICT_OFFICER
-  ].includes(user.role);
+  ].includes(user.role as any);
 }
 
 /**
@@ -67,7 +67,7 @@ export function canManageUsers(user: UserContext): boolean {
   return [
     USER_ROLES.ADMIN,
     USER_ROLES.NATIONAL_OFFICER
-  ].includes(user.role);
+  ].includes(user.role as any);
 }
 
 /**

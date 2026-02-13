@@ -43,7 +43,7 @@ export default function CaseListPage() {
       if (status === 'authenticated' && session?.user) {
         try {
           const allCases = await getAllCases();
-          const accessibleCases = filterCasesByAccess(allCases, session.user);
+          const accessibleCases = filterCasesByAccess(allCases, session.user!);
           setCases(accessibleCases);
         } catch (error) {
           console.error('Error loading cases:', error);
@@ -111,8 +111,9 @@ export default function CaseListPage() {
     USER_ROLES.HEALTH_WORKER,
     USER_ROLES.LAB_TECHNICIAN,
     USER_ROLES.DISTRICT_OFFICER,
-    USER_ROLES.ADMIN
-  ].includes(session.user.role);
+    USER_ROLES.ADMIN,
+    USER_ROLES.NATIONAL_OFFICER
+  ].includes(session.user.role as any);
 
   if (status === 'loading' || loading) {
     return (

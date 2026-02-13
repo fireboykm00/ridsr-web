@@ -48,8 +48,6 @@ const Sidebar: React.FC = () => {
           return "/dashboard/national";
         case USER_ROLES.DISTRICT_OFFICER:
           return `/dashboard/district/${session.user.district || "default"}`;
-        case USER_ROLES.LAB_TECHNICIAN:
-          return "/dashboard/validation-hub";
         default:
           return `/dashboard/facility/${session.user.facilityId || "default"}`;
       }
@@ -186,10 +184,10 @@ const Sidebar: React.FC = () => {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow hover:bg-gray-50"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-lg shadow hover:bg-gray-50"
         aria-label="Toggle sidebar"
       >
-        <svg
+        {!isOpen ? <svg
           className="w-6 h-6"
           fill="none"
           stroke="currentColor"
@@ -201,7 +199,18 @@ const Sidebar: React.FC = () => {
             strokeWidth="2"
             d="M4 6h16M4 12h16M4 18h16"
           />
-        </svg>
+        </svg> : <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <line x1="4" y1="4" x2="20" y2="20" />
+          <line x1="20" y1="4" x2="4" y2="20" />
+        </svg>}
       </button>
 
       {/* Sidebar */}
@@ -232,10 +241,9 @@ const Sidebar: React.FC = () => {
                       }}
                       className={`
                         w-full flex items-center px-4 py-2 rounded-lg transition-colors
-                        ${
-                          isActive
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
+                        ${isActive
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >
@@ -248,10 +256,9 @@ const Sidebar: React.FC = () => {
                       onClick={() => setIsOpen(false)}
                       className={`
                         flex items-center px-4 py-2 rounded-lg transition-colors
-                        ${
-                          isActive
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
+                        ${isActive
+                          ? "bg-blue-50 text-blue-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
                         }
                       `}
                     >
@@ -276,7 +283,7 @@ const Sidebar: React.FC = () => {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 md:hidden z-30"
+          className="fixed inset-0 bg-black/20 md:hidden z-30"
           onClick={() => setIsOpen(false)}
         />
       )}
