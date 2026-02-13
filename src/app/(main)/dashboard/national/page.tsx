@@ -27,6 +27,13 @@ interface DashboardStats {
   activeOutbreaks: number;
 }
 
+function unwrapApiData<T>(payload: unknown, fallback: T): T {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return ((payload as { data?: T }).data ?? fallback) as T;
+  }
+  return (payload as T) ?? fallback;
+}
+
 export default function NationalDashboard() {
   const { data: session, status } = useSession();
   const [stats, setStats] = useState<DashboardStats>({
@@ -62,13 +69,33 @@ export default function NationalDashboard() {
         ]);
 
         if (statsRes.ok) {
-          setStats(await statsRes.json());
+          const payload = await statsRes.json();
+          setStats(unwrapApiData<DashboardStats>(payload, {
+            totalCases: 0,
+            pendingCases: 0,
+            validatedCases: 0,
+            rejectedCases: 0,
+            alerts: 0,
+            totalFacilities: 0,
+            totalUsers: 0,
+            activeOutbreaks: 0,
+          }));
         }
         if (trendRes.ok) {
-          setTrendData(await trendRes.json());
+          const payload = await trendRes.json();
+          const trend = unwrapApiData<Array<{ _id?: string; count?: number }>>(payload, []);
+          setTrendData(trend.map((item) => ({
+            name: item._id || '',
+            value: item.count || 0,
+          })));
         }
         if (diseaseRes.ok) {
-          setDiseaseData(await diseaseRes.json());
+          const payload = await diseaseRes.json();
+          const diseases = unwrapApiData<Array<{ _id?: string; count?: number }>>(payload, []);
+          setDiseaseData(diseases.map((item) => ({
+            name: item._id || 'Unknown',
+            value: item.count || 0,
+          })));
         }
       } catch (error) {
         console.error('Error loading national dashboard:', error);

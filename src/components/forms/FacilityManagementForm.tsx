@@ -6,6 +6,10 @@ import { Input } from '@/components/ui/Input';
 import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 import { Button } from '@/components/ui/Button';
 import { FacilityType, RwandaDistrictType, RWANDA_DISTRICTS } from '@/types';
+import { createFacilitySchema } from '@/lib/schemas';
+import { z } from 'zod';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
+import { ApiClientError } from '@/lib/utils/apiError';
 
 interface FacilityFormData {
   name: string;
@@ -45,17 +49,71 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const setFieldError = (field: string, message?: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validateFieldLive = (field: keyof FacilityFormData, value: unknown) => {
+    const asString = String(value ?? '');
+    if (field === 'name') {
+      const parsed = z.string().trim().min(2, 'Facility name must be at least 2 characters.').safeParse(asString);
+      setFieldError('name', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'code') {
+      const parsed = z.string().trim().min(2, 'Facility code must be at least 2 characters.').safeParse(asString);
+      if (!parsed.success) {
+        setFieldError('code', parsed.error.issues[0]?.message);
+      } else if (!/^[A-Z0-9]{3,10}$/.test(asString)) {
+        setFieldError('code', 'Code must be 3-10 uppercase letters/numbers');
+      } else {
+        setFieldError('code');
+      }
+      return;
+    }
+    if (field === 'contactPerson') {
+      const parsed = z.string().trim().min(2, 'Contact person must be at least 2 characters.').safeParse(asString);
+      setFieldError('contactPerson', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'phone') {
+      const parsed = z.string().trim().min(10, 'Phone number must be at least 10 digits.').safeParse(asString);
+      if (!parsed.success) {
+        setFieldError('phone', parsed.error.issues[0]?.message);
+      } else if (!/^(\+250|0)[0-9]{9}$/.test(asString.replace(/\s/g, ''))) {
+        setFieldError('phone', 'Invalid Rwanda phone number format');
+      } else {
+        setFieldError('phone');
+      }
+      return;
+    }
+    if (field === 'email') {
+      const parsed = z.string().trim().email('Enter a valid email address.').safeParse(asString);
+      setFieldError('email', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'district') {
+      const parsed = z.string().trim().min(1, 'District is required.').safeParse(asString);
+      setFieldError('district', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'type') {
+      const parsed = z.string().trim().min(1, 'Facility type is required.').safeParse(asString);
+      setFieldError('type', parsed.success ? undefined : parsed.error.issues[0]?.message);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
     setFormData(prev => ({ ...prev, [name]: val }));
-
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+    if (type !== 'checkbox') {
+      validateFieldLive(name as keyof FacilityFormData, val);
     }
   };
 
@@ -75,39 +133,18 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = 'Facility name is required';
-    }
-
-    if (!formData.code.trim()) {
-      newErrors.code = 'Facility code is required';
-    } else if (!/^[A-Z0-9]{3,10}$/.test(formData.code)) {
-      newErrors.code = 'Code must be 3-10 uppercase letters/numbers';
-    }
-
-    if (!formData.type) {
-      newErrors.type = 'Facility type is required';
-    }
-
-    if (!formData.district) {
-      newErrors.district = 'District is required';
-    }
-
-    if (!formData.contactPerson.trim()) {
-      newErrors.contactPerson = 'Contact person is required';
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^(\+250|0)[0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Invalid Rwanda phone number format';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+    try {
+      createFacilitySchema.parse(formData);
+      if (!/^(\+250|0)[0-9]{9}$/.test(formData.phone.replace(/\s/g, ''))) {
+        newErrors.phone = 'Invalid Rwanda phone number format';
+      }
+      if (!/^[A-Z0-9]{3,10}$/.test(formData.code)) {
+        newErrors.code = 'Code must be 3-10 uppercase letters/numbers';
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        Object.assign(newErrors, zodErrorToFieldMap(error));
+      }
     }
 
     setErrors(newErrors);
@@ -123,6 +160,9 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
     try {
       await onSubmit(formData);
     } catch (error) {
+      if (error instanceof ApiClientError && error.fieldErrors) {
+        setErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      }
       console.error('Error submitting form:', error);
     } finally {
       setIsLoading(false);
@@ -160,7 +200,11 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
           <SearchableSelect
             label="Facility Type *"
             value={formData.type}
-            onChange={(value) => setFormData(prev => ({ ...prev, type: value as FacilityType || 'health_center' }))}
+            onChange={(value) => {
+              const nextValue = value as FacilityType || 'health_center';
+              setFormData(prev => ({ ...prev, type: nextValue }));
+              validateFieldLive('type', nextValue);
+            }}
             error={errors.type}
             options={[
               { value: 'health_center', label: 'Health Center' },
@@ -178,7 +222,11 @@ const FacilityManagementForm: React.FC<FacilityManagementFormProps> = ({
           <SearchableSelect
             label="District *"
             value={formData.district}
-            onChange={(value) => setFormData(prev => ({ ...prev, district: value as RwandaDistrictType || 'gasabo' }))}
+            onChange={(value) => {
+              const nextValue = value as RwandaDistrictType || 'gasabo';
+              setFormData(prev => ({ ...prev, district: nextValue }));
+              validateFieldLive('district', nextValue);
+            }}
             onSearch={searchDistricts}
             error={errors.district}
             placeholder="Search districts..."

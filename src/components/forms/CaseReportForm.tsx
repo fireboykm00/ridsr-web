@@ -14,6 +14,10 @@ import { CaseReportFormData } from '@/types/forms';
 import { DiseaseCode, Symptom, Facility } from '@/types';
 import { DISEASE_CODES, COMMON_SYMPTOMS } from '@/constants';
 import { facilityService } from '@/lib/services/facilityService';
+import { createCaseSchema } from '@/lib/schemas';
+import { z } from 'zod';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
+import { parseApiError } from '@/lib/utils/apiError';
 
 interface CaseReportFormProps {
   onCancel?: () => void;
@@ -40,6 +44,51 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
   const [isSearchingPatients, setIsSearchingPatients] = useState(false);
   const [selectedDisease, setSelectedDisease] = useState<typeof DISEASE_CODES[0] | null>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
+
+  const setFieldError = (field: string, message?: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validateFieldLive = (
+    field: 'facilityId' | 'patientId' | 'diseaseCode' | 'onsetDate' | 'symptoms',
+    value: unknown
+  ) => {
+    if (field === 'facilityId') {
+      const parsed = z.string().trim().min(1, 'Facility is required.').safeParse(value);
+      setFieldError('facilityId', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'patientId') {
+      const parsed = z.string().trim().min(1, 'Patient is required.').safeParse(value);
+      setFieldError('patientId', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'diseaseCode') {
+      const parsed = z.string().trim().min(1, 'Disease is required.').safeParse(value);
+      setFieldError('diseaseCode', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'onsetDate') {
+      const parsed = z.string().trim().min(1, 'Onset date is required.').safeParse(value);
+      if (!parsed.success) {
+        setFieldError('onsetDate', parsed.error.issues[0]?.message);
+        return;
+      }
+      if (new Date(String(value)) > new Date()) {
+        setFieldError('onsetDate', 'Onset date cannot be in the future');
+        return;
+      }
+      setFieldError('onsetDate');
+      return;
+    }
+    const parsed = z.array(z.string()).min(1, 'Select at least one symptom.').safeParse(value);
+    setFieldError('symptoms', parsed.success ? undefined : parsed.error.issues[0]?.message);
+  };
 
   // Update selected disease when disease code changes
   useEffect(() => {
@@ -74,9 +123,11 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
     setIsSearchingPatients(true);
     try {
       const response = await fetch(`/api/patients/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error('Failed to search patients');
+      if (!response.ok) {
+        throw new Error((await parseApiError(response, 'Failed to search patients')).message);
+      }
 
-      let result = await response.json();
+      const result = await response.json();
       // The API returns the options array directly, not wrapped in a 'data' property
 
       return result.data || [];
@@ -94,47 +145,22 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
         ? prev.symptoms.filter(s => s !== symptom)
         : [...prev.symptoms, symptom];
 
+      validateFieldLive('symptoms', newSymptoms);
       return { ...prev, symptoms: newSymptoms };
     });
-
-    // Clear symptoms error if at least one symptom is selected
-    if (errors.symptoms && formData.symptoms.length > 0) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.symptoms;
-        return newErrors;
-      });
-    }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
-    if (!formData.patientId.trim()) {
-      newErrors.patientId = 'Patient selection is required';
-    }
-
-    if (!formData.diseaseCode) {
-      newErrors.diseaseCode = 'Disease selection is required';
-    }
-
-    if (!formData.onsetDate) {
-      newErrors.onsetDate = 'Onset date is required';
-    } else {
-      const onsetDate = new Date(formData.onsetDate);
-      const today = new Date();
-      if (onsetDate > today) {
+    try {
+      createCaseSchema.parse(formData);
+      if (new Date(formData.onsetDate) > new Date()) {
         newErrors.onsetDate = 'Onset date cannot be in the future';
       }
-    }
-
-    if (formData.symptoms.length === 0) {
-      newErrors.symptoms = 'At least one symptom must be selected';
-    }
-
-    // Validate facility selection
-    if (!formData.facilityId) {
-      newErrors.facilityId = 'Facility selection is required';
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        Object.assign(newErrors, zodErrorToFieldMap(error));
+      }
     }
 
     setErrors(newErrors);
@@ -158,8 +184,11 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit case report');
+        const parsed = await parseApiError(response, 'Failed to submit case report');
+        if (parsed.fieldErrors) {
+          setErrors((prev) => ({ ...prev, ...parsed.fieldErrors }));
+        }
+        throw new Error(parsed.message);
       }
 
       await response.json();
@@ -222,13 +251,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
                   value={formData.facilityId}
                   onChange={(value) => {
                     setFormData(prev => ({ ...prev, facilityId: value || '' }));
-                    if (errors.facilityId) {
-                      setErrors(prev => {
-                        const newErrors = { ...prev };
-                        delete newErrors.facilityId;
-                        return newErrors;
-                      });
-                    }
+                    validateFieldLive('facilityId', value || '');
                   }}
                   options={facilities.map(facility => ({
                     value: facility.code,
@@ -248,13 +271,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
                 value={formData.patientId}
                 onChange={(value) => {
                   setFormData(prev => ({ ...prev, patientId: value || '' }));
-                  if (errors.patientId) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.patientId;
-                      return newErrors;
-                    });
-                  }
+                  validateFieldLive('patientId', value || '');
                 }}
                 onSearch={searchPatients}
                 isLoading={isSearchingPatients}
@@ -271,13 +288,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
                 value={formData.diseaseCode}
                 onChange={(value) => {
                   setFormData(prev => ({ ...prev, diseaseCode: value || '' }));
-                  if (errors.diseaseCode) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.diseaseCode;
-                      return newErrors;
-                    });
-                  }
+                  validateFieldLive('diseaseCode', value || '');
                 }}
                 error={errors.diseaseCode}
                 options={DISEASE_CODES.map(disease => ({
@@ -301,13 +312,7 @@ const CaseReportForm: React.FC<CaseReportFormProps> = ({
                 value={formData.onsetDate}
                 onChange={(e) => {
                   setFormData(prev => ({ ...prev, onsetDate: e.target.value }));
-                  if (errors.onsetDate) {
-                    setErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.onsetDate;
-                      return newErrors;
-                    });
-                  }
+                  validateFieldLive('onsetDate', e.target.value);
                 }}
                 error={errors.onsetDate}
                 max={new Date().toISOString().split('T')[0]}

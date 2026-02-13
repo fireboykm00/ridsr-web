@@ -116,8 +116,9 @@ class CaseService extends BaseService<ICase> {
   ): Promise<ICase[] | PaginatedResult<ICase>> {
     const query: FilterQuery<ICase> = {};
 
+    let facilityFilterId: mongoose.Types.ObjectId | undefined;
     if (filters.facilityId) {
-      query.facilityId = new mongoose.Types.ObjectId(filters.facilityId);
+      facilityFilterId = new mongoose.Types.ObjectId(filters.facilityId);
     }
     if (filters.diseaseCode) {
       query.diseaseCode = filters.diseaseCode;
@@ -135,7 +136,19 @@ class CaseService extends BaseService<ICase> {
       query.patientId = new mongoose.Types.ObjectId(filters.patientId);
     }
     if (filters.district) {
-      query.district = filters.district;
+      const districtFacilities = await Facility.find({ district: filters.district }).select('_id').lean();
+      const districtFacilityIds = districtFacilities
+        .map((f) => f._id)
+        .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
+
+      if (facilityFilterId) {
+        const inDistrict = districtFacilityIds.some((id) => id.equals(facilityFilterId));
+        query.facilityId = inDistrict ? facilityFilterId : { $in: [] };
+      } else {
+        query.facilityId = { $in: districtFacilityIds };
+      }
+    } else if (facilityFilterId) {
+      query.facilityId = facilityFilterId;
     }
     if (filters.dateFrom || filters.dateTo) {
       query.reportDate = {};

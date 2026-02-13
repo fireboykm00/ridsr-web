@@ -3,18 +3,25 @@ import { z } from 'zod';
 // Helper: accept both YYYY-MM-DD (from HTML date inputs) and full ISO datetime strings
 const dateStringSchema = z.string().refine(
   (val) => !isNaN(Date.parse(val)),
-  { message: 'Invalid date format' }
+  { message: 'Enter a valid date.' }
 );
+
+const requiredString = (label: string) =>
+  z.string().trim().min(1, `${label} is required.`);
 
 // User schemas
 export const createUserSchema = z.object({
   workerId: z.string().optional(),
-  nationalId: z.string().min(5).max(20),
-  name: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(10),
-  password: z.string().min(6),
-  role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']),
+  nationalId: requiredString('National ID')
+    .min(5, 'National ID must be at least 5 characters.')
+    .max(20, 'National ID must be at most 20 characters.'),
+  name: requiredString('Full name').min(2, 'Full name must be at least 2 characters.'),
+  email: requiredString('Email').email('Enter a valid email address.'),
+  phone: requiredString('Phone number').min(10, 'Phone number must be at least 10 digits.'),
+  password: requiredString('Password').min(6, 'Password must be at least 6 characters.'),
+  role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician'], {
+    message: 'Role is required.',
+  }),
   facilityId: z.string().optional(),
   district: z.string().optional(),
   province: z.string().optional(),
@@ -22,11 +29,13 @@ export const createUserSchema = z.object({
 
 export const updateUserSchema = z.object({
   workerId: z.string().optional(),
-  nationalId: z.string().min(5).max(20).optional(),
-  name: z.string().min(2).optional(),
-  email: z.string().email().optional(),
-  phone: z.string().min(10).optional(),
-  role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']).optional(),
+  nationalId: z.string().trim().min(5, 'National ID must be at least 5 characters.').max(20, 'National ID must be at most 20 characters.').optional(),
+  name: z.string().trim().min(2, 'Full name must be at least 2 characters.').optional(),
+  email: z.string().trim().email('Enter a valid email address.').optional(),
+  phone: z.string().trim().min(10, 'Phone number must be at least 10 digits.').optional(),
+  role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician'], {
+    message: 'Role is required.',
+  }).optional(),
   facilityId: z.string().optional(),
   district: z.string().optional(),
   province: z.string().optional(),
@@ -35,25 +44,27 @@ export const updateUserSchema = z.object({
 
 // Patient schemas
 export const createPatientSchema = z.object({
-  nationalId: z.string().min(5).max(20),
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
+  nationalId: requiredString('National ID')
+    .min(5, 'National ID must be at least 5 characters.')
+    .max(20, 'National ID must be at most 20 characters.'),
+  firstName: requiredString('First name').min(2, 'First name must be at least 2 characters.'),
+  lastName: requiredString('Last name').min(2, 'Last name must be at least 2 characters.'),
   dateOfBirth: dateStringSchema,
-  gender: z.enum(['male', 'female', 'other']),
-  phone: z.string().min(10),
+  gender: z.enum(['male', 'female', 'other'], { message: 'Gender is required.' }),
+  phone: requiredString('Phone number').min(10, 'Phone number must be at least 10 digits.'),
   address: z.object({
-    street: z.string().min(1),
-    sector: z.string().min(1),
-    district: z.string().min(1),
-    province: z.string().min(1),
+    street: requiredString('Street'),
+    sector: requiredString('Sector'),
+    district: requiredString('District'),
+    province: requiredString('Province'),
     country: z.string().default('Rwanda'),
   }).optional(),
-  district: z.string().min(1),
+  district: requiredString('District'),
   occupation: z.string().optional(),
   emergencyContact: z.object({
-    name: z.string().min(2),
-    phone: z.string().min(10),
-    relationship: z.string().min(2),
+    name: z.string().trim().min(2, 'Emergency contact name must be at least 2 characters.'),
+    phone: z.string().trim().min(10, 'Emergency contact phone must be at least 10 digits.'),
+    relationship: z.string().trim().min(2, 'Relationship must be at least 2 characters.'),
   }).optional(),
 });
 
@@ -61,16 +72,16 @@ export const updatePatientSchema = createPatientSchema.partial();
 
 // Case schemas
 export const createCaseSchema = z.object({
-  patientId: z.string().min(1),
-  diseaseCode: z.string().min(1),
-  symptoms: z.array(z.string()).min(1),
+  patientId: requiredString('Patient'),
+  diseaseCode: requiredString('Disease'),
+  symptoms: z.array(z.string()).min(1, 'Select at least one symptom.'),
   onsetDate: dateStringSchema,
   facilityId: z.string().optional(), // Allow facilityId to be passed in the request
 });
 
 export const updateCaseSchema = z.object({
-  diseaseCode: z.string().min(1).optional(),
-  symptoms: z.array(z.string()).min(1).optional(),
+  diseaseCode: z.string().trim().min(1, 'Disease is required.').optional(),
+  symptoms: z.array(z.string()).min(1, 'Select at least one symptom.').optional(),
   onsetDate: dateStringSchema.optional(),
   validationStatus: z.enum(['pending', 'validated', 'rejected']).optional(),
   status: z.enum(['suspected', 'confirmed', 'resolved', 'invalidated']).optional(),
@@ -79,14 +90,16 @@ export const updateCaseSchema = z.object({
 
 // Facility schemas
 export const createFacilitySchema = z.object({
-  name: z.string().min(2),
-  code: z.string().min(2),
-  type: z.enum(['health_center', 'hospital', 'clinic', 'dispensary', 'medical_center']),
-  district: z.string().min(1),
+  name: requiredString('Facility name').min(2, 'Facility name must be at least 2 characters.'),
+  code: requiredString('Facility code').min(2, 'Facility code must be at least 2 characters.'),
+  type: z.enum(['health_center', 'hospital', 'clinic', 'dispensary', 'medical_center'], {
+    message: 'Facility type is required.',
+  }),
+  district: requiredString('District'),
   province: z.string().optional(),
-  contactPerson: z.string().min(2),
-  phone: z.string().min(10),
-  email: z.string().email(),
+  contactPerson: requiredString('Contact person').min(2, 'Contact person must be at least 2 characters.'),
+  phone: requiredString('Phone number').min(10, 'Phone number must be at least 10 digits.'),
+  email: requiredString('Email').email('Enter a valid email address.'),
 });
 
 export const updateFacilitySchema = createFacilitySchema.partial();
@@ -98,5 +111,5 @@ export const paginationSchema = z.object({
 });
 
 export const searchSchema = z.object({
-  q: z.string().min(1),
+  q: z.string().trim().min(1, 'Search term is required.'),
 });

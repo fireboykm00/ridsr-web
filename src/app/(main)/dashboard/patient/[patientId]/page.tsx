@@ -12,6 +12,9 @@ import { useToastHelpers } from '@/components/ui/Toast';
 import { PencilIcon, ArrowLeftIcon, UserIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import { Patient, Case, RwandaDistrictType } from '@/types';
 import { updatePatient } from '@/lib/services/patientService';
+import { z } from 'zod';
+import { ApiClientError } from '@/lib/utils/apiError';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
 
 const DISTRICTS = [
   { value: 'gasabo', label: 'Gasabo' },
@@ -38,6 +41,18 @@ interface EditPatientData {
   };
 }
 
+const editPatientSchema = z.object({
+  firstName: z.string().trim().min(1, 'First name is required.'),
+  lastName: z.string().trim().min(1, 'Last name is required.'),
+  phone: z.string().trim().min(10, 'Phone number must be at least 10 digits.'),
+  district: z.string().trim().min(1, 'District is required.'),
+  emergencyContact: z.object({
+    name: z.string().optional(),
+    phone: z.string().optional(),
+    relationship: z.string().optional(),
+  }),
+});
+
 export default function PatientDetailPage({ params }: { params: Promise<{ patientId: string }> }) {
   const { data: session, status } = useSession();
   const { error: showError, success: showSuccess } = useToastHelpers();
@@ -48,6 +63,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
   const [loading, setLoading] = useState(true);
   const [casesLoading, setCasesLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   
   const [editData, setEditData] = useState<EditPatientData>({
     firstName: '',
@@ -127,8 +143,10 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
   const handleEditPatient = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editData.firstName || !editData.lastName) {
-      showError('First name and last name are required');
+    const validation = editPatientSchema.safeParse(editData);
+    if (!validation.success) {
+      setEditErrors(zodErrorToFieldMap(validation.error));
+      showError(validation.error.issues[0]?.message || 'Please correct the highlighted fields');
       return;
     }
 
@@ -145,7 +163,41 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
       }
     } catch (error) {
       console.error('Error updating patient:', error);
-      showError('Failed to update patient');
+      if (error instanceof ApiClientError && error.fieldErrors) {
+        setEditErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      }
+      showError(error instanceof ApiClientError ? error.message : 'Failed to update patient');
+    }
+  };
+
+  const setEditFieldError = (field: string, message?: string) => {
+    setEditErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validateEditField = (field: string, value: string) => {
+    if (field === 'firstName') {
+      const parsed = z.string().trim().min(1, 'First name is required.').safeParse(value);
+      setEditFieldError('firstName', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'lastName') {
+      const parsed = z.string().trim().min(1, 'Last name is required.').safeParse(value);
+      setEditFieldError('lastName', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'phone') {
+      const parsed = z.string().trim().min(10, 'Phone number must be at least 10 digits.').safeParse(value);
+      setEditFieldError('phone', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'district') {
+      const parsed = z.string().trim().min(1, 'District is required.').safeParse(value);
+      setEditFieldError('district', parsed.success ? undefined : parsed.error.issues[0]?.message);
     }
   };
 
@@ -394,14 +446,24 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
             <Input
               label="First Name"
               value={editData.firstName}
-              onChange={(e) => setEditData({ ...editData, firstName: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEditData({ ...editData, firstName: value });
+                validateEditField('firstName', value);
+              }}
+              error={editErrors.firstName}
               required
             />
 
             <Input
               label="Last Name"
               value={editData.lastName}
-              onChange={(e) => setEditData({ ...editData, lastName: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEditData({ ...editData, lastName: value });
+                validateEditField('lastName', value);
+              }}
+              error={editErrors.lastName}
               required
             />
 
@@ -409,14 +471,24 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
               label="Phone"
               type="tel"
               value={editData.phone}
-              onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setEditData({ ...editData, phone: value });
+                validateEditField('phone', value);
+              }}
+              error={editErrors.phone}
             />
 
             <SearchableSelect
               label="District"
               value={editData.district}
-              onChange={(value) => setEditData({ ...editData, district: value as RwandaDistrictType })}
+              onChange={(value) => {
+                const district = value as RwandaDistrictType;
+                setEditData({ ...editData, district });
+                validateEditField('district', district || '');
+              }}
               options={DISTRICTS}
+              error={editErrors.district}
             />
 
             <div className="space-y-4">

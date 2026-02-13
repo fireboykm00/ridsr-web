@@ -77,9 +77,9 @@ export default function AdminPage() {
         const facilitiesData = await facilitiesRes.json();
         const casesData = await casesRes.json();
 
-        const users: UserSummary[] = usersData.data || [];
-        const facilities: FacilitySummary[] = facilitiesData.data || [];
-        const cases: CaseSummary[] = casesData.data?.data || [];
+        const users: UserSummary[] = usersData.data?.data || usersData.data || [];
+        const facilities: FacilitySummary[] = facilitiesData.data?.data || facilitiesData.data || [];
+        const cases: CaseSummary[] = casesData.data?.data || casesData.data || [];
 
         // Process system stats
         const systemStats: SystemStats = {

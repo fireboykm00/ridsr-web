@@ -9,6 +9,10 @@ import { useToastHelpers } from '@/components/ui/Toast';
 import { USER_ROLES, User, Facility, UserRole, RwandaDistrictType, RWANDA_DISTRICTS } from '@/types';
 import { userService } from '@/lib/services/userService';
 import { facilityService } from '@/lib/services/facilityService';
+import { createUserSchema, updateUserSchema } from '@/lib/schemas';
+import { z } from 'zod';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
+import { ApiClientError } from '@/lib/utils/apiError';
 
 interface UserFormData {
   nationalId: string;
@@ -28,9 +32,20 @@ interface UserManagementFormProps {
   onCancel: () => void;
 }
 
+const liveFieldValidators = {
+  name: z.string().trim().min(2, 'Full name must be at least 2 characters.'),
+  email: z.string().trim().email('Enter a valid email address.'),
+  phone: z.string().trim().min(10, 'Phone number must be at least 10 digits.'),
+  nationalId: z.string().trim().min(5, 'National ID must be at least 5 characters.').max(20, 'National ID must be at most 20 characters.'),
+  password: z.string().trim().min(6, 'Password must be at least 6 characters.'),
+} as const;
+const FACILITY_REQUIRED_ROLES: UserRole[] = [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN];
+const DISTRICT_REQUIRED_ROLES: UserRole[] = [USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN];
+
 export function UserManagementForm({ user, onSuccess, onCancel }: UserManagementFormProps) {
   const { error: showError, success: showSuccess } = useToastHelpers();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [formData, setFormData] = useState<UserFormData>({
     nationalId: user?.nationalId || '',
@@ -45,6 +60,24 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
   });
 
   const isEditing = !!user;
+
+  const setFieldError = (field: string, message?: string) => {
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validateLiveField = (field: keyof typeof liveFieldValidators, value: string) => {
+    if (field === 'password' && isEditing && !value.trim()) {
+      setFieldError('password');
+      return;
+    }
+    const parsed = liveFieldValidators[field].safeParse(value);
+    setFieldError(field, parsed.success ? undefined : parsed.error.issues[0]?.message);
+  };
 
   useEffect(() => {
     const loadFacilities = async () => {
@@ -65,26 +98,51 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
     setLoading(true);
 
     try {
-      if (!formData.name || !formData.email || !formData.phone || !formData.nationalId) {
-        showError('Please fill in required fields (Name, Email, Phone, National ID)');
-        return;
+      setErrors({});
+
+      if (isEditing) {
+        updateUserSchema.parse({
+          workerId: formData.workerId || undefined,
+          nationalId: formData.nationalId,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          facilityId: formData.facilityId || undefined,
+          district: formData.district,
+        });
+      } else {
+        createUserSchema.parse({
+          workerId: formData.workerId || undefined,
+          nationalId: formData.nationalId,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          role: formData.role,
+          facilityId: formData.facilityId || undefined,
+          district: formData.district,
+        });
       }
 
       // Facility is only required for health workers and lab technicians
-      const isFacilityRequired = [USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role);
+      const isFacilityRequired = FACILITY_REQUIRED_ROLES.includes(formData.role);
       if (isFacilityRequired && !formData.facilityId) {
+        setFieldError('facilityId', 'Facility is required for this role');
         showError('Facility is required for this role');
         return;
       }
 
       // District is required for district officers, health workers, and lab technicians
-      const isDistrictRequired = [USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role);
+      const isDistrictRequired = DISTRICT_REQUIRED_ROLES.includes(formData.role);
       if (isDistrictRequired && !formData.district) {
+        setFieldError('district', 'District is required for this role');
         showError('District is required for this role');
         return;
       }
 
       if (!isEditing && !formData.password) {
+        setErrors((prev) => ({ ...prev, password: 'Password is required for new users' }));
         showError('Password is required for new users');
         return;
       }
@@ -160,6 +218,11 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
 
       onSuccess();
     } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        setErrors(zodErrorToFieldMap(error));
+      } else if (error instanceof ApiClientError && error.fieldErrors) {
+        setErrors(error.fieldErrors);
+      }
       const message = error instanceof Error ? error.message : `Failed to ${isEditing ? 'update' : 'create'} user`;
       showError(message);
     } finally {
@@ -190,7 +253,12 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       <Input
         label="Full Name"
         value={formData.name}
-        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ ...formData, name: value });
+          validateLiveField('name', value);
+        }}
+        error={errors.name}
         required
         disabled={loading}
       />
@@ -199,7 +267,12 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         label="Email"
         type="email"
         value={formData.email}
-        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ ...formData, email: value });
+          validateLiveField('email', value);
+        }}
+        error={errors.email}
         required
         disabled={loading}
       />
@@ -207,7 +280,12 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       <Input
         label="Phone"
         value={formData.phone}
-        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ ...formData, phone: value });
+          validateLiveField('phone', value);
+        }}
+        error={errors.phone}
         required
         disabled={loading}
         placeholder="e.g. +2507XXXXXXXX"
@@ -216,7 +294,12 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       <Input
         label="National ID"
         value={formData.nationalId}
-        onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ ...formData, nationalId: value });
+          validateLiveField('nationalId', value);
+        }}
+        error={errors.nationalId}
         required
         disabled={loading}
       />
@@ -225,6 +308,7 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
         label="Worker ID (optional)"
         value={formData.workerId || ''}
         onChange={(e) => setFormData({ ...formData, workerId: e.target.value })}
+        error={errors.workerId}
         disabled={loading}
         placeholder="Auto-generated if blank"
       />
@@ -232,30 +316,42 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       <SearchableSelect
         label="Role"
         value={formData.role}
-        onChange={(value) => setFormData({ ...formData, role: value as UserRole })}
+        onChange={(value) => {
+          setFormData({ ...formData, role: value as UserRole });
+          setFieldError('role', value ? undefined : 'Role is required.');
+        }}
         options={roleOptions}
+        error={errors.role}
         required
         disabled={loading}
       />
 
-      {[USER_ROLES.DISTRICT_OFFICER, USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role) && (
+      {DISTRICT_REQUIRED_ROLES.includes(formData.role) && (
         <SearchableSelect
           label="District *"
           value={formData.district}
-          onChange={(value) => setFormData({ ...formData, district: value as RwandaDistrictType })}
+          onChange={(value) => {
+            setFormData({ ...formData, district: value as RwandaDistrictType });
+            setFieldError('district', value ? undefined : 'District is required for this role');
+          }}
           options={districtOptions}
+          error={errors.district}
           required
           disabled={loading}
           placeholder="Select a district..."
         />
       )}
 
-      {[USER_ROLES.HEALTH_WORKER, USER_ROLES.LAB_TECHNICIAN].includes(formData.role) && (
+      {FACILITY_REQUIRED_ROLES.includes(formData.role) && (
         <SearchableSelect
           label="Facility *"
           value={formData.facilityId}
-          onChange={(value) => setFormData({ ...formData, facilityId: value })}
+          onChange={(value) => {
+            setFormData({ ...formData, facilityId: value || '' });
+            setFieldError('facilityId', value ? undefined : 'Facility is required for this role');
+          }}
           options={facilityOptions}
+          error={errors.facilityId}
           required
           disabled={loading}
           placeholder="Select a facility..."
@@ -265,7 +361,12 @@ export function UserManagementForm({ user, onSuccess, onCancel }: UserManagement
       <PasswordInput
         label={isEditing ? "New Password (leave blank to keep current)" : "Password"}
         value={formData.password}
-        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+        onChange={(e) => {
+          const value = e.target.value;
+          setFormData({ ...formData, password: value });
+          validateLiveField('password', value);
+        }}
+        error={errors.password}
         required={!isEditing}
         disabled={loading}
       />

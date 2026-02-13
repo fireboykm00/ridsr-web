@@ -2,15 +2,23 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { caseService } from '@/lib/services/server/caseService';
 import { USER_ROLES, UserRole } from '@/types';
 
 const labResultSchema = z.object({
-  testType: z.string().min(1),
-  testName: z.string().min(1),
-  testDate: z.string().datetime(),
-  resultValue: z.string().min(1),
-  interpretation: z.enum(['positive', 'negative', 'equivocal', 'contaminated']),
+  testType: z.string().trim().min(1, 'Test type is required.'),
+  testName: z.string().trim().min(1, 'Test name is required.'),
+  testDate: z.string().datetime('Test date must be a valid date-time value.'),
+  resultValue: z.string().trim().min(1, 'Result value is required.'),
+  interpretation: z.enum(['positive', 'negative', 'equivocal', 'contaminated'], {
+    message: 'Interpretation is required.',
+  }),
   resultUnit: z.string().optional(),
   referenceRange: z.string().optional(),
 });
@@ -41,7 +49,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
     console.error('[API] Error fetching case lab results:', error);
-    return errorResponse('Failed to fetch case lab results', 500);
+    return serverErrorResponse(error, 'Failed to fetch case lab results', 'CASE_LAB_RESULTS_FETCH_FAILED');
   }
 }
 
@@ -50,8 +58,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const allowedRoles = [...ROLE_PERMISSIONS.MANAGEMENT, USER_ROLES.LAB_TECHNICIAN] as unknown as UserRole[];
     const user = await requireRoles(request, allowedRoles);
     const { id } = await params;
-    const body = await request.json();
-    const payload = labResultSchema.parse(body);
+    const payload = await parseAndValidateBody(request, labResultSchema, {
+      message: 'Please correct the highlighted lab result fields.',
+    });
 
     const result = await caseService.addCaseLabResult(id, payload, {
       id: user.id,
@@ -64,8 +73,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0]?.message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     if (error instanceof Error) {
       if (error.message === 'NOT_FOUND') {
@@ -79,10 +88,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     }
     console.error('[API] Error creating case lab result:', error);
-    return errorResponse(
-      'Failed to create case lab result',
-      500,
-      error instanceof Error ? error.message : 'Unknown server error'
-    );
+    return serverErrorResponse(error, 'Failed to create case lab result', 'CASE_LAB_RESULT_CREATE_FAILED');
   }
 }

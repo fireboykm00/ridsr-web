@@ -417,7 +417,17 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+  code?: string;
+  fieldErrors?: Record<string, string>;
 }
+
+export type ApiErrorPayload = {
+  success: false;
+  error: string;
+  message?: string;
+  code?: string;
+  fieldErrors?: Record<string, string>;
+};
 
 export interface ApiPaginatedResponse<T> {
   data: T[];

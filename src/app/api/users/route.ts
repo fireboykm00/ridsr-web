@@ -3,6 +3,13 @@ import { z } from 'zod';
 import { requireAuth, requireRoles, isAuthError } from '@/lib/api/middleware';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  validationErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { createUserSchema, paginationSchema } from '@/lib/schemas';
 import { RwandaDistrictType, RwandaProvinceType, UserRole, USER_ROLES } from '@/types';
 
@@ -48,10 +55,10 @@ export async function GET(request: NextRequest) {
       return errorResponse(error.message, error.status);
     }
     if (error instanceof z.ZodError) {
-      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+      return validationErrorResponse(error, 'Invalid query parameters');
     }
     console.error('[API] Error fetching users:', error);
-    return errorResponse('Failed to fetch users', 500);
+    return serverErrorResponse(error, 'Failed to fetch users', 'USER_FETCH_FAILED');
   }
 }
 
@@ -59,8 +66,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireRoles(request, [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER] as unknown as UserRole[]);
 
-    const body = await request.json();
-    const validatedData = createUserSchema.parse(body);
+    const validatedData = await parseAndValidateBody(request, createUserSchema, {
+      message: 'Please correct the highlighted user fields.',
+    });
 
     // Generate workerId if not provided
     let workerId = validatedData.workerId;
@@ -84,13 +92,15 @@ export async function POST(request: NextRequest) {
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
-      return errorResponse('Duplicate user data', 400, 'Worker ID, email, or national ID already exists');
+      return errorResponse('Duplicate user data', 409, 'Worker ID, email, or national ID already exists', {
+        code: 'USER_DUPLICATE',
+      });
     }
     console.error('[API] Error creating user:', error);
-    return errorResponse('Failed to create user', 500);
+    return serverErrorResponse(error, 'Failed to create user', 'USER_CREATE_FAILED');
   }
 }

@@ -4,6 +4,13 @@ import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/
 import { facilityService } from '@/lib/services/server/facilityService';
 import type { CreateFacilityData } from '@/lib/services/server/facilityService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  validationErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { createFacilitySchema, paginationSchema } from '@/lib/schemas';
 import { FacilityType, RwandaDistrictType, RwandaProvinceType, UserRole } from '@/types';
 
@@ -34,10 +41,10 @@ export async function GET(request: NextRequest) {
       return errorResponse(error.message, error.status);
     }
     if (error instanceof z.ZodError) {
-      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+      return validationErrorResponse(error, 'Invalid query parameters');
     }
     console.error('[API] Error fetching facilities:', error);
-    return errorResponse('Failed to fetch facilities', 500);
+    return serverErrorResponse(error, 'Failed to fetch facilities', 'FACILITY_FETCH_FAILED');
   }
 }
 
@@ -45,8 +52,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireRoles(request, ROLE_PERMISSIONS.ADMIN as unknown as UserRole[]);
 
-    const body = await request.json();
-    const validatedData = createFacilitySchema.parse(body);
+    const validatedData = await parseAndValidateBody(request, createFacilitySchema, {
+      message: 'Please correct the highlighted facility fields.',
+    });
 
     const getProvinceFromDistrict = (district: string): string => {
       const d = district.toLowerCase();
@@ -77,10 +85,10 @@ export async function POST(request: NextRequest) {
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     console.error('[API] Error creating facility:', error);
-    return errorResponse('Failed to create facility', 500);
+    return serverErrorResponse(error, 'Failed to create facility', 'FACILITY_CREATE_FAILED');
   }
 }

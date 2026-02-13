@@ -3,6 +3,13 @@ import { z } from 'zod';
 import { getPatients, createPatient, searchPatients } from '@/lib/services/server/patientService';
 import { createPatientSchema, searchSchema } from '@/lib/schemas';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  validationErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { isAuthError, requireAuth } from '@/lib/api/middleware';
 import { RwandaDistrictType, RwandaProvinceType, Gender } from '@/types';
 import type { CreatePatientData } from '@/lib/services/server/patientService';
@@ -49,10 +56,10 @@ export async function GET(request: NextRequest) {
       return errorResponse(error.message, error.status);
     }
     if (error instanceof z.ZodError) {
-      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+      return validationErrorResponse(error, 'Invalid query parameters');
     }
     console.error('[API] Error fetching patients:', error);
-    return errorResponse('Failed to fetch patients');
+    return serverErrorResponse(error, 'Failed to fetch patients', 'PATIENT_FETCH_FAILED');
   }
 }
 
@@ -60,8 +67,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireAuth(request);
 
-    const body = await request.json();
-    const validated = createPatientSchema.parse(body);
+    const validated = await parseAndValidateBody(request, createPatientSchema, {
+      message: 'Please correct the highlighted patient fields.',
+    });
 
     const patientData: CreatePatientData = {
       ...validated,
@@ -81,10 +89,10 @@ export async function POST(request: NextRequest) {
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     console.error('[API] Error creating patient:', error);
-    return errorResponse('Failed to create patient');
+    return serverErrorResponse(error, 'Failed to create patient', 'PATIENT_CREATE_FAILED');
   }
 }

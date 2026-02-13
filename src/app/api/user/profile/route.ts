@@ -2,6 +2,18 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
+import { z } from 'zod';
+
+const profileUpdateSchema = z.object({
+  name: z.string().trim().min(2, 'Full name must be at least 2 characters.'),
+  email: z.string().trim().email('Enter a valid email address.'),
+});
 
 export async function PUT(request: NextRequest) {
   try {
@@ -10,8 +22,9 @@ export async function PUT(request: NextRequest) {
       return errorResponse('Unauthorized', 401);
     }
 
-    const body = await request.json();
-    const { name, email } = body;
+    const { name, email } = await parseAndValidateBody(request, profileUpdateSchema, {
+      message: 'Please correct the highlighted profile fields.',
+    });
 
     const updatedUser = await userService.updateUserById(session.user.id, {
       name,
@@ -24,7 +37,10 @@ export async function PUT(request: NextRequest) {
 
     return successResponse({ message: 'Profile updated successfully' });
   } catch (error) {
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
+    }
     console.error('[API] Error updating profile:', error);
-    return errorResponse('Failed to update profile');
+    return serverErrorResponse(error, 'Failed to update profile', 'USER_PROFILE_UPDATE_FAILED');
   }
 }

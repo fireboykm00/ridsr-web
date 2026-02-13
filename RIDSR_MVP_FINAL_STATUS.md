@@ -259,6 +259,37 @@ Any Officer logs in
 
 ---
 
+## VALIDATION ARCHITECTURE (CENTRALIZED)
+
+- **Backend is authoritative:** every mutating API route validates request body before service execution.
+- **Frontend is UX-first:** forms validate on change and before submit to show inline guidance early.
+- **Shared schema source:** request/form constraints are defined from shared Zod schemas in `src/lib/schemas/index.ts`.
+- **Shared API error contract:** non-2xx responses return:
+  - `error` (stable category)
+  - `message` (human-readable context)
+  - `code` (optional machine code)
+  - `fieldErrors` (optional map for inline field binding)
+
+### Standard Route Pattern
+
+- Use `parseAndValidateBody(request, schema, { message })` from `src/lib/api/error-utils.ts`.
+- Handle validation with `isApiValidationError` + `apiValidationErrorResponse`.
+- Use `serverErrorResponse` for sanitized 500 errors.
+
+### Standard Form Pattern
+
+- Validate fields live (`onChange`) and block invalid submit.
+- Map `ApiClientError.fieldErrors` to inline control errors.
+- Show toast/banner only for non-field failures.
+
+### Team Guardrails
+
+1. New forms must implement live field validation and server `fieldErrors` mapping.
+2. New API routes must use centralized request-body validation helper and standard error payload.
+3. Avoid generic `"Failed to ..."` UI messages when API provides contextual `message`.
+
+---
+
 ## DEPLOYMENT CHECKLIST
 
 - [ ] Code complete
@@ -274,6 +305,5 @@ Any Officer logs in
 - [ ] Documentation complete
 
 ---
-
 
 

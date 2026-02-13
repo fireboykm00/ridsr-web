@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { dashboardService } from '@/lib/services/server/dashboardService';
 import { UserRole, RwandaDistrictType } from '@/types';
+import { successResponse } from '@/lib/api/response';
+import { serverErrorResponse } from '@/lib/api/error-utils';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -49,9 +51,9 @@ export async function GET(request: NextRequest) {
         }
     }
 
-    return NextResponse.json(stats);
+    return successResponse(stats);
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverErrorResponse(error, 'Failed to fetch dashboard data', 'DASHBOARD_FETCH_FAILED');
   }
 }

@@ -128,7 +128,8 @@ export default function FacilityManagementPage() {
           <div className="relative">
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
-              placeholder="Search facilities..."
+              label="Search facility"
+              placeholder="Enter code, name, ..etc"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"

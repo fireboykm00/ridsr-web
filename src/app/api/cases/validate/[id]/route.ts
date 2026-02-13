@@ -3,6 +3,12 @@ import { z } from 'zod';
 import { requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { ValidationStatus, UserRole, USER_ROLES } from '@/types';
 
 const validateCaseSchema = z.object({
@@ -16,8 +22,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const user = await requireRoles(request, allowedRoles);
 
     const { id } = await params;
-    const body = await request.json();
-    const { validationStatus, validationNotes } = validateCaseSchema.parse(body);
+    const { validationStatus, validationNotes } = await parseAndValidateBody(request, validateCaseSchema, {
+      message: 'Please select a valid validation decision.',
+    });
 
     // Check if case exists and is pending
     const existingCase = await caseService.findById(id);
@@ -57,11 +64,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     console.error('[API] Error validating case:', error);
-    return errorResponse('Failed to validate case', 500);
+    return serverErrorResponse(error, 'Failed to validate case', 'CASE_VALIDATE_FAILED');
   }
 }
 
@@ -91,6 +98,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return errorResponse(error.message, error.status);
     }
     console.error('[API] Error fetching case validation info:', error);
-    return errorResponse('Failed to fetch validation info', 500);
+    return serverErrorResponse(error, 'Failed to fetch validation info', 'CASE_VALIDATION_INFO_FAILED');
   }
 }

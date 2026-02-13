@@ -3,6 +3,12 @@ import { z } from 'zod';
 import { requireAuth, requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { updateCaseSchema } from '@/lib/schemas';
 import { UserRole } from '@/types';
 
@@ -27,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return errorResponse(error.message, error.status);
     }
     console.error('[API] Error fetching case:', error);
-    return errorResponse('Failed to fetch case', 500);
+    return serverErrorResponse(error, 'Failed to fetch case', 'CASE_GET_FAILED');
   }
 }
 
@@ -36,8 +42,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     await requireRoles(request, ROLE_PERMISSIONS.ALL_STAFF as unknown as UserRole[]);
 
     const { id } = await params;
-    const body = await request.json();
-    const validatedData = updateCaseBodySchema.parse(body);
+    const validatedData = await parseAndValidateBody(request, updateCaseBodySchema, {
+      message: 'Please correct the highlighted case fields.',
+    });
 
     const caseRecord = await caseService.updateById(id, validatedData);
 
@@ -50,11 +57,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     console.error('[API] Error updating case:', error);
-    return errorResponse('Failed to update case', 500);
+    return serverErrorResponse(error, 'Failed to update case', 'CASE_UPDATE_FAILED');
   }
 }
 
@@ -75,6 +82,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return errorResponse(error.message, error.status);
     }
     console.error('[API] Error deleting case:', error);
-    return errorResponse('Failed to delete case', 500);
+    return serverErrorResponse(error, 'Failed to delete case', 'CASE_DELETE_FAILED');
   }
 }

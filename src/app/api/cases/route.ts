@@ -3,6 +3,13 @@ import { z } from 'zod';
 import { getCases, createCase } from '@/lib/services/server/caseService';
 import { createCaseSchema, paginationSchema } from '@/lib/schemas';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  validationErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
 import { isAuthError, requireAuth } from '@/lib/api/middleware';
 import { CaseStatus, DiseaseCode, Symptom } from '@/types';
 
@@ -29,10 +36,10 @@ export async function GET(request: NextRequest) {
       return errorResponse(error.message, error.status);
     }
     if (error instanceof z.ZodError) {
-      return errorResponse('Invalid query parameters', 400, error.issues[0].message);
+      return validationErrorResponse(error, 'Invalid query parameters');
     }
     console.error('[API] Error fetching cases:', error);
-    return errorResponse('Failed to fetch cases');
+    return serverErrorResponse(error, 'Failed to fetch cases', 'CASE_FETCH_FAILED');
   }
 }
 
@@ -40,11 +47,12 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
 
-    const body = await request.json();
-    const validated = createCaseSchema.parse(body);
+    const validated = await parseAndValidateBody(request, createCaseSchema, {
+      message: 'Please correct the highlighted case fields.',
+    });
 
     // If facilityId is a code (not ObjectId), look it up
-    let facilityId = body.facilityId || user?.facilityId;
+    let facilityId = validated.facilityId || user?.facilityId;
     if (facilityId && facilityId.length < 24) {
       // It's a code, need to look up the facility
       const { facilityService } = await import('@/lib/services/server/facilityService');
@@ -74,10 +82,10 @@ export async function POST(request: NextRequest) {
     if (isAuthError(error)) {
       return errorResponse(error.message, error.status);
     }
-    if (error instanceof z.ZodError) {
-      return errorResponse('Validation failed', 400, error.issues[0].message);
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
     }
     console.error('[API] Error creating case:', error);
-    return errorResponse('Failed to create case');
+    return serverErrorResponse(error, 'Failed to create case', 'CASE_CREATE_FAILED');
   }
 }

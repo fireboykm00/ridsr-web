@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { dbConnect } from '@/lib/services/db';
 import { User as UserModel } from '@/lib/models';
 import { requireAuth, isAuthError } from '@/lib/api/middleware';
+import { errorResponse, successResponse } from '@/lib/api/response';
+import { serverErrorResponse } from '@/lib/api/error-utils';
 
 // GET: Search users
 export async function GET(request: NextRequest) {
@@ -12,7 +14,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q');
 
     if (!query) {
-      return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
+      return errorResponse('Invalid query', 400, 'Query parameter is required', { code: 'QUERY_REQUIRED' });
     }
 
     await dbConnect();
@@ -33,12 +35,12 @@ export async function GET(request: NextRequest) {
       return user;
     });
 
-    return NextResponse.json(filteredUsers);
+    return successResponse(filteredUsers);
   } catch (error) {
     if (isAuthError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return errorResponse(error.message, error.status);
     }
     console.error('Error searching users:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverErrorResponse(error, 'Failed to search users', 'USER_SEARCH_FAILED');
   }
 }

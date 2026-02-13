@@ -13,6 +13,9 @@ import { UserGroupIcon, PlusIcon, EyeIcon, PencilIcon } from '@heroicons/react/2
 import { Patient, RwandaDistrictType, Gender, USER_ROLES } from '@/types';
 import { createPatient } from '@/lib/services/patientService';
 import { useDebounce } from '@/hooks/useDebounce';
+import { z } from 'zod';
+import { ApiClientError, parseApiError } from '@/lib/utils/apiError';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
 
 interface PatientFormData {
   firstName: string;
@@ -43,6 +46,16 @@ const GENDERS = [
   { value: 'other', label: 'Other' },
 ];
 
+const patientCreateFormSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  nationalId: z.string().min(5, 'National ID is required'),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  gender: z.enum(['male', 'female', 'other']),
+  phone: z.string().min(10, 'Phone is required'),
+  district: z.string().min(1, 'District is required'),
+});
+
 export default function PatientsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -70,6 +83,53 @@ export default function PatientsPage() {
     phone: '',
     district: 'gasabo'
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const setFieldError = (field: string, message?: string) => {
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validatePatientField = (field: keyof PatientFormData, value: string) => {
+    if (field === 'firstName') {
+      const parsed = z.string().trim().min(1, 'First name is required').safeParse(value);
+      setFieldError('firstName', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'lastName') {
+      const parsed = z.string().trim().min(1, 'Last name is required').safeParse(value);
+      setFieldError('lastName', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'nationalId') {
+      const parsed = z
+        .string()
+        .trim()
+        .min(5, 'National ID must be at least 5 characters.')
+        .max(20, 'National ID must be at most 20 characters.')
+        .safeParse(value);
+      setFieldError('nationalId', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'phone') {
+      const parsed = z.string().trim().min(10, 'Phone number must be at least 10 digits.').safeParse(value);
+      setFieldError('phone', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'dateOfBirth') {
+      const parsed = z.string().trim().min(1, 'Date of birth is required').safeParse(value);
+      setFieldError('dateOfBirth', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'district') {
+      const parsed = z.string().trim().min(1, 'District is required').safeParse(value);
+      setFieldError('district', parsed.success ? undefined : parsed.error.issues[0]?.message);
+    }
+  };
 
   const loadPatients = useCallback(async () => {
     if (status !== 'authenticated' || !session) return;
@@ -90,7 +150,9 @@ export default function PatientsPage() {
       if (genderFilter) params.append('gender', genderFilter);
 
       const response = await fetch(`/api/patients?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch patients');
+      if (!response.ok) {
+        throw new Error((await parseApiError(response, 'Failed to fetch patients')).message);
+      }
 
       const json = await response.json();
       const result = json.data || json; // Handle wrapped or direct response
@@ -112,9 +174,14 @@ export default function PatientsPage() {
   const handleAddPatient = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.lastName || !formData.nationalId) {
-      showError('Please fill in all required fields');
-      return;
+    try {
+      patientCreateFormSchema.parse(formData);
+      setFormErrors({});
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        setFormErrors(zodErrorToFieldMap(error));
+        return;
+      }
     }
 
     try {
@@ -142,12 +209,19 @@ export default function PatientsPage() {
 
       // Refresh the patient list
       loadPatients();
-    } catch {
-      showError('Failed to create patient');
+    } catch (error) {
+      if (error instanceof ApiClientError && error.fieldErrors) {
+        setFormErrors((prev) => ({ ...prev, ...error.fieldErrors }));
+      }
+      showError(error instanceof ApiClientError ? error.message : 'Failed to create patient');
     }
   };
 
   const handleViewPatient = (patientId: string) => {
+    if (!patientId || patientId === 'undefined') {
+      showError('Patient ID is missing. Please refresh and try again.');
+      return;
+    }
     router.push(`/dashboard/patient/${patientId}`);
   };
 
@@ -266,8 +340,10 @@ export default function PatientsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {patients.length > 0 && patients.map((patient, index) => (
-                    <tr key={patient.firstName + index} className="border-b border-gray-200 hover:bg-gray-50">
+                  {patients.length > 0 && patients.map((patient, index) => {
+                    const patientId = patient.id || (patient as Patient & { _id?: string })._id || '';
+                    return (
+                    <tr key={(patientId || patient.firstName) + index} className="border-b border-gray-200 hover:bg-gray-50">
                       <td className="py-3 px-4 text-gray-900">
                         {patient.firstName} {patient.lastName}
                       </td>
@@ -280,14 +356,16 @@ export default function PatientsPage() {
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleViewPatient(patient._id || patient.id)}
+                            onClick={() => handleViewPatient(patientId)}
+                            disabled={!patientId}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                             title="View Details"
                           >
                             <EyeIcon className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleViewPatient(patient._id || patient.id)}
+                            onClick={() => handleViewPatient(patientId)}
+                            disabled={!patientId}
                             className="p-2 text-green-600 hover:bg-green-50 rounded"
                             title="Edit Patient"
                           >
@@ -296,7 +374,7 @@ export default function PatientsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
@@ -344,21 +422,36 @@ export default function PatientsPage() {
             <Input
               label="First Name"
               value={formData.firstName}
-              onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, firstName: value });
+                validatePatientField('firstName', value);
+              }}
+              error={formErrors.firstName}
               required
             />
 
             <Input
               label="Last Name"
               value={formData.lastName}
-              onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, lastName: value });
+                validatePatientField('lastName', value);
+              }}
+              error={formErrors.lastName}
               required
             />
 
             <Input
               label="National ID"
               value={formData.nationalId}
-              onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, nationalId: value });
+                validatePatientField('nationalId', value);
+              }}
+              error={formErrors.nationalId}
               required
             />
 
@@ -366,7 +459,12 @@ export default function PatientsPage() {
               label="Date of Birth"
               type="date"
               value={formData.dateOfBirth}
-              onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, dateOfBirth: value });
+                validatePatientField('dateOfBirth', value);
+              }}
+              error={formErrors.dateOfBirth}
             />
 
             <SearchableSelect
@@ -379,15 +477,25 @@ export default function PatientsPage() {
             <SearchableSelect
               label="District"
               value={formData.district}
-              onChange={(value) => setFormData({ ...formData, district: value as RwandaDistrictType })}
+              onChange={(value) => {
+                const next = value as RwandaDistrictType;
+                setFormData({ ...formData, district: next });
+                validatePatientField('district', next);
+              }}
               options={DISTRICTS}
+              error={formErrors.district}
             />
 
             <Input
               label="Phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                setFormData({ ...formData, phone: value });
+                validatePatientField('phone', value);
+              }}
+              error={formErrors.phone}
             />
 
             <div className="flex gap-3 pt-4">

@@ -1,5 +1,6 @@
 import { USER_ROLES, Case, ExtendedSession, User } from '@/types';
 import { normalizeId } from '@/lib/utils/normalize';
+import { throwApiError } from '@/lib/utils/apiError';
 
 type CaseRecord = Partial<Case> & { _id?: string; id?: string };
 
@@ -12,7 +13,7 @@ function mapCase(record: CaseRecord): Case {
 
 export async function getAllCases(): Promise<Case[]> {
   const res = await fetch('/api/cases');
-  if (!res.ok) throw new Error('Failed to fetch cases');
+  if (!res.ok) await throwApiError(res, 'Failed to fetch cases');
   const responseData = await res.json();
   const data = responseData.data?.data || responseData.data || responseData;
   return Array.isArray(data) ? data.map((c) => mapCase(c as CaseRecord)) : [];
@@ -32,7 +33,7 @@ export async function createCase(caseData: Partial<Case>): Promise<Case> {
     body: JSON.stringify(caseData),
   });
 
-  if (!res.ok) throw new Error('Failed to create case');
+  if (!res.ok) await throwApiError(res, 'Failed to create case');
   const responseData = await res.json();
   return normalizeId(responseData.data || responseData) as Case;
 }
@@ -44,13 +45,14 @@ export async function updateCase(id: string, caseData: Partial<Case>): Promise<C
     body: JSON.stringify(caseData),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) await throwApiError(res, 'Failed to update case');
   const responseData = await res.json();
   return normalizeId(responseData.data || responseData) as Case;
 }
 
 export async function deleteCase(id: string): Promise<boolean> {
   const res = await fetch(`/api/cases/${id}`, { method: 'DELETE' });
+  if (!res.ok) await throwApiError(res, 'Failed to delete case');
   return res.ok;
 }
 

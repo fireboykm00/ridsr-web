@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { auth } from '@/lib/auth';
@@ -6,6 +6,40 @@ import { dbConnect } from '@/lib/services/db';
 import { User as UserModel } from '@/lib/models';
 import { USER_ROLES } from '@/types';
 import { facilityService } from '@/lib/services/server/facilityService';
+import { errorResponse, successResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
+import { z } from 'zod';
+import { updateUserSchema } from '@/lib/schemas';
+
+const updateUserBodySchema = updateUserSchema.extend({
+  password: z.string().trim().min(6, 'Password must be at least 6 characters.').optional(),
+});
+
+function mapMongooseValidationErrors(error: unknown): Record<string, string> | undefined {
+  if (
+    !error ||
+    typeof error !== 'object' ||
+    !('errors' in error) ||
+    !error.errors ||
+    typeof error.errors !== 'object'
+  ) {
+    return undefined;
+  }
+
+  const rawErrors = error.errors as Record<string, { message?: string }>;
+  const fieldErrors: Record<string, string> = {};
+  for (const [field, details] of Object.entries(rawErrors)) {
+    if (!fieldErrors[field] && details?.message) {
+      fieldErrors[field] = details.message;
+    }
+  }
+  return Object.keys(fieldErrors).length ? fieldErrors : undefined;
+}
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -21,22 +55,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       userContext?.role === USER_ROLES.NATIONAL_OFFICER;
 
     if (!userContext) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse('Unauthorized', 401);
     }
 
     if (!canViewUser) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return errorResponse('Forbidden', 403);
     }
 
     const user = await UserModel.findById(id).select('-password').lean();
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return errorResponse('User not found', 404);
     }
 
-    return NextResponse.json(user);
+    return successResponse(user);
   } catch (error) {
     console.error('Error fetching user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverErrorResponse(error, 'Failed to fetch user', 'USER_GET_FAILED');
   }
 }
 
@@ -46,11 +80,13 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const { id } = await params;
-    let data = (await request.json()) as Record<string, unknown>;
+    let data = (await parseAndValidateBody(request, updateUserBodySchema, {
+      message: 'Please correct the highlighted user fields.',
+    })) as Record<string, unknown>;
     await dbConnect();
 
     if (!userContext) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse('Unauthorized', 401);
     }
 
     const canEditUser =
@@ -59,7 +95,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       userContext.role === USER_ROLES.NATIONAL_OFFICER;
 
     if (!canEditUser) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return errorResponse('Forbidden', 403);
     }
 
     // If updating own profile, restrict certain fields
@@ -78,7 +114,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Hash password if provided
     if (data.password) {
-      data.password = await bcrypt.hash(data.password, 12);
+      data.password = await bcrypt.hash(String(data.password), 12);
     }
 
     // Accept facility code (e.g. HC00055) or ObjectId.
@@ -92,7 +128,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         } else if (!mongoose.Types.ObjectId.isValid(trimmed)) {
           const facility = await facilityService.getFacilityByCode(trimmed);
           if (!facility?._id) {
-            return NextResponse.json({ error: 'Facility not found' }, { status: 404 });
+            return errorResponse('Facility not found', 404);
           }
           data.facilityId = facility._id;
           data.facilityName = facility.name;
@@ -109,23 +145,34 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }).select('-password').lean();
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return errorResponse('User not found', 404);
     }
 
-    return NextResponse.json(user);
+    return successResponse(user);
   } catch (error: unknown) {
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
+    }
     console.error('Error updating user:', error);
 
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) {
-      return NextResponse.json({ error: 'Email, Worker ID, or National ID already exists' }, { status: 400 });
+      return errorResponse('Duplicate user data', 409, 'Email, Worker ID, or National ID already exists', {
+        code: 'USER_DUPLICATE',
+      });
     }
 
     if (typeof error === 'object' && error !== null && 'name' in error && error.name === 'ValidationError') {
-      const validationMessage = 'message' in error ? String(error.message) : 'Validation failed';
-      return NextResponse.json({ error: validationMessage }, { status: 400 });
+      const fieldErrors = mapMongooseValidationErrors(error);
+      const validationMessage =
+        fieldErrors ? 'Please correct the highlighted user fields.' :
+          ('message' in error ? String(error.message) : 'Validation failed');
+      return errorResponse('Validation failed', 400, validationMessage, {
+        code: 'VALIDATION_ERROR',
+        fieldErrors,
+      });
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverErrorResponse(error, 'Failed to update user', 'USER_UPDATE_FAILED');
   }
 }
 
@@ -138,7 +185,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     await dbConnect();
 
     if (!userContext) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return errorResponse('Unauthorized', 401);
     }
 
     const canDeleteUser =
@@ -146,22 +193,22 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       userContext.role === USER_ROLES.NATIONAL_OFFICER;
 
     if (!canDeleteUser) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return errorResponse('Forbidden', 403);
     }
 
     // Prevent self-deletion
     if (userContext && userContext.id === id) {
-      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+      return errorResponse('Invalid operation', 400, 'Cannot delete your own account');
     }
 
     const success = await UserModel.findByIdAndDelete(id);
     if (!success) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return errorResponse('User not found', 404);
     }
 
-    return NextResponse.json({ message: 'User deleted successfully' });
+    return successResponse({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverErrorResponse(error, 'Failed to delete user', 'USER_DELETE_FAILED');
   }
 }

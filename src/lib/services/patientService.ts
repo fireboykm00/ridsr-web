@@ -1,9 +1,10 @@
 import { USER_ROLES, Patient, RwandaDistrictType, User, ExtendedSession } from '@/types';
 import { normalizeId, normalizeIds } from '@/lib/utils/normalize';
+import { throwApiError } from '@/lib/utils/apiError';
 
 export async function getAllPatients(): Promise<Patient[]> {
   const res = await fetch('/api/patients');
-  if (!res.ok) throw new Error('Failed to fetch patients');
+  if (!res.ok) await throwApiError(res, 'Failed to fetch patients');
   const responseData = await res.json();
   const data = responseData.data || responseData;
   return normalizeIds(Array.isArray(data) ? data : []);
@@ -25,7 +26,7 @@ export async function createPatient(patientData: Partial<Patient>): Promise<Pati
     body: JSON.stringify(patientData),
   });
 
-  if (!res.ok) throw new Error('Failed to create patient');
+  if (!res.ok) await throwApiError(res, 'Failed to create patient');
   const responseData = await res.json();
   return normalizeId(responseData.data || responseData);
 }
@@ -37,19 +38,20 @@ export async function updatePatient(id: string, patientData: Partial<Patient>): 
     body: JSON.stringify(patientData),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) await throwApiError(res, 'Failed to update patient');
   const responseData = await res.json();
   return normalizeId(responseData.data || responseData);
 }
 
 export async function deletePatient(id: string): Promise<boolean> {
   const res = await fetch(`/api/patients/${id}`, { method: 'DELETE' });
+  if (!res.ok) await throwApiError(res, 'Failed to delete patient');
   return res.ok;
 }
 
 export async function searchPatients(query: string): Promise<Patient[]> {
   const res = await fetch(`/api/patients?q=${encodeURIComponent(query)}`);
-  if (!res.ok) throw new Error('Failed to search patients');
+  if (!res.ok) await throwApiError(res, 'Failed to search patients');
   const responseData = await res.json();
   const data = responseData.data || responseData;
   return normalizeIds(Array.isArray(data) ? data : []);
@@ -76,7 +78,7 @@ export async function getPatientsWithFilters(filters: {
   if (filters.limit) params.append('limit', filters.limit.toString());
 
   const res = await fetch(`/api/patients?${params}`);
-  if (!res.ok) throw new Error('Failed to fetch patients');
+  if (!res.ok) await throwApiError(res, 'Failed to fetch patients');
   return res.json();
 }
 

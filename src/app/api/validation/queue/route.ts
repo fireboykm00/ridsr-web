@@ -2,9 +2,11 @@ import { NextRequest } from 'next/server';
 import { requireRoles, ROLE_PERMISSIONS, isAuthError } from '@/lib/api/middleware';
 import { caseService } from '@/lib/services/server/caseService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import { serverErrorResponse } from '@/lib/api/error-utils';
 import { USER_ROLES, UserRole } from '@/types';
 import { FilterQuery } from 'mongoose';
 import type { ICase } from '@/lib/models/Case';
+import { Facility } from '@/lib/models/Facility';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +21,9 @@ export async function GET(request: NextRequest) {
     const filters: FilterQuery<ICase> = { validationStatus: 'pending' };
 
     if (user && user.role === USER_ROLES.DISTRICT_OFFICER && user.district) {
-      // District officers only see cases from their district
-      filters.district = user.district;
+      // District officers only see cases from facilities in their district.
+      const facilities = await Facility.find({ district: user.district }).select('_id').lean();
+      filters.facilityId = { $in: facilities.map((f) => f._id) };
     }
     if (user && user.role === USER_ROLES.LAB_TECHNICIAN && user.facilityId) {
       // Lab technicians only see pending cases from their own facility.
@@ -53,6 +56,6 @@ export async function GET(request: NextRequest) {
       return errorResponse(error.message, error.status);
     }
     console.error('[API] Error fetching validation queue:', error);
-    return errorResponse('Failed to fetch validation queue', 500);
+    return serverErrorResponse(error, 'Failed to fetch validation queue', 'VALIDATION_QUEUE_FAILED');
   }
 }

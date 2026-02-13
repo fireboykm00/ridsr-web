@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { searchPatients } from '@/lib/services/server/patientService';
 import { searchSchema } from '@/lib/schemas';
-import { successResponse, errorResponse } from '@/lib/api/response';
+import { successResponse } from '@/lib/api/response';
+import { serverErrorResponse, validationErrorResponse } from '@/lib/api/error-utils';
 import type { IPatient } from '@/lib/models/Patient';
 
 export async function GET(request: NextRequest) {
@@ -26,9 +27,9 @@ export async function GET(request: NextRequest) {
     return successResponse(options);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return errorResponse('Invalid search query', 400, error.issues[0].message);
+      return validationErrorResponse(error, 'Invalid search query');
     }
     console.error('[API] Error searching patients:', error);
-    return errorResponse('Failed to search patients');
+    return serverErrorResponse(error, 'Failed to search patients', 'PATIENT_SEARCH_FAILED');
   }
 }

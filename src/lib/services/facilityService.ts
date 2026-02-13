@@ -1,10 +1,11 @@
 import { USER_ROLES, Facility, CreateFacilityInput, RwandaDistrictType, UpdateFacilityInput, User, ExtendedSession } from '@/types';
 import { normalizeId, normalizeIds } from '@/lib/utils/normalize';
+import { throwApiError } from '@/lib/utils/apiError';
 
 class FacilityService {
   async getAllFacilities(): Promise<Facility[]> {
     const res = await fetch('/api/facilities');
-    if (!res.ok) throw new Error('Failed to fetch facilities');
+    if (!res.ok) await throwApiError(res, 'Failed to fetch facilities');
     const responseData = await res.json();
     return normalizeIds(responseData.data || responseData);
   }
@@ -21,7 +22,7 @@ class FacilityService {
     }
 
     const res = await fetch(`/api/facilities?district=${district}`);
-    if (!res.ok) throw new Error('Failed to fetch facilities');
+    if (!res.ok) await throwApiError(res, 'Failed to fetch facilities');
     const responseData = await res.json();
     return normalizeIds(responseData.data || responseData);
   }
@@ -42,7 +43,7 @@ class FacilityService {
       body: JSON.stringify(facilityData),
     });
 
-    if (!res.ok) throw new Error('Failed to create facility');
+    if (!res.ok) await throwApiError(res, 'Failed to create facility');
     const responseData = await res.json();
     return normalizeId(responseData.data || responseData);
   }
@@ -54,13 +55,14 @@ class FacilityService {
       body: JSON.stringify(facilityData),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) await throwApiError(res, 'Failed to update facility');
     const responseData = await res.json();
     return normalizeId(responseData.data || responseData);
   }
 
   async deleteFacility(id: string): Promise<boolean> {
     const res = await fetch(`/api/facilities/${id}`, { method: 'DELETE' });
+    if (!res.ok) await throwApiError(res, 'Failed to delete facility');
     return res.ok;
   }
 

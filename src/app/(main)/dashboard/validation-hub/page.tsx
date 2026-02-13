@@ -1,12 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { CheckCircleIcon, XCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { USER_ROLES, Case, ValidationStatus, UserRole, LabResultInterpretation } from '@/types';
+import { z } from 'zod';
+import { parseApiError, ApiClientError } from '@/lib/utils/apiError';
+import { zodErrorToFieldMap } from '@/lib/utils/zod';
 
 interface ValidationCase extends Case {
   patient?: {
@@ -75,6 +78,18 @@ const HUB_ROLES: UserRole[] = [
   USER_ROLES.DISTRICT_OFFICER,
   USER_ROLES.LAB_TECHNICIAN,
 ];
+const VALIDATOR_ROLES: UserRole[] = [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER];
+const LAB_ACTION_ROLES: UserRole[] = [...VALIDATOR_ROLES, USER_ROLES.LAB_TECHNICIAN];
+
+const labResultFormSchema = z.object({
+  testType: z.string().min(1, 'Test type is required'),
+  testName: z.string().min(1, 'Test name is required'),
+  testDate: z.string().min(1, 'Test date is required'),
+  resultValue: z.string().min(1, 'Result value is required'),
+  interpretation: z.enum(['positive', 'negative', 'equivocal', 'contaminated']),
+  resultUnit: z.string().optional(),
+  referenceRange: z.string().optional(),
+});
 
 async function readApiError(response: Response, fallback: string): Promise<string> {
   try {
@@ -97,7 +112,8 @@ interface CaseDetailModalProps {
   loadingLabResults: boolean;
   submittingLabResult: boolean;
   form: LabResultForm;
-  setForm: Dispatch<SetStateAction<LabResultForm>>;
+  formErrors: Record<string, string>;
+  onFormFieldChange: (field: keyof LabResultForm, value: string) => void;
   onSubmitLabResult: () => void;
 }
 
@@ -113,7 +129,8 @@ function CaseDetailModal({
   loadingLabResults,
   submittingLabResult,
   form,
-  setForm,
+  formErrors,
+  onFormFieldChange,
   onSubmitLabResult,
 }: CaseDetailModalProps) {
   if (!isOpen || !caseItem) return null;
@@ -180,52 +197,71 @@ function CaseDetailModal({
                   Required: test type, test name, test date, result value, interpretation.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Test Type *"
-                    value={form.testType}
-                    onChange={(e) => setForm((prev) => ({ ...prev, testType: e.target.value }))}
-                  />
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Test Name *"
-                    value={form.testName}
-                    onChange={(e) => setForm((prev) => ({ ...prev, testName: e.target.value }))}
-                  />
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    type="datetime-local"
-                    value={form.testDate}
-                    onChange={(e) => setForm((prev) => ({ ...prev, testDate: e.target.value }))}
-                  />
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Result Value *"
-                    value={form.resultValue}
-                    onChange={(e) => setForm((prev) => ({ ...prev, resultValue: e.target.value }))}
-                  />
-                  <select
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    value={form.interpretation}
-                    onChange={(e) => setForm((prev) => ({ ...prev, interpretation: e.target.value as LabResultInterpretation }))}
-                  >
-                    <option value="positive">positive</option>
-                    <option value="negative">negative</option>
-                    <option value="equivocal">equivocal</option>
-                    <option value="contaminated">contaminated</option>
-                  </select>
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    placeholder="Result Unit (optional)"
-                    value={form.resultUnit}
-                    onChange={(e) => setForm((prev) => ({ ...prev, resultUnit: e.target.value }))}
-                  />
-                  <input
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm md:col-span-2"
-                    placeholder="Reference Range (optional)"
-                    value={form.referenceRange}
-                    onChange={(e) => setForm((prev) => ({ ...prev, referenceRange: e.target.value }))}
-                  />
+                  <div>
+                    <input
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testType ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Test Type *"
+                      value={form.testType}
+                      onChange={(e) => onFormFieldChange('testType', e.target.value)}
+                    />
+                    {formErrors.testType && <p className="mt-1 text-xs text-red-600">{formErrors.testType}</p>}
+                  </div>
+                  <div>
+                    <input
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testName ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Test Name *"
+                      value={form.testName}
+                      onChange={(e) => onFormFieldChange('testName', e.target.value)}
+                    />
+                    {formErrors.testName && <p className="mt-1 text-xs text-red-600">{formErrors.testName}</p>}
+                  </div>
+                  <div>
+                    <input
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testDate ? 'border-red-500' : 'border-gray-300'}`}
+                      type="datetime-local"
+                      value={form.testDate}
+                      onChange={(e) => onFormFieldChange('testDate', e.target.value)}
+                    />
+                    {formErrors.testDate && <p className="mt-1 text-xs text-red-600">{formErrors.testDate}</p>}
+                  </div>
+                  <div>
+                    <input
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.resultValue ? 'border-red-500' : 'border-gray-300'}`}
+                      placeholder="Result Value *"
+                      value={form.resultValue}
+                      onChange={(e) => onFormFieldChange('resultValue', e.target.value)}
+                    />
+                    {formErrors.resultValue && <p className="mt-1 text-xs text-red-600">{formErrors.resultValue}</p>}
+                  </div>
+                  <div>
+                    <select
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.interpretation ? 'border-red-500' : 'border-gray-300'}`}
+                      value={form.interpretation}
+                      onChange={(e) => onFormFieldChange('interpretation', e.target.value)}
+                    >
+                      <option value="positive">positive</option>
+                      <option value="negative">negative</option>
+                      <option value="equivocal">equivocal</option>
+                      <option value="contaminated">contaminated</option>
+                    </select>
+                    {formErrors.interpretation && <p className="mt-1 text-xs text-red-600">{formErrors.interpretation}</p>}
+                  </div>
+                  <div>
+                    <input
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Result Unit (optional)"
+                      value={form.resultUnit}
+                      onChange={(e) => onFormFieldChange('resultUnit', e.target.value)}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <input
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Reference Range (optional)"
+                      value={form.referenceRange}
+                      onChange={(e) => onFormFieldChange('referenceRange', e.target.value)}
+                    />
+                  </div>
                 </div>
                 <div className="mt-3">
                   <Button onClick={onSubmitLabResult} disabled={submittingLabResult}>
@@ -283,11 +319,53 @@ export default function ValidationHubPage() {
   const [loadingLabResults, setLoadingLabResults] = useState(false);
   const [submittingLabResult, setSubmittingLabResult] = useState(false);
   const [labForm, setLabForm] = useState<LabResultForm>(INITIAL_FORM);
+  const [labFormErrors, setLabFormErrors] = useState<Record<string, string>>({});
 
   const currentRole = session?.user?.role as UserRole | undefined;
   const canAccessHub = !!currentRole && HUB_ROLES.includes(currentRole);
-  const canValidateCases = !!currentRole && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(currentRole);
-  const canSubmitLabResult = !!currentRole && [USER_ROLES.LAB_TECHNICIAN, USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(currentRole);
+  const canValidateCases = !!currentRole && VALIDATOR_ROLES.includes(currentRole);
+  const canSubmitLabResult = !!currentRole && LAB_ACTION_ROLES.includes(currentRole);
+
+  const setLabFieldError = (field: keyof LabResultForm, message?: string) => {
+    setLabFormErrors((prev) => {
+      const next = { ...prev };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  };
+
+  const validateLabField = (field: keyof LabResultForm, value: string) => {
+    if (field === 'testType') {
+      const parsed = z.string().trim().min(1, 'Test type is required.').safeParse(value);
+      setLabFieldError('testType', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'testName') {
+      const parsed = z.string().trim().min(1, 'Test name is required.').safeParse(value);
+      setLabFieldError('testName', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'testDate') {
+      const parsed = z.string().trim().min(1, 'Test date is required.').safeParse(value);
+      setLabFieldError('testDate', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'resultValue') {
+      const parsed = z.string().trim().min(1, 'Result value is required.').safeParse(value);
+      setLabFieldError('resultValue', parsed.success ? undefined : parsed.error.issues[0]?.message);
+      return;
+    }
+    if (field === 'interpretation') {
+      const parsed = z.enum(['positive', 'negative', 'equivocal', 'contaminated']).safeParse(value);
+      setLabFieldError('interpretation', parsed.success ? undefined : 'Interpretation is required.');
+    }
+  };
+
+  const handleLabFormFieldChange = (field: keyof LabResultForm, value: string) => {
+    setLabForm((prev) => ({ ...prev, [field]: value }));
+    validateLabField(field, value);
+  };
 
   const loadPendingCases = useCallback(async () => {
     try {
@@ -354,14 +432,16 @@ export default function ValidationHubPage() {
     setSelectedCase(caseItem);
     setIsModalOpen(true);
     setLabForm(INITIAL_FORM);
+    setLabFormErrors({});
     await loadCaseLabResults(caseItem.id);
   };
 
   const handleSubmitLabResult = async () => {
     if (!selectedCase) return;
-
-    if (!labForm.testType || !labForm.testName || !labForm.testDate || !labForm.resultValue || !labForm.interpretation) {
-      showError('Please fill all required lab result fields');
+    const parsedForm = labResultFormSchema.safeParse(labForm);
+    if (!parsedForm.success) {
+      setLabFormErrors(zodErrorToFieldMap(parsedForm.error));
+      showError(parsedForm.error.issues[0]?.message || 'Please correct the highlighted fields');
       return;
     }
 
@@ -382,11 +462,16 @@ export default function ValidationHubPage() {
       });
 
       if (!response.ok) {
-        throw new Error(await readApiError(response, 'Failed to submit lab result'));
+        const parsed = await parseApiError(response, 'Failed to submit lab result');
+        if (parsed.fieldErrors) {
+          setLabFormErrors((prev) => ({ ...prev, ...parsed.fieldErrors }));
+        }
+        throw new ApiClientError(parsed.message, { fieldErrors: parsed.fieldErrors, status: response.status });
       }
 
       showSuccess('Lab result submitted successfully');
       setLabForm(INITIAL_FORM);
+      setLabFormErrors({});
       await loadCaseLabResults(selectedCase.id);
       await loadPendingCases();
     } catch (error) {
@@ -535,6 +620,7 @@ export default function ValidationHubPage() {
           setSelectedCase(null);
           setLabResults([]);
           setLabForm(INITIAL_FORM);
+          setLabFormErrors({});
         }}
         onValidate={handleValidateCase}
         isValidating={validatingCaseId !== null}
@@ -544,7 +630,8 @@ export default function ValidationHubPage() {
         loadingLabResults={loadingLabResults}
         submittingLabResult={submittingLabResult}
         form={labForm}
-        setForm={setLabForm}
+        formErrors={labFormErrors}
+        onFormFieldChange={handleLabFormFieldChange}
         onSubmitLabResult={handleSubmitLabResult}
       />
     </div>

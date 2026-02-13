@@ -1,4 +1,5 @@
 import { USER_ROLES, User, UserRole, CreateUserInput, UpdateUserInput, ExtendedSession } from '@/types';
+import { throwApiError } from '@/lib/utils/apiError';
 
 type UserRecord = Partial<User> & { _id?: string; id?: string };
 
@@ -31,10 +32,7 @@ class UserService {
 
   async getAllUsers(): Promise<User[]> {
     const res = await fetch('/api/users');
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to fetch users');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to fetch users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
     return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
@@ -42,10 +40,7 @@ class UserService {
 
   async getUsersByRole(role: UserRole): Promise<User[]> {
     const res = await fetch(`/api/users?role=${role}`);
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to fetch users');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to fetch users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
     return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
@@ -53,10 +48,7 @@ class UserService {
 
   async getUsersByFacility(facilityId: string): Promise<User[]> {
     const res = await fetch(`/api/users?facilityId=${facilityId}`);
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to fetch users');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to fetch users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
     return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
@@ -64,10 +56,7 @@ class UserService {
 
   async getUsersByDistrict(district: string): Promise<User[]> {
     const res = await fetch(`/api/users?district=${district}`);
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to fetch users');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to fetch users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
     return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
@@ -75,10 +64,7 @@ class UserService {
 
   async searchUsers(query: string): Promise<User[]> {
     const res = await fetch(`/api/users?search=${encodeURIComponent(query)}`);
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to search users');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to search users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
     return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
@@ -91,10 +77,7 @@ class UserService {
       body: JSON.stringify(userData),
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to create user');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to create user');
 
     const responseData = await res.json();
     const user = responseData.data || responseData;
@@ -108,10 +91,7 @@ class UserService {
       body: JSON.stringify(userData),
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to update user');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to update user');
 
     const responseData = await res.json();
     const user = responseData.data || responseData;
@@ -121,10 +101,7 @@ class UserService {
   async deleteUser(id: string): Promise<boolean> {
     const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to delete user');
-    }
+    if (!res.ok) await throwApiError(res, 'Failed to delete user');
 
     return true;
   }

@@ -2,6 +2,20 @@ import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
 import { userService } from '@/lib/services/server/userService';
 import { successResponse, errorResponse } from '@/lib/api/response';
+import {
+  serverErrorResponse,
+  parseAndValidateBody,
+  isApiValidationError,
+  apiValidationErrorResponse,
+} from '@/lib/api/error-utils';
+import { z } from 'zod';
+
+const settingsUpdateSchema = z.object({
+  emailNotifications: z.boolean(),
+  smsAlerts: z.boolean(),
+  weeklyReports: z.boolean(),
+  twoFactorAuth: z.boolean(),
+});
 
 export async function PUT(request: NextRequest) {
   try {
@@ -10,8 +24,9 @@ export async function PUT(request: NextRequest) {
       return errorResponse('Unauthorized', 401);
     }
 
-    const body = await request.json();
-    const { emailNotifications, smsAlerts, weeklyReports, twoFactorAuth } = body;
+    const { emailNotifications, smsAlerts, weeklyReports, twoFactorAuth } = await parseAndValidateBody(request, settingsUpdateSchema, {
+      message: 'Please correct the highlighted settings fields.',
+    });
 
     const updatedUser = await userService.updateUserById(session.user.id, {
       settings: {
@@ -28,7 +43,10 @@ export async function PUT(request: NextRequest) {
 
     return successResponse({ message: 'Settings updated successfully' });
   } catch (error) {
+    if (isApiValidationError(error)) {
+      return apiValidationErrorResponse(error);
+    }
     console.error('[API] Error updating settings:', error);
-    return errorResponse('Failed to update settings');
+    return serverErrorResponse(error, 'Failed to update settings', 'USER_SETTINGS_UPDATE_FAILED');
   }
 }
