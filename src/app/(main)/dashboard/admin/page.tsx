@@ -6,6 +6,9 @@ import { USER_ROLES } from "@/types";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { LineChart } from "@/components/ui/LineChart";
+import { BarChart } from "@/components/ui/BarChart";
+import { MapVisualization } from "@/components/ui/MapVisualization";
 import Link from "next/link";
 import {
   Users,
@@ -355,25 +358,13 @@ export default function AdminPage() {
               <BarChart3 className="h-5 w-5" />
               User Distribution by Role
             </h3>
-            <div className="space-y-3">
-              {chartData?.usersByRole.map((item) => (
-                <div
-                  key={item.role}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <span className="text-sm capitalize text-gray-700">
-                      {item.role.replace("_", " ")}
-                    </span>
-                  </div>
-                  <Badge variant="default">{item.count}</Badge>
-                </div>
-              ))}
-            </div>
+            <BarChart
+              data={(chartData?.usersByRole || []).map((item) => ({
+                name: item.role.replace("_", " "),
+                value: item.count,
+              }))}
+              height={260}
+            />
           </Card>
 
           {/* Facility Distribution by District */}
@@ -382,17 +373,13 @@ export default function AdminPage() {
               <MapPin className="h-5 w-5" />
               Facilities by District
             </h3>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {chartData?.facilitiesByDistrict.map((item) => (
-                <div
-                  key={item.district}
-                  className="flex items-center justify-between"
-                >
-                  <span className="text-sm text-gray-700">{item.district}</span>
-                  <Badge variant="info">{item.count}</Badge>
-                </div>
-              ))}
-            </div>
+            <MapVisualization
+              data={(chartData?.facilitiesByDistrict || []).map((item) => ({
+                district: item.district,
+                value: item.count,
+              }))}
+              height={260}
+            />
           </Card>
         </div>
 
@@ -402,21 +389,16 @@ export default function AdminPage() {
             <TrendingUp className="h-5 w-5" />
             Case Trends (Last 30 Days)
           </h3>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">
-                Chart visualization would be implemented here
-              </p>
-              <p className="text-sm text-gray-400">
-                Total cases in period:{" "}
-                {chartData?.caseTrends.reduce(
-                  (sum, item) => sum + item.cases,
-                  0,
-                ) || 0}
-              </p>
-            </div>
-          </div>
+          <LineChart
+            data={(chartData?.caseTrends || []).map((item) => ({
+              name: item.date,
+              value: item.cases,
+            }))}
+            height={260}
+            emptyMessage={`No case trend data yet. Total cases in period: ${
+              chartData?.caseTrends.reduce((sum, item) => sum + item.cases, 0) || 0
+            }`}
+          />
         </Card>
 
         {/* Recent Activity Log */}

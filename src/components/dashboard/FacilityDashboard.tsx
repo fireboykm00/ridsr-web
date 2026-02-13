@@ -95,9 +95,6 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
           <div className="h-80">
             <LineChart
               data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
-              dataKey="value"
-              categories={['value']}
-              index="name"
             />
           </div>
         </Card>
@@ -107,8 +104,6 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
           <div className="h-80">
             <BarChart
               data={data.diseaseDistribution.map(item => ({ name: item.disease, value: item.count }))}
-              dataKey="name"
-              categories={['value']}
             />
           </div>
         </Card>
@@ -120,8 +115,6 @@ const FacilityDashboard: React.FC<FacilityDashboardProps> = ({ data }) => {
           <div className="h-80">
             <PieChart
               data={data.caseStatusBreakdown.map(item => ({ name: item.status, value: item.count }))}
-              category="value"
-              index="name"
             />
           </div>
         </Card>

@@ -97,9 +97,6 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
           <div className="h-80">
             <LineChart
               data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
-              dataKey="value"
-              categories={['value']}
-              index="name"
             />
           </div>
         </Card>
@@ -109,8 +106,6 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
           <div className="h-80">
             <BarChart
               data={data.diseaseDistribution.map(item => ({ name: item.disease, value: item.count }))}
-              dataKey="name"
-              categories={['value']}
             />
           </div>
         </Card>
@@ -122,8 +117,6 @@ const NationalDashboard: React.FC<NationalDashboardProps> = ({ data }) => {
           <div className="h-80">
             <BarChart
               data={data.districtCaseDistribution.map(item => ({ name: item.district, value: item.cases }))}
-              dataKey="name"
-              categories={['value']}
             />
           </div>
         </Card>

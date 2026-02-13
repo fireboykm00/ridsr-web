@@ -96,9 +96,6 @@ const DistrictDashboard: React.FC<DistrictDashboardProps> = ({ data }) => {
           <div className="h-80">
             <LineChart
               data={data.weeklyTrends.map(item => ({ name: item.week, value: item.count }))}
-              dataKey="value"
-              categories={['value']}
-              index="name"
             />
           </div>
         </Card>
@@ -108,8 +105,6 @@ const DistrictDashboard: React.FC<DistrictDashboardProps> = ({ data }) => {
           <div className="h-80">
             <BarChart
               data={data.facilityCaseDistribution.map(item => ({ name: item.facility, value: item.cases }))}
-              dataKey="name"
-              categories={['value']}
             />
           </div>
         </Card>
