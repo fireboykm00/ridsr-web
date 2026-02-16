@@ -56,11 +56,13 @@ These are present in `.env.example` but are not currently referenced via `proces
 
 ## Skipping TypeScript + ESLint checks during deployment builds (optional)
 
-If your host runs `next build` and you want to **skip TypeScript and ESLint build-time checks**, set:
+If your host runs `next build` and you want to **skip TypeScript build-time checks**, set:
 
 - `SKIP_TYPECHECK=true`
 
-This enables `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds` in `next.config.ts`.
+This enables `typescript.ignoreBuildErrors` in `next.config.ts`.
+
+Note: with Next.js 16 in this repo, `next build` does not expose a `--no-lint` flag; keep linting as a separate step via `npm run lint` in CI when desired.
 
 ## Common host configs
 
@@ -75,4 +77,3 @@ This enables `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds` in `
 
 - Set the env vars above in the Vercel dashboard
 - `NEXTAUTH_URL` is still recommended (avoids relying on `VERCEL_URL` fallback)
-

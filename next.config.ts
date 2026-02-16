@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: skipTypecheck,
   },
-  eslint: {
-    ignoreDuringBuilds: skipTypecheck,
-  },
 };
 
 export default nextConfig;
