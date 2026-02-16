@@ -1,0 +1,263 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+//
+// Generated from: src/lib/models/*.ts (Mongoose / MongoDB collections)
+// Notes:
+// - `_id` fields are Mongo ObjectIds (modeled here as `varchar`)
+// - Embedded subdocuments (Case.labResults) are modeled as a separate table
+
+Enum user_role {
+  admin
+  national_officer
+  district_officer
+  health_worker
+  lab_technician
+}
+
+Enum rwanda_province {
+  kigali_city
+  northern_province
+  southern_province
+  eastern_province
+  western_province
+}
+
+Enum rwanda_district {
+  gasabo
+  kicukiro
+  nyarugenge
+  burera
+  gakenke
+  gicumbi
+  musanze
+  rulindo
+  gisagara
+  huye
+  kamonyi
+  muhanga
+  nyamagabe
+  nyanza
+  nyaruguru
+  ruhango
+  bugesera
+  gatsibo
+  kayonza
+  kirehe
+  ngoma
+  nyagatare
+  rwamagana
+  karongi
+  ngororero
+  nyabihu
+  nyamasheke
+  rubavu
+  rusizi
+  rutsiro
+}
+
+Enum facility_type {
+  health_center
+  hospital
+  clinic
+  dispensary
+  medical_center
+}
+
+Enum gender {
+  male
+  female
+  other
+}
+
+Enum validation_status {
+  pending
+  validated
+  rejected
+}
+
+Enum case_status {
+  suspected
+  confirmed
+  resolved
+  invalidated
+}
+
+Enum outcome_status {
+  recovered
+  deceased
+  transferred
+  unknown
+}
+
+Enum lab_result_interpretation {
+  positive
+  negative
+  equivocal
+  contaminated
+}
+
+Enum disease_code {
+  CHOLERA
+  MAL01
+  SARI
+  AFP
+  YELLOW_FEVER
+  RUBELLA
+  MEASLES
+  PLAGUE
+  RABIES
+  EBOLA
+  MONKEYPOX
+  TYPHOID
+  HEPATITIS_E
+}
+
+Enum symptom {
+  fever
+  cough
+  difficulty_breathing
+  diarrhea
+  vomiting
+  headache
+  muscle_pain
+  fatigue
+  rash
+  jaundice
+  bleeding
+  convulsions
+  paralysis
+  sore_throat
+  abdominal_pain
+  joint_pain
+  loss_of_appetite
+  dehydration
+  confusion
+  seizures
+}
+
+Table facilities {
+  _id varchar [primary key, note: 'Mongo ObjectId']
+
+  name varchar [not null]
+  code varchar [not null, unique]
+  type facility_type [not null]
+  district rwanda_district [not null]
+  province rwanda_province [not null]
+
+  contactPerson varchar
+  phone varchar
+  email varchar
+
+  isActive boolean [not null, default: true]
+  createdAt timestamp [not null]
+  updatedAt timestamp [not null]
+}
+
+Table users {
+  _id varchar [primary key, note: 'Mongo ObjectId']
+
+  workerId varchar [not null, unique]
+  nationalId varchar [not null, unique]
+  name varchar [not null]
+  email varchar [not null, unique]
+  phone varchar [not null]
+  password varchar [not null, note: 'Hashed password']
+  role user_role [not null]
+
+  facilityId varchar
+  facilityName varchar
+  district rwanda_district
+  province rwanda_province
+
+  isActive boolean [not null, default: true]
+  createdAt timestamp [not null]
+  updatedAt timestamp [not null]
+}
+
+Table patients {
+  _id varchar [primary key, note: 'Mongo ObjectId']
+
+  nationalId varchar [not null, unique]
+  firstName varchar [not null]
+  lastName varchar [not null]
+  dateOfBirth date [not null]
+  gender gender [not null]
+  phone varchar [not null]
+
+  // Embedded: address
+  addressStreet varchar
+  addressSector varchar
+  addressDistrict rwanda_district
+  addressProvince rwanda_province
+  addressCountry varchar [default: 'Rwanda']
+
+  district rwanda_district [not null]
+  occupation varchar
+
+  // Embedded: emergencyContact
+  emergencyContactName varchar
+  emergencyContactPhone varchar
+  emergencyContactRelationship varchar
+
+  createdAt timestamp [not null]
+  updatedAt timestamp [not null]
+}
+
+Table cases {
+  _id varchar [primary key, note: 'Mongo ObjectId']
+
+  patientId varchar [not null]
+  facilityId varchar [not null]
+
+  diseaseCode disease_code [not null]
+  symptoms json [note: 'Array of symptom values']
+
+  onsetDate timestamp [not null]
+  reportDate timestamp [not null]
+
+  reporterId varchar [not null]
+
+  validationStatus validation_status [not null, default: pending]
+  status case_status [not null, default: suspected]
+  outcome outcome_status
+
+  validatorId varchar
+  validationDate timestamp
+  outcomeDate timestamp
+
+  createdAt timestamp [not null]
+  updatedAt timestamp [not null]
+}
+
+Table case_lab_results {
+  _id varchar [primary key, note: 'Mongo ObjectId (subdocument _id)']
+
+  caseId varchar [not null]
+
+  testType varchar [not null]
+  testName varchar [not null]
+  testDate timestamp [not null]
+
+  resultValue varchar [not null]
+  interpretation lab_result_interpretation [not null]
+  resultUnit varchar
+  referenceRange varchar
+
+  technicianId varchar [not null]
+  validatedBy varchar
+  validatedAt timestamp
+
+  createdAt timestamp [not null]
+  updatedAt timestamp [not null]
+}
+
+Ref: users.facilityId > facilities._id
+
+Ref: cases.patientId > patients._id
+Ref: cases.facilityId > facilities._id
+Ref: cases.reporterId > users._id
+Ref: cases.validatorId > users._id
+
+Ref: case_lab_results.caseId > cases._id
+Ref: case_lab_results.technicianId > users._id
+Ref: case_lab_results.validatedBy > users._id
