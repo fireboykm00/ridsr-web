@@ -10,8 +10,8 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Badge } from '@/components/ui/Badge';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { DocumentTextIcon, FunnelIcon } from '@heroicons/react/24/outline';
-import { Case, ValidationStatus, USER_ROLES } from '@/types';
-import { getAllCases, filterCasesByAccess } from '@/lib/services/caseService';
+import { Case, ValidationStatus, USER_ROLES, UserRole } from '@/types';
+import { getCasesWithFilters } from '@/lib/services/caseService';
 import { useDebounce } from '@/hooks/useDebounce';
 import { DISEASE_CODES } from '@/constants';
 
@@ -26,7 +26,9 @@ export default function CaseListPage() {
   const { data: session, status } = useSession();
   const { error: showError } = useToastHelpers();
   const [cases, setCases] = useState<Case[]>([]);
-  const [filteredCases, setFilteredCases] = useState<Case[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -38,13 +40,24 @@ export default function CaseListPage() {
   });
 
   const debouncedSearch = useDebounce(searchTerm, 300);
+
   useEffect(() => {
     const loadCases = async () => {
       if (status === 'authenticated' && session?.user) {
+        setLoading(true);
         try {
-          const allCases = await getAllCases();
-          const accessibleCases = filterCasesByAccess(allCases, session.user!);
-          setCases(accessibleCases);
+          const result = await getCasesWithFilters({
+            search: debouncedSearch || undefined,
+            diseaseCode: filters.disease || undefined,
+            validationStatus: filters.status !== 'all' ? filters.status : undefined,
+            dateFrom: filters.dateFrom || undefined,
+            dateTo: filters.dateTo || undefined,
+            page: currentPage,
+            limit: 20,
+          });
+          setCases(result.data);
+          setTotal(result.total);
+          setTotalPages(result.totalPages);
         } catch (error) {
           console.error('Error loading cases:', error);
           showError('Failed to load cases');
@@ -54,49 +67,8 @@ export default function CaseListPage() {
       }
     };
 
-    loadCases();
-  }, [status, session, showError]);
-
-  useEffect(() => {
-    let filtered = cases;
-
-    // Search filter
-    if (debouncedSearch) {
-      filtered = filtered.filter(c =>
-        c.id.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.patientId.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        c.diseaseCode.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
-    }
-
-    // Status filter
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(c => c.validationStatus === filters.status);
-    }
-
-    // Disease filter
-    if (filters.disease) {
-      filtered = filtered.filter(c =>
-        c.diseaseCode.toLowerCase().includes(filters.disease.toLowerCase())
-      );
-    }
-
-    // Date filters
-    if (filters.dateFrom) {
-      filtered = filtered.filter(c =>
-        new Date(c.reportDate) >= new Date(filters.dateFrom)
-      );
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(c =>
-        new Date(c.reportDate) <= new Date(filters.dateTo)
-      );
-    }
-
-    setFilteredCases(filtered);
-  }, [cases, debouncedSearch, filters]);
-
-  const safeFilteredCases = Array.isArray(filteredCases) ? filteredCases : [];
+    void loadCases();
+  }, [status, session, showError, debouncedSearch, filters, currentPage]);
 
   const getStatusBadge = (status: ValidationStatus) => {
     const variants = {
@@ -107,13 +79,14 @@ export default function CaseListPage() {
     return <Badge variant={variants[status]}>{status}</Badge>;
   };
 
-  const canReportCase = session?.user?.role && [
+  const caseReporterRoles: UserRole[] = [
     USER_ROLES.HEALTH_WORKER,
     USER_ROLES.LAB_TECHNICIAN,
     USER_ROLES.DISTRICT_OFFICER,
     USER_ROLES.ADMIN,
-    USER_ROLES.NATIONAL_OFFICER
-  ].includes(session.user.role as any);
+    USER_ROLES.NATIONAL_OFFICER,
+  ];
+  const canReportCase = !!session?.user?.role && caseReporterRoles.includes(session.user.role as UserRole);
 
   if (status === 'loading' || loading) {
     return (
@@ -158,7 +131,10 @@ export default function CaseListPage() {
             <Input
               placeholder="Search by case ID, patient ID, or disease..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSearchTerm(e.target.value);
+              }}
             />
           </div>
           <Button
@@ -177,7 +153,10 @@ export default function CaseListPage() {
               <SearchableSelect
                 label="Status"
                 value={filters.status}
-                onChange={(value) => setFilters(prev => ({ ...prev, status: value as ValidationStatus | 'all' }))}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters(prev => ({ ...prev, status: value as ValidationStatus | 'all' }));
+                }}
                 options={[
                   { value: 'all', label: 'All Statuses' },
                   { value: 'pending', label: 'Pending' },
@@ -188,7 +167,10 @@ export default function CaseListPage() {
               <SearchableSelect
                 label="Disease"
                 value={filters.disease}
-                onChange={(value) => setFilters(prev => ({ ...prev, disease: value || '' }))}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters(prev => ({ ...prev, disease: value || '' }));
+                }}
                 options={[
                   { value: '', label: 'All Diseases' },
                   ...DISEASE_CODES.map(d => ({ value: d.code, label: d.name }))
@@ -198,13 +180,19 @@ export default function CaseListPage() {
                 label="From Date"
                 type="date"
                 value={filters.dateFrom}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setFilters(prev => ({ ...prev, dateFrom: e.target.value }));
+                }}
               />
               <Input
                 label="To Date"
                 type="date"
                 value={filters.dateTo}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setFilters(prev => ({ ...prev, dateTo: e.target.value }));
+                }}
               />
             </div>
           </div>
@@ -226,8 +214,8 @@ export default function CaseListPage() {
               </tr>
             </thead>
             <tbody>
-              {safeFilteredCases.length > 0 ? (
-                safeFilteredCases.map(caseItem => (
+              {cases.length > 0 ? (
+                cases.map(caseItem => (
                   <tr key={caseItem.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm">
                       <Link
@@ -271,6 +259,31 @@ export default function CaseListPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Showing page {currentPage} of {totalPages} ({total} total cases)
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

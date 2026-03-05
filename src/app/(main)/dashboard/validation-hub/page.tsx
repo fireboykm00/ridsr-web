@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { CheckCircleIcon, XCircleIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { USER_ROLES, Case, ValidationStatus, UserRole, LabResultInterpretation } from '@/types';
@@ -320,6 +322,10 @@ export default function ValidationHubPage() {
   const [submittingLabResult, setSubmittingLabResult] = useState(false);
   const [labForm, setLabForm] = useState<LabResultForm>(INITIAL_FORM);
   const [labFormErrors, setLabFormErrors] = useState<Record<string, string>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [diseaseFilter, setDiseaseFilter] = useState('');
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
 
   const currentRole = session?.user?.role as UserRole | undefined;
   const canAccessHub = !!currentRole && HUB_ROLES.includes(currentRole);
@@ -369,7 +375,13 @@ export default function ValidationHubPage() {
 
   const loadPendingCases = useCallback(async () => {
     try {
-      const response = await fetch('/api/validation/queue?tab=pending');
+      const params = new URLSearchParams({ tab: 'pending' });
+      if (searchTerm) params.set('search', searchTerm);
+      if (diseaseFilter) params.set('diseaseCode', diseaseFilter);
+      if (dateFromFilter) params.set('dateFrom', dateFromFilter);
+      if (dateToFilter) params.set('dateTo', dateToFilter);
+
+      const response = await fetch(`/api/validation/queue?${params.toString()}`);
       if (!response.ok) {
         throw new Error(await readApiError(response, 'Failed to fetch validation queue'));
       }
@@ -388,7 +400,7 @@ export default function ValidationHubPage() {
       console.error('Error loading pending cases:', error);
       showError(error instanceof Error ? error.message : 'Failed to load pending cases');
     }
-  }, [showError]);
+  }, [showError, searchTerm, diseaseFilter, dateFromFilter, dateToFilter]);
 
   useEffect(() => {
     const init = async () => {
@@ -538,6 +550,52 @@ export default function ValidationHubPage() {
           <p className="text-gray-600 mt-2">Review cases and submit laboratory results</p>
           <p className="text-gray-500 text-sm mt-1">After lab result submission, a case moves from pending to in-review queue.</p>
         </div>
+
+        <Card className="p-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <Input
+              placeholder="Search cases"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <SearchableSelect
+              placeholder="Filter disease"
+              value={diseaseFilter}
+              onChange={(value) => setDiseaseFilter(value || '')}
+              options={[
+                { value: '', label: 'All diseases' },
+                { value: 'CHOLERA', label: 'Cholera' },
+                { value: 'MAL01', label: 'Malaria' },
+                { value: 'SARI', label: 'SARI' },
+                { value: 'EBOLA', label: 'Ebola' },
+                { value: 'MONKEYPOX', label: 'Monkeypox' },
+              ]}
+            />
+            <Input
+              type="date"
+              value={dateFromFilter}
+              onChange={(e) => setDateFromFilter(e.target.value)}
+            />
+            <Input
+              type="date"
+              value={dateToFilter}
+              onChange={(e) => setDateToFilter(e.target.value)}
+            />
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => {
+              setSearchTerm('');
+              setDiseaseFilter('');
+              setDateFromFilter('');
+              setDateToFilter('');
+            }}>
+              Clear Filters
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => void loadPendingCases()}>
+              Apply
+            </Button>
+          </div>
+        </Card>
 
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">

@@ -7,16 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { MapPinIcon, BuildingOfficeIcon, DocumentTextIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { USER_ROLES, RWANDA_DISTRICTS, RwandaDistrictType } from '@/types';
-
-interface FacilityRecord {
-  district?: RwandaDistrictType;
-}
-
-interface CaseRecord {
-  district?: RwandaDistrictType;
-  validationStatus?: string;
-}
+import { USER_ROLES, RWANDA_DISTRICTS, RwandaDistrictType, UserRole } from '@/types';
 
 interface DistrictSummary {
   district: RwandaDistrictType;
@@ -25,10 +16,14 @@ interface DistrictSummary {
   pendingCases: number;
 }
 
+const nationalRoles: UserRole[] = [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER];
+
 export default function DistrictsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [districtsData, setDistrictsData] = useState<DistrictSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,10 +32,9 @@ export default function DistrictsPage() {
       return;
     }
 
-    const role = session.user.role;
     const district = session.user.district;
 
-    if (session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user.role as any)) {
+    if (session.user?.role && nationalRoles.includes(session.user.role as UserRole)) {
       // allowed on this page
     } else if (district) {
       router.replace(`/dashboard/district/${district}`);
@@ -52,30 +46,23 @@ export default function DistrictsPage() {
 
     const loadDistricts = async () => {
       try {
-        const [facilitiesRes, casesRes] = await Promise.all([
-          fetch('/api/facilities?limit=200'),
-          fetch('/api/cases?limit=500'),
-        ]);
+        const params = new URLSearchParams({ type: 'districts' });
+        if (dateFrom) params.set('dateFrom', dateFrom);
+        if (dateTo) params.set('dateTo', dateTo);
 
-        const facilitiesJson = facilitiesRes.ok ? await facilitiesRes.json() : { data: { data: [] } };
-        const casesJson = casesRes.ok ? await casesRes.json() : { data: { data: [] } };
-
-        const facilities: FacilityRecord[] = facilitiesJson.data?.data || facilitiesJson.data || [];
-        const cases: CaseRecord[] = casesJson.data?.data || casesJson.data || [];
-
+        const response = await fetch(`/api/dashboard?${params.toString()}`);
+        const payload = response.ok ? await response.json() : { data: [] };
+        const summary = (payload.data || []) as DistrictSummary[];
+        const byDistrict = new Map(summary.map((item) => [item.district, item]));
         const allDistricts = Object.values(RWANDA_DISTRICTS) as RwandaDistrictType[];
-        const summary = allDistricts.map((districtName) => {
-          const districtFacilities = facilities.filter((f) => f.district === districtName);
-          const districtCases = cases.filter((c) => c.district === districtName);
-          return {
+        setDistrictsData(
+          allDistricts.map((districtName) => byDistrict.get(districtName) || {
             district: districtName,
-            facilities: districtFacilities.length,
-            totalCases: districtCases.length,
-            pendingCases: districtCases.filter((c) => c.validationStatus === 'pending').length,
-          };
-        });
-
-        setDistrictsData(summary);
+            facilities: 0,
+            totalCases: 0,
+            pendingCases: 0,
+          }),
+        );
       } catch (error) {
         console.error('Failed loading district summaries:', error);
       } finally {
@@ -83,8 +70,8 @@ export default function DistrictsPage() {
       }
     };
 
-    loadDistricts();
-  }, [status, session, router]);
+    void loadDistricts();
+  }, [status, session, router, dateFrom, dateTo]);
 
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return districtsData;
@@ -111,7 +98,7 @@ export default function DistrictsPage() {
     );
   }
 
-  if (!session?.user || !(session.user?.role && [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER].includes(session.user.role as any))) {
+  if (!session?.user || !(session.user?.role && nationalRoles.includes(session.user.role as UserRole))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md text-center">
@@ -151,11 +138,23 @@ export default function DistrictsPage() {
       </div>
 
       <Card className="p-5">
-        <Input
-          placeholder="Search district..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Input
+            placeholder="Search district..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

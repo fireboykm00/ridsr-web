@@ -3,11 +3,59 @@ import { normalizeId, normalizeIds } from '@/lib/utils/normalize';
 import { throwApiError } from '@/lib/utils/apiError';
 
 class FacilityService {
-  async getAllFacilities(): Promise<Facility[]> {
-    const res = await fetch('/api/facilities');
+  async getAllFacilities(filters?: {
+    search?: string;
+    type?: string;
+    district?: string;
+    isActive?: boolean;
+  }): Promise<Facility[]> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.type) params.set('type', filters.type);
+    if (filters?.district) params.set('district', filters.district);
+    if (filters?.isActive !== undefined) params.set('isActive', String(filters.isActive));
+    const query = params.toString();
+
+    const res = await fetch(`/api/facilities${query ? `?${query}` : ''}`);
     if (!res.ok) await throwApiError(res, 'Failed to fetch facilities');
     const responseData = await res.json();
-    return normalizeIds(responseData.data || responseData);
+    const payload = responseData.data || responseData;
+    const data = Array.isArray(payload) ? payload : payload.data || [];
+    return normalizeIds(data);
+  }
+
+  async getFacilitiesWithFilters(filters: {
+    search?: string;
+    type?: string;
+    district?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Facility[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.type) params.set('type', filters.type);
+    if (filters.district) params.set('district', filters.district);
+    if (filters.isActive !== undefined) params.set('isActive', String(filters.isActive));
+    if (filters.page) params.set('page', String(filters.page));
+    if (filters.limit) params.set('limit', String(filters.limit));
+
+    const res = await fetch(`/api/facilities?${params.toString()}`);
+    if (!res.ok) await throwApiError(res, 'Failed to fetch facilities');
+    const responseData = await res.json();
+    const payload = responseData.data || responseData;
+    const data = Array.isArray(payload) ? payload : payload.data || [];
+    return {
+      data: normalizeIds(data),
+      total: payload.total || data.length,
+      page: payload.page || 1,
+      totalPages: payload.totalPages || 1,
+    };
   }
 
   async getFacilitiesByDistrict(district: RwandaDistrictType, user?: User | ExtendedSession['user']): Promise<Facility[]> {

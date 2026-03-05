@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { getAuthErrorMessage } from '@/lib/auth/error-messages';
 
 export default function AuthErrorPage() {
   const router = useRouter();
@@ -14,21 +15,15 @@ export default function AuthErrorPage() {
     // Get error from URL query params
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get('error');
+    const codeParam = urlParams.get('code');
 
     if (errorParam) {
-      let errorMessage = '';
-      switch (errorParam) {
-        case 'CredentialsSignin':
-          errorMessage = 'Invalid email or password. Please try again.';
-          break;
-        case 'Verification':
-          errorMessage = 'Verification link expired or invalid. Please try again.';
-          break;
-        case 'OAuthAccountNotLinked':
-          errorMessage = 'Account not linked. Please sign in with the same provider you used originally.';
-          break;
-        default:
-          errorMessage = 'An authentication error occurred. Please try again.';
+      let errorMessage = getAuthErrorMessage(errorParam, codeParam);
+      if (errorParam === 'Verification') {
+        errorMessage = 'Verification link expired or invalid. Please try again.';
+      }
+      if (errorParam === 'OAuthAccountNotLinked') {
+        errorMessage = 'Account not linked. Please sign in with the same provider you used originally.';
       }
       // Using a timeout to avoid calling setState directly in the effect
       setTimeout(() => setError(errorMessage), 0);

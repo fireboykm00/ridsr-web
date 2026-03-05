@@ -30,6 +30,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   // UI state
   const [showModal, setShowModal] = useState(false);
@@ -46,7 +47,7 @@ export default function UsersPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const itemsPerPage = 10;
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -56,77 +57,78 @@ export default function UsersPage() {
     session?.user?.role === USER_ROLES.DISTRICT_OFFICER;
 
   useEffect(() => {
-    const loadData = async () => {
-      if (status === 'authenticated' && session) {
-        if (!canManageUsers) {
-          window.location.href = '/dashboard';
-          return;
-        }
+    const loadFacilities = async () => {
+      if (status !== 'authenticated' || !session) return;
+      if (!canManageUsers) {
+        window.location.href = '/dashboard';
+        return;
+      }
 
-        try {
-          let usersData, facilitiesData;
-
-          // District officers only see their district
-          if (session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district) {
-            [usersData, facilitiesData] = await Promise.all([
-              userService.getUsersByDistrict(session.user.district),
-              facilityService.getFacilitiesByDistrict(session.user.district)
-            ]);
-          } else {
-            // Admin and National officers see all
-            [usersData, facilitiesData] = await Promise.all([
-              userService.getAllUsers(),
-              facilityService.getAllFacilities()
-            ]);
-
-
-          }
-
-          setUsers(usersData);
-          setFacilities(facilitiesData);
-        } catch (error) {
-          console.error('Error loading data:', error);
-          showError('Failed to load data');
-        } finally {
-          setLoading(false);
-        }
+      try {
+        const facilitiesData = session.user?.role === USER_ROLES.DISTRICT_OFFICER && session.user.district
+          ? await facilityService.getFacilitiesByDistrict(session.user.district)
+          : await facilityService.getAllFacilities();
+        setFacilities(facilitiesData);
+      } catch (error) {
+        console.error('Error loading facilities:', error);
+        showError('Failed to load facilities');
       }
     };
 
-    loadData();
+    void loadFacilities();
   }, [status, session, showError, canManageUsers]);
 
-  // Filter and search users
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = !debouncedSearchTerm ||
-      user.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      (user.workerId && user.workerId.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
-      (user.nationalId && user.nationalId.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
-      (user.phone && user.phone.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (status !== 'authenticated' || !session || !canManageUsers) return;
+      setLoading(true);
+      try {
+        const roleScopedDistrict = session.user?.role === USER_ROLES.DISTRICT_OFFICER
+          ? session.user.district
+          : undefined;
 
-    const matchesRole = !filters.role || user.role === filters.role;
-    const matchesFacility = !filters.facility || user.facilityId === filters.facility;
-    const matchesDistrict = !filters.district || user.district === filters.district;
-    const matchesStatus = filters.status === 'all' ||
-      (filters.status === 'active' && user.isActive) ||
-      (filters.status === 'inactive' && !user.isActive);
+        const result = await userService.getUsersWithFilters({
+          search: debouncedSearchTerm || undefined,
+          role: filters.role || undefined,
+          facilityId: filters.facility || undefined,
+          district: roleScopedDistrict || filters.district,
+          isActive: filters.status === 'all' ? undefined : filters.status === 'active',
+          page: currentPage,
+          limit: itemsPerPage,
+        });
+        setUsers(result.data);
+        setTotalUsers(result.total);
+      } catch (error) {
+        console.error('Error loading users:', error);
+        showError('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return matchesSearch && matchesRole && matchesFacility && matchesDistrict && matchesStatus;
-  });
+    void loadUsers();
+  }, [status, session, canManageUsers, debouncedSearchTerm, filters, currentPage, showError]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalUsers / itemsPerPage));
 
   const handleUserSuccess = async () => {
     setShowModal(false);
     setEditingUser(null);
 
     try {
-      const updatedUsers = await userService.getAllUsers();
-      setUsers(updatedUsers);
+      const refreshed = await userService.getUsersWithFilters({
+        search: debouncedSearchTerm || undefined,
+        role: filters.role || undefined,
+        facilityId: filters.facility || undefined,
+        district: session?.user?.role === USER_ROLES.DISTRICT_OFFICER
+          ? session.user.district
+          : (filters.district || undefined),
+        isActive: filters.status === 'all' ? undefined : filters.status === 'active',
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      setUsers(refreshed.data);
+      setTotalUsers(refreshed.total);
     } catch {
       showError('Failed to reload users');
     }
@@ -148,8 +150,19 @@ export default function UsersPage() {
       await userService.updateUser(userId, { isActive: !user.isActive });
       showSuccess(`User ${action}d successfully`);
 
-      const updatedUsers = await userService.getAllUsers();
-      setUsers(updatedUsers);
+      const refreshed = await userService.getUsersWithFilters({
+        search: debouncedSearchTerm || undefined,
+        role: filters.role || undefined,
+        facilityId: filters.facility || undefined,
+        district: session?.user?.role === USER_ROLES.DISTRICT_OFFICER
+          ? session.user.district
+          : (filters.district || undefined),
+        isActive: filters.status === 'all' ? undefined : filters.status === 'active',
+        page: currentPage,
+        limit: itemsPerPage,
+      });
+      setUsers(refreshed.data);
+      setTotalUsers(refreshed.total);
     } catch {
       showError(`Failed to ${action} user`);
     }
@@ -178,7 +191,7 @@ export default function UsersPage() {
   const facilityOptions = [
     { value: '', label: 'All Facilities' },
     ...facilities.map(facility => ({
-      value: facility.code,
+      value: facility.id,
       label: `${facility.name} - ${facility.district}`
     }))
   ];
@@ -256,41 +269,56 @@ export default function UsersPage() {
               <Input
                 placeholder="Search by name, email, phone, worker ID, or national ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setSearchTerm(e.target.value);
+                }}
                 variant="outlined"
               />
 
               <SearchableSelect
                 placeholder="Filter by role"
                 value={filters.role}
-                onChange={(value) => setFilters({ ...filters, role: value || '' })}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters({ ...filters, role: value || '' });
+                }}
                 options={roleOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by facility"
                 value={filters.facility}
-                onChange={(value) => setFilters({ ...filters, facility: value || '' })}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters({ ...filters, facility: value || '' });
+                }}
                 options={facilityOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by district"
                 value={filters.district}
-                onChange={(value) => setFilters({ ...filters, district: value || '' })}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters({ ...filters, district: value || '' });
+                }}
                 options={districtOptions}
               />
 
               <SearchableSelect
                 placeholder="Filter by status"
                 value={filters.status}
-                onChange={(value) => setFilters({ ...filters, status: value || '' })}
+                onChange={(value) => {
+                  setCurrentPage(1);
+                  setFilters({ ...filters, status: value || '' });
+                }}
                 options={statusOptions}
               />
             </div>
 
             <div className="text-sm text-gray-600">
-              Showing {paginatedUsers.length} of {filteredUsers.length} users
+              Showing {users.length} of {totalUsers} users
             </div>
           </div>
         </Card>
@@ -314,7 +342,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedUsers.map((user) => {
+                {users.map((user) => {
                   const facility = facilities.find(f => f.id === user.facilityId);
                   return (
                     <tr key={user.id + user.workerId} className="border-b border-gray-200 hover:bg-gray-50">

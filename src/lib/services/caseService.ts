@@ -19,6 +19,51 @@ export async function getAllCases(): Promise<Case[]> {
   return Array.isArray(data) ? data.map((c) => mapCase(c as CaseRecord)) : [];
 }
 
+export async function getCasesWithFilters(filters: {
+  search?: string;
+  diseaseCode?: string;
+  validationStatus?: string;
+  status?: string;
+  district?: string;
+  facilityId?: string;
+  patientId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  data: Case[];
+  total: number;
+  page: number;
+  totalPages: number;
+}> {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.diseaseCode) params.set('diseaseCode', filters.diseaseCode);
+  if (filters.validationStatus) params.set('validationStatus', filters.validationStatus);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.district) params.set('district', filters.district);
+  if (filters.facilityId) params.set('facilityId', filters.facilityId);
+  if (filters.patientId) params.set('patientId', filters.patientId);
+  if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+  if (filters.dateTo) params.set('dateTo', filters.dateTo);
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.limit) params.set('limit', String(filters.limit));
+
+  const res = await fetch(`/api/cases?${params.toString()}`);
+  if (!res.ok) await throwApiError(res, 'Failed to fetch cases');
+  const responseData = await res.json();
+  const payload = responseData.data || responseData;
+  const data = payload.data || payload || [];
+
+  return {
+    data: Array.isArray(data) ? data.map((c: CaseRecord) => mapCase(c)) : [],
+    total: payload.total || (Array.isArray(data) ? data.length : 0),
+    page: payload.page || 1,
+    totalPages: payload.totalPages || 1,
+  };
+}
+
 export async function getCaseById(id: string): Promise<Case | null> {
   const res = await fetch(`/api/cases/${id}`);
   if (!res.ok) return null;

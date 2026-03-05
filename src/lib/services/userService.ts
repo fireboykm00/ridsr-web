@@ -30,12 +30,64 @@ class UserService {
     return user ? { ...user, id: user._id || user.id } : null;
   }
 
-  async getAllUsers(): Promise<User[]> {
-    const res = await fetch('/api/users');
+  async getAllUsers(filters?: {
+    search?: string;
+    role?: string;
+    facilityId?: string;
+    district?: string;
+    isActive?: boolean;
+  }): Promise<User[]> {
+    const params = new URLSearchParams();
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.role) params.set('role', filters.role);
+    if (filters?.facilityId) params.set('facilityId', filters.facilityId);
+    if (filters?.district) params.set('district', filters.district);
+    if (filters?.isActive !== undefined) params.set('isActive', String(filters.isActive));
+    const query = params.toString();
+
+    const res = await fetch(`/api/users${query ? `?${query}` : ''}`);
     if (!res.ok) await throwApiError(res, 'Failed to fetch users');
     const responseData = await res.json();
     const users = responseData.data || responseData;
-    return Array.isArray(users) ? users.map((u) => mapUser(u as UserRecord)) : [];
+    const data = Array.isArray(users) ? users : users.data;
+    return Array.isArray(data) ? data.map((u) => mapUser(u as UserRecord)) : [];
+  }
+
+  async getUsersWithFilters(filters: {
+    search?: string;
+    role?: string;
+    facilityId?: string;
+    district?: string;
+    isActive?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: User[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params = new URLSearchParams();
+    if (filters.search) params.set('search', filters.search);
+    if (filters.role) params.set('role', filters.role);
+    if (filters.facilityId) params.set('facilityId', filters.facilityId);
+    if (filters.district) params.set('district', filters.district);
+    if (filters.isActive !== undefined) params.set('isActive', String(filters.isActive));
+    if (filters.page) params.set('page', String(filters.page));
+    if (filters.limit) params.set('limit', String(filters.limit));
+
+    const res = await fetch(`/api/users?${params.toString()}`);
+    if (!res.ok) await throwApiError(res, 'Failed to fetch users');
+    const responseData = await res.json();
+    const payload = responseData.data || responseData;
+    const data = Array.isArray(payload) ? payload : payload.data || [];
+
+    return {
+      data: data.map((u: UserRecord) => mapUser(u)),
+      total: payload.total || data.length,
+      page: payload.page || 1,
+      totalPages: payload.totalPages || 1,
+    };
   }
 
   async getUsersByRole(role: UserRole): Promise<User[]> {

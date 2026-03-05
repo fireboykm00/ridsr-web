@@ -39,6 +39,7 @@ export interface UpdateCaseData {
 
 export interface CaseFilters {
   facilityId?: string;
+  facilityIds?: string[];
   diseaseCode?: DiseaseCode;
   validationStatus?: ValidationStatus;
   status?: CaseStatus;
@@ -47,6 +48,7 @@ export interface CaseFilters {
   dateFrom?: Date;
   dateTo?: Date;
   district?: string;
+  search?: string;
 }
 
 interface ActionActor {
@@ -116,9 +118,18 @@ class CaseService extends BaseService<ICase> {
   ): Promise<ICase[] | PaginatedResult<ICase>> {
     const query: FilterQuery<ICase> = {};
 
-    let facilityFilterId: mongoose.Types.ObjectId | undefined;
+    const facilityFilterIds: mongoose.Types.ObjectId[] = [];
     if (filters.facilityId) {
-      facilityFilterId = new mongoose.Types.ObjectId(filters.facilityId);
+      if (mongoose.Types.ObjectId.isValid(filters.facilityId)) {
+        facilityFilterIds.push(new mongoose.Types.ObjectId(filters.facilityId));
+      }
+    }
+    if (filters.facilityIds?.length) {
+      for (const facilityId of filters.facilityIds) {
+        if (mongoose.Types.ObjectId.isValid(facilityId)) {
+          facilityFilterIds.push(new mongoose.Types.ObjectId(facilityId));
+        }
+      }
     }
     if (filters.diseaseCode) {
       query.diseaseCode = filters.diseaseCode;
@@ -135,20 +146,39 @@ class CaseService extends BaseService<ICase> {
     if (filters.patientId) {
       query.patientId = new mongoose.Types.ObjectId(filters.patientId);
     }
+    if (filters.search) {
+      const searchRegex = new RegExp(filters.search, 'i');
+      const searchOr: FilterQuery<ICase>[] = [
+        { diseaseCode: searchRegex },
+      ];
+      if (mongoose.Types.ObjectId.isValid(filters.search)) {
+        const objectId = new mongoose.Types.ObjectId(filters.search);
+        searchOr.push(
+          { patientId: objectId },
+          { facilityId: objectId },
+          { reporterId: objectId },
+        );
+      }
+      query.$or = searchOr;
+    }
     if (filters.district) {
       const districtFacilities = await Facility.find({ district: filters.district }).select('_id').lean();
       const districtFacilityIds = districtFacilities
         .map((f) => f._id)
         .filter((id): id is mongoose.Types.ObjectId => Boolean(id));
 
-      if (facilityFilterId) {
-        const inDistrict = districtFacilityIds.some((id) => id.equals(facilityFilterId));
-        query.facilityId = inDistrict ? facilityFilterId : { $in: [] };
+      if (facilityFilterIds.length > 0) {
+        const scopedFacilityIds = facilityFilterIds.filter((facilityId) =>
+          districtFacilityIds.some((districtFacilityId) => districtFacilityId.equals(facilityId))
+        );
+        query.facilityId = scopedFacilityIds.length > 0 ? { $in: scopedFacilityIds } : { $in: [] };
       } else {
         query.facilityId = { $in: districtFacilityIds };
       }
-    } else if (facilityFilterId) {
-      query.facilityId = facilityFilterId;
+    } else if (facilityFilterIds.length === 1) {
+      query.facilityId = facilityFilterIds[0];
+    } else if (facilityFilterIds.length > 1) {
+      query.facilityId = { $in: facilityFilterIds };
     }
     if (filters.dateFrom || filters.dateTo) {
       query.reportDate = {};

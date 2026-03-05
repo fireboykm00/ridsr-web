@@ -67,6 +67,8 @@ export default function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [districtFilter, setDistrictFilter] = useState<string | null>(null);
   const [genderFilter, setGenderFilter] = useState<string | null>(null);
+  const [ageFromFilter, setAgeFromFilter] = useState<string>('');
+  const [ageToFilter, setAgeToFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -148,6 +150,8 @@ export default function PatientsPage() {
       if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       if (districtFilter) params.append('district', districtFilter);
       if (genderFilter) params.append('gender', genderFilter);
+      if (ageFromFilter) params.append('ageFrom', ageFromFilter);
+      if (ageToFilter) params.append('ageTo', ageToFilter);
 
       const response = await fetch(`/api/patients?${params}`);
       if (!response.ok) {
@@ -165,7 +169,7 @@ export default function PatientsPage() {
     } finally {
       setLoading(false);
     }
-  }, [status, session, currentPage, debouncedSearchTerm, districtFilter, genderFilter, showError]);
+  }, [status, session, currentPage, debouncedSearchTerm, districtFilter, genderFilter, ageFromFilter, ageToFilter, showError]);
 
   useEffect(() => {
     loadPatients();
@@ -229,6 +233,8 @@ export default function PatientsPage() {
     setSearchTerm('');
     setDistrictFilter(null);
     setGenderFilter(null);
+    setAgeFromFilter('');
+    setAgeToFilter('');
     setCurrentPage(1);
   };
 
@@ -272,18 +278,24 @@ export default function PatientsPage() {
 
         {/* Search and Filters */}
         <Card className="p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <Input
               placeholder="Search by name, ID, or phone..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSearchTerm(e.target.value);
+              }}
               variant="outlined"
             />
 
             <SearchableSelect
               placeholder="Filter by district"
               value={districtFilter}
-              onChange={setDistrictFilter}
+              onChange={(value) => {
+                setCurrentPage(1);
+                setDistrictFilter(value);
+              }}
               options={DISTRICTS}
               isClearable
             />
@@ -291,9 +303,32 @@ export default function PatientsPage() {
             <SearchableSelect
               placeholder="Filter by gender"
               value={genderFilter}
-              onChange={setGenderFilter}
+              onChange={(value) => {
+                setCurrentPage(1);
+                setGenderFilter(value);
+              }}
               options={GENDERS}
               isClearable
+            />
+            <Input
+              placeholder="Age from"
+              type="number"
+              min={0}
+              value={ageFromFilter}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setAgeFromFilter(e.target.value);
+              }}
+            />
+            <Input
+              placeholder="Age to"
+              type="number"
+              min={0}
+              value={ageToFilter}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setAgeToFilter(e.target.value);
+              }}
             />
 
             <Button

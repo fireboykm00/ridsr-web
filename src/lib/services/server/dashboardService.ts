@@ -1,12 +1,18 @@
 import { dbConnect } from '@/lib/services/db';
 import { Case as CaseModel, User as UserModel, Facility as FacilityModel } from '@/lib/models';
 import { UserRole, RwandaDistrictType, DashboardStats } from '@/types';
+import { alertService } from './alertService';
 
 interface UserContext {
   id: string;
   role: UserRole;
   facilityId?: string;
   district?: RwandaDistrictType;
+}
+
+interface DistrictSummaryOptions {
+  dateFrom?: Date;
+  dateTo?: Date;
 }
 
 export class DashboardService {
@@ -30,13 +36,14 @@ export class DashboardService {
 
     await dbConnect();
 
-    const [totalCases, pendingCases, validatedCases, rejectedCases, totalFacilities, totalUsers] = await Promise.all([
+    const [totalCases, pendingCases, validatedCases, rejectedCases, totalFacilities, totalUsers, alerts] = await Promise.all([
       CaseModel.countDocuments(),
       CaseModel.countDocuments({ validationStatus: 'pending' }),
       CaseModel.countDocuments({ validationStatus: 'validated' }),
       CaseModel.countDocuments({ validationStatus: 'rejected' }),
       FacilityModel.countDocuments(),
-      UserModel.countDocuments()
+      UserModel.countDocuments(),
+      alertService.countActiveAlerts(user),
     ]);
 
     return {
@@ -44,7 +51,7 @@ export class DashboardService {
       pendingCases,
       validatedCases,
       rejectedCases,
-      alerts: 0,
+      alerts,
       totalFacilities,
       totalUsers,
       activeOutbreaks: 0
@@ -59,11 +66,12 @@ export class DashboardService {
     await dbConnect();
     const filter = await this.getFacilityFilter(user);
 
-    const [totalCases, pendingCases, validatedCases, rejectedCases] = await Promise.all([
+    const [totalCases, pendingCases, validatedCases, rejectedCases, alerts] = await Promise.all([
       CaseModel.countDocuments(filter),
       CaseModel.countDocuments({ ...filter, validationStatus: 'pending' }),
       CaseModel.countDocuments({ ...filter, validationStatus: 'validated' }),
       CaseModel.countDocuments({ ...filter, validationStatus: 'rejected' }),
+      alertService.countActiveAlerts(user),
     ]);
 
     return {
@@ -71,7 +79,7 @@ export class DashboardService {
       pendingCases,
       validatedCases,
       rejectedCases,
-      alerts: 0,
+      alerts,
       totalFacilities: 0,
       totalUsers: 0,
       activeOutbreaks: 0
@@ -82,11 +90,12 @@ export class DashboardService {
     await dbConnect();
     const filter = await this.getFacilityFilter(user);
 
-    const [totalCases, pendingCases, validatedCases, rejectedCases] = await Promise.all([
+    const [totalCases, pendingCases, validatedCases, rejectedCases, alerts] = await Promise.all([
       CaseModel.countDocuments(filter),
       CaseModel.countDocuments({ ...filter, validationStatus: 'pending' }),
       CaseModel.countDocuments({ ...filter, validationStatus: 'validated' }),
       CaseModel.countDocuments({ ...filter, validationStatus: 'rejected' }),
+      alertService.countActiveAlerts(user),
     ]);
 
     return {
@@ -94,7 +103,7 @@ export class DashboardService {
       pendingCases,
       validatedCases,
       rejectedCases,
-      alerts: 0,
+      alerts,
       totalFacilities: 0,
       totalUsers: 0,
       activeOutbreaks: 0
@@ -129,6 +138,75 @@ export class DashboardService {
       },
       { $sort: { _id: 1 } }
     ]);
+  }
+
+  async getDistrictSummaries(user: UserContext, options: DistrictSummaryOptions = {}) {
+    if (user.role !== 'admin' && user.role !== 'national_officer') {
+      throw new Error('Insufficient permissions for district summaries');
+    }
+
+    await dbConnect();
+
+    const dateFilter = options.dateFrom || options.dateTo
+      ? {
+        reportDate: {
+          ...(options.dateFrom ? { $gte: options.dateFrom } : {}),
+          ...(options.dateTo ? { $lte: options.dateTo } : {}),
+        },
+      }
+      : {};
+
+    const [facilitiesAgg, casesAgg] = await Promise.all([
+      FacilityModel.aggregate([
+        { $group: { _id: '$district', facilities: { $sum: 1 } } },
+      ]),
+      CaseModel.aggregate([
+        { $match: dateFilter },
+        {
+          $lookup: {
+            from: 'facilities',
+            localField: 'facilityId',
+            foreignField: '_id',
+            as: 'facility',
+          },
+        },
+        { $unwind: '$facility' },
+        {
+          $group: {
+            _id: '$facility.district',
+            totalCases: { $sum: 1 },
+            pendingCases: {
+              $sum: {
+                $cond: [{ $eq: ['$validationStatus', 'pending'] }, 1, 0],
+              },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const districtMap = new Map<string, { district: string; facilities: number; totalCases: number; pendingCases: number }>();
+    for (const item of facilitiesAgg) {
+      districtMap.set(item._id, {
+        district: item._id,
+        facilities: item.facilities || 0,
+        totalCases: 0,
+        pendingCases: 0,
+      });
+    }
+    for (const item of casesAgg) {
+      const existing = districtMap.get(item._id) || {
+        district: item._id,
+        facilities: 0,
+        totalCases: 0,
+        pendingCases: 0,
+      };
+      existing.totalCases = item.totalCases || 0;
+      existing.pendingCases = item.pendingCases || 0;
+      districtMap.set(item._id, existing);
+    }
+
+    return Array.from(districtMap.values()).sort((a, b) => a.district.localeCompare(b.district));
   }
 }
 

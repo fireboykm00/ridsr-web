@@ -18,6 +18,7 @@ const getUsersQuerySchema = z.object({
   role: z.enum(['admin', 'national_officer', 'district_officer', 'health_worker', 'lab_technician']).optional(),
   district: z.string().optional(),
   search: z.string().optional(),
+  isActive: z.enum(['true', 'false']).optional(),
 }).merge(paginationSchema.partial());
 
 const omitPassword = <T extends Record<string, unknown>>(user: T): Omit<T, 'password'> => {
@@ -32,13 +33,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
-    const { facilityId, role, district, search, page, limit } = getUsersQuerySchema.parse(queryParams);
+    const { facilityId, role, district, search, isActive, page, limit } = getUsersQuerySchema.parse(queryParams);
 
     const filters = {
       facilityId,
       role,
       district: (district || user?.district) as RwandaDistrictType | undefined,
-      search
+      search,
+      isActive: isActive === undefined ? undefined : isActive === 'true',
     };
     const users = await userService.getUsersWithFilters(filters, page, limit);
 

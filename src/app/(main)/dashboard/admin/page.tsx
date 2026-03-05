@@ -70,26 +70,29 @@ export default function AdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, facilitiesRes, casesRes] = await Promise.all([
+        const [usersRes, facilitiesRes, casesRes, alertsRes] = await Promise.all([
           fetch("/api/users"),
           fetch("/api/facilities"),
           fetch("/api/cases"),
+          fetch("/api/alerts?status=active&limit=200"),
         ]);
 
         const usersData = await usersRes.json();
         const facilitiesData = await facilitiesRes.json();
         const casesData = await casesRes.json();
+        const alertsData = await alertsRes.json();
 
         const users: UserSummary[] = usersData.data?.data || usersData.data || [];
         const facilities: FacilitySummary[] = facilitiesData.data?.data || facilitiesData.data || [];
         const cases: CaseSummary[] = casesData.data?.data || casesData.data || [];
+        const alerts: Array<{ id?: string }> = alertsData.data || [];
 
         // Process system stats
         const systemStats: SystemStats = {
           totalUsers: users.length,
           totalFacilities: facilities.length,
           totalCases: cases.length,
-          totalAlerts: 0,
+          totalAlerts: alerts.length,
           activeUsers: users.filter((u) => u.status === "active").length,
           pendingValidations: cases.filter(
             (c) => c.validationStatus === "pending",

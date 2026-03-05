@@ -40,6 +40,12 @@ export async function GET(request: NextRequest) {
         const days = parseInt(searchParams.get('days') || '30');
         stats = await dashboardService.getCasesTrend(userContext, days);
         break;
+      case 'districts':
+        stats = await dashboardService.getDistrictSummaries(userContext, {
+          dateFrom: searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom') as string) : undefined,
+          dateTo: searchParams.get('dateTo') ? new Date(searchParams.get('dateTo') as string) : undefined,
+        });
+        break;
       default:
         // Default behavior based on user role
         if (userContext.role === 'admin' || userContext.role === 'national_officer') {

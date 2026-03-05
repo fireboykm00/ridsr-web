@@ -15,6 +15,7 @@ import {
   BuildingOfficeIcon,
   UserGroupIcon,
   MapPinIcon,
+  BellIcon,
 } from "@heroicons/react/24/outline";
 import RIDSRLogo from "../ui/RIDSRLogo";
 
@@ -139,6 +140,18 @@ const Sidebar: React.FC = () => {
       href: "/dashboard/facility",
       icon: <BuildingOfficeIcon className="w-5 h-5" />,
       roles: [USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER],
+    },
+    {
+      name: "Alerts",
+      href: "/dashboard/alert",
+      icon: <BellIcon className="w-5 h-5" />,
+      roles: [
+        USER_ROLES.ADMIN,
+        USER_ROLES.NATIONAL_OFFICER,
+        USER_ROLES.DISTRICT_OFFICER,
+        USER_ROLES.HEALTH_WORKER,
+        USER_ROLES.LAB_TECHNICIAN,
+      ],
     },
 
     {

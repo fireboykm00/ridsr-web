@@ -61,6 +61,8 @@ export async function getPatientsWithFilters(filters: {
   search?: string;
   district?: string;
   gender?: string;
+  ageFrom?: number;
+  ageTo?: number;
   page?: number;
   limit?: number;
 }): Promise<{
@@ -74,12 +76,21 @@ export async function getPatientsWithFilters(filters: {
   if (filters.search) params.append('search', filters.search);
   if (filters.district) params.append('district', filters.district);
   if (filters.gender) params.append('gender', filters.gender);
+  if (filters.ageFrom !== undefined) params.append('ageFrom', String(filters.ageFrom));
+  if (filters.ageTo !== undefined) params.append('ageTo', String(filters.ageTo));
   if (filters.page) params.append('page', filters.page.toString());
   if (filters.limit) params.append('limit', filters.limit.toString());
 
   const res = await fetch(`/api/patients?${params}`);
   if (!res.ok) await throwApiError(res, 'Failed to fetch patients');
-  return res.json();
+  const responseData = await res.json();
+  const payload = responseData.data || responseData;
+  return {
+    data: normalizeIds(payload.data || []),
+    total: payload.total || 0,
+    page: payload.page || 1,
+    totalPages: payload.totalPages || 1,
+  };
 }
 
 export function filterPatientsByAccess(patients: Patient[], user?: User | ExtendedSession['user']): Patient[] {

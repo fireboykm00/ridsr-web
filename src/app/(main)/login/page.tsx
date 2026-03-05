@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { useToastHelpers } from "@/components/ui/Toast";
 import { Checkbox } from "@/components/ui/Checkbox";
 import RIDSRLogo from "@/components/ui/RIDSRLogo";
+import { getAuthErrorMessage } from "@/lib/auth/error-messages";
 
 interface FormErrors {
   identifier?: string;
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const error = searchParams.get("error");
+  const code = searchParams.get("code");
   const { error: showError, success } = useToastHelpers();
 
   useEffect(() => {
@@ -39,25 +41,19 @@ export default function LoginPage() {
   // Show error from URL params (e.g., from middleware redirect)
   useEffect(() => {
     if (error) {
-      switch (error) {
-        case "CredentialsSignin":
-          showError("Invalid email/worker ID or password");
-          break;
-        case "AccessDenied":
-          showError("Access denied. Please contact your administrator.");
-          break;
-        default:
-          showError("Authentication failed. Please try again.");
-      }
+      showError(getAuthErrorMessage(error, code));
     }
-  }, [error, showError]);
+  }, [error, code, showError]);
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
     if (!identifier.trim()) {
       newErrors.identifier = "Email or Worker ID is required";
-    } else if (identifier.includes("@") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+    } else if (
+      identifier.includes("@") &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)
+    ) {
       newErrors.identifier = "Please enter a valid email address";
     }
 
@@ -89,16 +85,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        switch (result.error) {
-          case "CredentialsSignin":
-            showError("Invalid email/worker ID or password");
-            break;
-          case "AccessDenied":
-            showError("Your account has been deactivated. Please contact support.");
-            break;
-          default:
-            showError(result.error);
-        }
+        showError(getAuthErrorMessage(result.error, result.code));
         setLoading(false);
       } else if (result?.ok) {
         // Get updated session to ensure user data is available
@@ -161,7 +148,7 @@ export default function LoginPage() {
             onChange={(e) => {
               setIdentifier(e.target.value);
               if (errors.identifier) {
-                setErrors(prev => ({ ...prev, identifier: undefined }));
+                setErrors((prev) => ({ ...prev, identifier: undefined }));
               }
             }}
             error={errors.identifier}
@@ -177,7 +164,7 @@ export default function LoginPage() {
             onChange={(e) => {
               setPassword(e.target.value);
               if (errors.password) {
-                setErrors(prev => ({ ...prev, password: undefined }));
+                setErrors((prev) => ({ ...prev, password: undefined }));
               }
             }}
             error={errors.password}
@@ -187,9 +174,9 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between">
-            <Checkbox 
-              id="remember-me" 
-              label="Remember me" 
+            <Checkbox
+              id="remember-me"
+              label="Remember me"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
               disabled={loading}
@@ -217,6 +204,26 @@ export default function LoginPage() {
             </Button>
           </div>
         </form>
+
+        <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            Demo Credentials
+          </p>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Email</span>
+              <span className="font-mono text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-100">
+                admin@ridsr.rw
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Password</span>
+              <span className="font-mono text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-100">
+                Hello123
+              </span>
+            </div>
+          </div>
+        </div>
 
         <div className="text-center text-sm text-gray-600">
           <p>

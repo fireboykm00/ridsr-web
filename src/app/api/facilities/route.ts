@@ -18,6 +18,7 @@ const getFacilitiesQuerySchema = z.object({
   district: z.string().optional(),
   type: z.enum(['health_center', 'hospital', 'clinic', 'dispensary', 'medical_center']).optional(),
   search: z.string().optional(),
+  isActive: z.enum(['true', 'false']).optional(),
 }).merge(paginationSchema.partial());
 
 export async function GET(request: NextRequest) {
@@ -26,12 +27,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
-    const { district, type, search, page, limit } = getFacilitiesQuerySchema.parse(queryParams);
+    const { district, type, search, isActive, page, limit } = getFacilitiesQuerySchema.parse(queryParams);
 
     const filters = {
       district: (district || user?.district) as RwandaDistrictType | undefined,
       type: type as FacilityType | undefined,
-      search
+      search,
+      isActive: isActive === undefined ? undefined : isActive === 'true',
     };
     const facilities = await facilityService.getFacilitiesWithFilters(filters, page, limit);
 

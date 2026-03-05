@@ -1,9 +1,25 @@
 // src/lib/auth.ts
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { CredentialsSignin } from "next-auth";
 import { User, UserRole, RwandaDistrictType, RwandaProvinceType } from "@/types";
 
-async function getUser(identifier: string, password: string): Promise<User | null> {
+type AuthFailureCode =
+  | "invalid_credentials"
+  | "account_disabled"
+  | "auth_service_error";
+
+type GetUserResult =
+  | { ok: true; user: User }
+  | { ok: false; code: AuthFailureCode };
+
+function credentialsError(code: AuthFailureCode): CredentialsSignin {
+  const error = new CredentialsSignin();
+  error.code = code;
+  return error;
+}
+
+async function getUser(identifier: string, password: string): Promise<GetUserResult> {
   try {
     // For server-side fetch in Next.js, we need to use absolute URL
     const baseUrl = process.env.NEXTAUTH_URL ||
@@ -20,18 +36,25 @@ async function getUser(identifier: string, password: string): Promise<User | nul
     });
 
     if (!response.ok) {
-      // Log the error for debugging but return null to prevent credential errors
       const errorData = await response.json().catch(() => ({}));
       console.error("Authentication API error:", errorData);
-      return null;
+
+      if (response.status === 401) {
+        return { ok: false, code: "invalid_credentials" };
+      }
+
+      if (response.status === 403) {
+        return { ok: false, code: "account_disabled" };
+      }
+
+      return { ok: false, code: "auth_service_error" };
     }
 
     const userData = await response.json();
-    return userData;
+    return { ok: true, user: userData };
   } catch (error) {
     console.error("Authentication error:", error);
-    // Return null to prevent credential errors from leaking information
-    return null;
+    return { ok: false, code: "auth_service_error" };
   }
 }
 
@@ -49,35 +72,26 @@ export const {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        try {
-          const { identifier, password } = credentials as {
-            identifier?: string;
-            password?: string;
-          };
+        const { identifier, password } = credentials as {
+          identifier?: string;
+          password?: string;
+        };
 
-          if (!identifier?.trim()) {
-            throw new Error("Email or Worker ID is required");
-          }
-
-          if (!password?.trim()) {
-            throw new Error("Password is required");
-          }
-
-          const user = await getUser(identifier.trim(), password);
-
-          if (!user) {
-            throw new Error("Invalid email/worker ID or password");
-          }
-
-          if (!user.isActive) {
-            throw new Error("Your account has been deactivated. Please contact support.");
-          }
-
-          return user;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Authentication failed";
-          throw new Error(message);
+        if (!identifier?.trim() || !password?.trim()) {
+          throw credentialsError("invalid_credentials");
         }
+
+        const authResult = await getUser(identifier.trim(), password);
+
+        if (!authResult.ok) {
+          throw credentialsError(authResult.code);
+        }
+
+        if (!authResult.user.isActive) {
+          throw credentialsError("account_disabled");
+        }
+
+        return authResult.user;
       },
     }),
   ],

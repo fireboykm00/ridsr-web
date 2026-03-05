@@ -11,25 +11,53 @@ import {
   apiValidationErrorResponse,
 } from '@/lib/api/error-utils';
 import { isAuthError, requireAuth } from '@/lib/api/middleware';
-import { CaseStatus, DiseaseCode, Symptom } from '@/types';
+import { CaseStatus, DiseaseCode, Symptom, ValidationStatus } from '@/types';
+
+const getCasesQuerySchema = z.object({
+  facilityId: z.string().optional(),
+  patientId: z.string().optional(),
+  district: z.string().optional(),
+  status: z.enum(['suspected', 'confirmed', 'resolved', 'invalidated']).optional(),
+  validationStatus: z.enum(['pending', 'validated', 'rejected']).optional(),
+  diseaseCode: z.string().optional(),
+  search: z.string().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+}).merge(paginationSchema.partial());
 
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
-    const { page, limit } = paginationSchema.parse({
-      page: searchParams.get('page') || '1',
-      limit: searchParams.get('limit') || '10',
-    });
+    const queryParams = Object.fromEntries(searchParams.entries());
+    const {
+      facilityId,
+      patientId,
+      district,
+      status,
+      validationStatus,
+      diseaseCode,
+      search,
+      dateFrom,
+      dateTo,
+      page,
+      limit,
+    } = getCasesQuerySchema.parse(queryParams);
 
     const filters = {
-      facilityId: searchParams.get('facilityId') || user?.facilityId,
-      status: (searchParams.get('status') as CaseStatus) || undefined,
-      district: searchParams.get('district') || undefined,
+      facilityId: facilityId || user?.facilityId,
+      patientId: patientId || undefined,
+      district: district || undefined,
+      status: status as CaseStatus | undefined,
+      validationStatus: validationStatus as ValidationStatus | undefined,
+      diseaseCode: diseaseCode as DiseaseCode | undefined,
+      search: search || undefined,
+      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
+      dateTo: dateTo ? new Date(dateTo) : undefined,
     };
 
-    const result = await getCases(filters, page, limit);
+    const result = await getCases(filters, page ?? 1, limit ?? 10);
     return successResponse(result);
   } catch (error) {
     if (isAuthError(error)) {
@@ -61,6 +89,9 @@ export async function POST(request: NextRequest) {
         return errorResponse('Facility not found', 404);
       }
       facilityId = facility._id?.toString();
+    }
+    if (!facilityId) {
+      return errorResponse('Facility is required', 400);
     }
 
     const caseRecord = await createCase({

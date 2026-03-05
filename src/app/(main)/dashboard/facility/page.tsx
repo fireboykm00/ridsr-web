@@ -24,6 +24,10 @@ export default function FacilityManagementPage() {
   const [editingFacility, setEditingFacility] = useState<Facility | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalFacilities, setTotalFacilities] = useState(0);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -31,9 +35,19 @@ export default function FacilityManagementPage() {
 
   useEffect(() => {
     const loadFacilities = async () => {
+      if (status !== 'authenticated') return;
+      setLoading(true);
       try {
-        const data = await facilityService.getAllFacilities();
-        setFacilities(data);
+        const result = await facilityService.getFacilitiesWithFilters({
+          search: debouncedSearchTerm || undefined,
+          type: typeFilter || undefined,
+          isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+          page: currentPage,
+          limit: 20,
+        });
+        setFacilities(result.data);
+        setTotalFacilities(result.total);
+        setTotalPages(result.totalPages);
       } catch (error) {
         console.error('Error loading facilities:', error);
         showError('Failed to load facilities');
@@ -42,21 +56,8 @@ export default function FacilityManagementPage() {
       }
     };
 
-    if (status === 'authenticated') {
-      loadFacilities();
-    }
-  }, [status, showError]);
-
-  const filteredFacilities = facilities.filter(f => {
-    const matchesSearch = !debouncedSearchTerm ||
-      f.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      f.code.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      f.district.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-
-    const matchesType = !typeFilter || f.type === typeFilter;
-
-    return matchesSearch && matchesType;
-  });
+    void loadFacilities();
+  }, [status, showError, debouncedSearchTerm, typeFilter, statusFilter, currentPage]);
 
   const handleCreateOrUpdate = async (formData: CreateFacilityInput | UpdateFacilityInput) => {
     try {
@@ -70,8 +71,16 @@ export default function FacilityManagementPage() {
       setShowModal(false);
       setEditingFacility(null);
       // Reload
-      const data = await facilityService.getAllFacilities();
-      setFacilities(data);
+      const result = await facilityService.getFacilitiesWithFilters({
+        search: debouncedSearchTerm || undefined,
+        type: typeFilter || undefined,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+        page: currentPage,
+        limit: 20,
+      });
+      setFacilities(result.data);
+      setTotalFacilities(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       showError(editingFacility ? 'Failed to update facility' : 'Failed to create facility');
     }
@@ -84,8 +93,16 @@ export default function FacilityManagementPage() {
     try {
       await facilityService.updateFacility(facility.id, { isActive: !facility.isActive });
       showSuccess(`Facility ${action}d successfully`);
-      const data = await facilityService.getAllFacilities();
-      setFacilities(data);
+      const result = await facilityService.getFacilitiesWithFilters({
+        search: debouncedSearchTerm || undefined,
+        type: typeFilter || undefined,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+        page: currentPage,
+        limit: 20,
+      });
+      setFacilities(result.data);
+      setTotalFacilities(result.total);
+      setTotalPages(result.totalPages);
     } catch {
       showError(`Failed to ${action} facility`);
     }
@@ -124,21 +141,27 @@ export default function FacilityManagementPage() {
       </div>
 
       <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="relative">
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               label="Search facility"
               placeholder="Enter code, name, ..etc"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setSearchTerm(e.target.value);
+              }}
               className="pl-10"
             />
           </div>
           <SearchableSelect
             placeholder="Filter by type"
             value={typeFilter}
-            onChange={(val) => setTypeFilter(val || '')}
+            onChange={(val) => {
+              setCurrentPage(1);
+              setTypeFilter(val || '');
+            }}
             options={[
               { value: '', label: 'All Types' },
               { value: 'health_center', label: 'Health Center' },
@@ -148,7 +171,21 @@ export default function FacilityManagementPage() {
               { value: 'medical_center', label: 'Medical Center' },
             ]}
           />
+          <SearchableSelect
+            placeholder="Filter by status"
+            value={statusFilter}
+            onChange={(val) => {
+              setCurrentPage(1);
+              setStatusFilter(val || 'all');
+            }}
+            options={[
+              { value: 'all', label: 'All Statuses' },
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+            ]}
+          />
         </div>
+        <p className="text-sm text-gray-600 mb-4">Showing {facilities.length} of {totalFacilities} facilities</p>
 
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -164,7 +201,7 @@ export default function FacilityManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredFacilities.map((facility) => (
+              {facilities.map((facility) => (
                 <tr key={facility.id} className="border-b border-gray-200 hover:bg-gray-50">
                   <td className="py-3 px-4 text-gray-900 font-medium">{facility.name}</td>
                   <td className="py-3 px-4 text-gray-600">{facility.code}</td>
@@ -204,7 +241,7 @@ export default function FacilityManagementPage() {
                   </td>
                 </tr>
               ))}
-              {filteredFacilities.length === 0 && (
+              {facilities.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-gray-500">
                     No facilities found.
@@ -214,6 +251,29 @@ export default function FacilityManagementPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">Page {currentPage} of {totalPages}</p>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Modal

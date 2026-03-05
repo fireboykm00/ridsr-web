@@ -18,6 +18,8 @@ const filtersSchema = z.object({
   district: z.string().optional(),
   gender: z.string().optional(),
   search: z.string().optional(),
+  ageFrom: z.string().optional(),
+  ageTo: z.string().optional(),
   page: z.string().default('1'),
   limit: z.string().default('10'),
 });
@@ -38,6 +40,8 @@ export async function GET(request: NextRequest) {
         district: searchParams.get('district') || undefined,
         gender: searchParams.get('gender') || undefined,
         search: searchParams.get('search') || undefined,
+        ageFrom: searchParams.get('ageFrom') || undefined,
+        ageTo: searchParams.get('ageTo') || undefined,
         page: searchParams.get('page') || '1',
         limit: searchParams.get('limit') || '10',
       });
@@ -46,6 +50,8 @@ export async function GET(request: NextRequest) {
         district: (filters.district || user?.district) as RwandaDistrictType,
         gender: filters.gender as Gender,
         search: filters.search,
+        ageFrom: filters.ageFrom ? parseInt(filters.ageFrom) : undefined,
+        ageTo: filters.ageTo ? parseInt(filters.ageTo) : undefined,
       };
 
       const result = await getPatients(patientFilters, parseInt(filters.page), parseInt(filters.limit));
