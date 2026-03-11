@@ -8,6 +8,7 @@ import { serverErrorResponse, validationErrorResponse } from '@/lib/api/error-ut
 const searchQuerySchema = z.object({
   q: z.string().trim().min(1, 'Search term is required.'),
   limit: z.string().transform(val => Math.min(parseInt(val) || 10, 50)).optional(),
+  district: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -15,9 +16,9 @@ export async function GET(request: NextRequest) {
     await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
-    const { q, limit = 10 } = searchQuerySchema.parse(Object.fromEntries(searchParams.entries()));
+    const { q, limit = 10, district } = searchQuerySchema.parse(Object.fromEntries(searchParams.entries()));
 
-    const facilities = await facilityService.searchFacilities(q, limit);
+    const facilities = await facilityService.searchFacilities(q, limit, district);
     return successResponse(facilities);
   } catch (error) {
     if (isAuthError(error)) {

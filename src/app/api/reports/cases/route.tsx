@@ -56,9 +56,19 @@ export async function POST(request: NextRequest) {
     const body: GenerateReportBody = await request.json();
     const validated = generateReportSchema.parse(body);
 
+    let facilityId: string | undefined = validated.facilityId;
+    let district = validated.district;
+
+    if (facilityId === '__all_national__') {
+      facilityId = undefined;
+      district = undefined;
+    } else if (facilityId === '__all_district__') {
+      facilityId = undefined;
+    }
+
     const filters: ReportFilters = {
-      facilityId: validated.facilityId,
-      district: validated.district,
+      facilityId,
+      district,
       diseaseCode: validated.diseaseCode as DiseaseCode | undefined,
       status: validated.status as CaseStatus | undefined,
     };

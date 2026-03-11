@@ -48,17 +48,23 @@ class FacilityService extends BaseService<IFacility> {
     return this.model.findOne({ code }).lean();
   }
 
-  async searchFacilities(searchTerm: string, limit: number = 10): Promise<IFacility[]> {
+  async searchFacilities(searchTerm: string, limit: number = 10, district?: string): Promise<IFacility[]> {
     await this.dbConnect();
     const searchRegex = new RegExp(searchTerm, 'i');
 
-    return this.model.find({
+    const query: Record<string, unknown> = {
       $or: [
         { name: searchRegex },
         { code: searchRegex }
       ],
       isActive: true
-    }).limit(limit).lean();
+    };
+
+    if (district) {
+      query.district = district;
+    }
+
+    return this.model.find(query).limit(limit).lean();
   }
 
   async getFacilitiesWithFilters(
