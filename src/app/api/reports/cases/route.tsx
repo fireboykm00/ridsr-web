@@ -97,9 +97,22 @@ export async function POST(request: NextRequest) {
 
     const title = getReportTitle(validated.reportType);
 
+    const uniqueFacilities = [...new Set(reportData.cases.map((c: { facilityName: string; facilityCode?: string }) => 
+      c.facilityCode ? `${c.facilityName} (${c.facilityCode})` : c.facilityName
+    ).filter(Boolean))];
+    
+    const facilityDisplay = uniqueFacilities.length === 1 
+      ? uniqueFacilities[0] 
+      : uniqueFacilities.length > 1 
+        ? `${uniqueFacilities.length} Facilities` 
+        : null;
+    
+    const districtValue = typeof validated.district === 'string' ? validated.district : validated.district?.[0];
+    const districtDisplay = districtValue ? districtValue.charAt(0).toUpperCase() + districtValue.slice(1) : null;
+    
     const subtitle = [
-      validated.district && `District: ${validated.district}`,
-      validated.facilityId && `Facility ID: ${validated.facilityId}`,
+      districtDisplay && `District: ${districtDisplay}`,
+      facilityDisplay && `Facility: ${facilityDisplay}`,
       validated.diseaseCode && `Disease: ${validated.diseaseCode}`,
     ].filter(Boolean).join(' | ');
 
@@ -112,7 +125,8 @@ export async function POST(request: NextRequest) {
       cases: reportData.cases,
       summary: reportData.summary,
       filters: {
-        district: validated.district,
+        district: districtDisplay || undefined,
+        facilityName: facilityDisplay || undefined,
         diseaseCode: validated.diseaseCode,
         status: validated.status,
         validationStatus: validated.validationStatus,

@@ -12,7 +12,9 @@ export interface CaseReportData {
   onsetDate: string;
   outcome?: string;
   facilityName: string;
+  facilityCode?: string;
   patientInfo: string;
+  patientNationalId?: string;
 }
 
 export interface ReportOptions {
@@ -24,6 +26,7 @@ export interface ReportOptions {
   cases: CaseReportData[];
   filters?: {
     district?: string;
+    facilityName?: string;
     diseaseCode?: string;
     status?: string;
     validationStatus?: string;
@@ -212,10 +215,12 @@ function drawTableSection(doc: jsPDF, options: ReportOptions, startY: number): n
       details.push(`Outcome: ${c.outcome}`);
     }
     
+    const facilityDisplay = c.facilityCode ? `${c.facilityName} (${c.facilityCode})` : c.facilityName;
+    
     return [
       c.patientInfo,
       getDiseaseName(c.diseaseCode),
-      c.facilityName,
+      facilityDisplay,
       c.status.charAt(0).toUpperCase() + c.status.slice(1),
       c.validationStatus.charAt(0).toUpperCase() + c.validationStatus.slice(1),
       c.reportDate,
@@ -310,18 +315,29 @@ function drawTableSection(doc: jsPDF, options: ReportOptions, startY: number): n
 function drawFiltersSection(doc: jsPDF, options: ReportOptions, startY: number): number {
   if (!options.filters) return startY;
 
-  const filterParts = [
-    options.filters.district && `District: ${options.filters.district}`,
-    options.filters.diseaseCode && `Disease: ${getDiseaseName(options.filters.diseaseCode)}`,
-    options.filters.status && `Status: ${options.filters.status}`,
-    options.filters.validationStatus && `Validation: ${options.filters.validationStatus}`,
-  ].filter(Boolean);
+  const filterParts: string[] = [];
+  
+  if (options.filters.district) {
+    filterParts.push(`District: ${options.filters.district.charAt(0).toUpperCase() + options.filters.district.slice(1)}`);
+  }
+  if (options.filters.facilityName) {
+    filterParts.push(`Facility: ${options.filters.facilityName}`);
+  }
+  if (options.filters.diseaseCode) {
+    filterParts.push(`Disease: ${getDiseaseName(options.filters.diseaseCode)}`);
+  }
+  if (options.filters.status) {
+    filterParts.push(`Status: ${options.filters.status.charAt(0).toUpperCase() + options.filters.status.slice(1)}`);
+  }
+  if (options.filters.validationStatus) {
+    filterParts.push(`Validation: ${options.filters.validationStatus.charAt(0).toUpperCase() + options.filters.validationStatus.slice(1)}`);
+  }
 
   if (filterParts.length === 0) return startY;
 
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
-  doc.text(`Applied Filters: ${filterParts.join(' | ')}`, 14, startY);
+  doc.text(`Filters Applied: ${filterParts.join(' | ')}`, 14, startY);
 
   return startY + 8;
 }

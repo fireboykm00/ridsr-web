@@ -33,9 +33,11 @@ export interface CaseReportData {
   onsetDate: string;
   outcome?: string;
   facilityName: string;
+  facilityCode?: string;
   facilityId: string;
   patientInfo: string;
   patientId: string;
+  patientNationalId?: string;
 }
 
 export interface ReportSummary {
@@ -197,8 +199,10 @@ class ReportService {
         onsetDate: c.onsetDate.toISOString().split('T')[0],
         outcome: c.outcome || undefined,
         facilityName: facility?.name || 'Unknown',
+        facilityCode: facility?.code || '',
         facilityId: facility?.id || '',
-        patientInfo: patient ? `${patient.firstName} ${patient.lastName} (${patient.nationalId})` : 'Unknown',
+        patientInfo: patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown',
+        patientNationalId: patient?.nationalId || '',
         patientId: patient?.id || '',
       };
     });
