@@ -70,9 +70,11 @@ class ReportService {
     if (filters.diseaseCode) {
       query.diseaseCode = filters.diseaseCode;
     }
+    
     if (filters.validationStatus) {
       query.validationStatus = filters.validationStatus;
     }
+    
     if (filters.status) {
       query.status = filters.status;
     }

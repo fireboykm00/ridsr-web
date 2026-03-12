@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { reportService, ReportFilters } from '@/lib/services/server/reportService';
 import { requireAuth } from '@/lib/api/middleware';
 import { isAuthError } from '@/lib/api/middleware';
-import { CaseStatus, DiseaseCode } from '@/types';
+import { CaseStatus, DiseaseCode, ValidationStatus } from '@/types';
 
 const generateReportSchema = z.object({
   reportType: z.enum([
@@ -18,9 +18,10 @@ const generateReportSchema = z.object({
     'annual_national',
   ]),
   facilityId: z.string().optional(),
-  district: z.string().optional(),
+  district: z.union([z.string(), z.array(z.string())]).optional(),
   diseaseCode: z.string().optional(),
-  status: z.string().optional(),
+  status: z.union([z.string(), z.array(z.string())]).optional(),
+  validationStatus: z.union([z.string(), z.array(z.string())]).optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 });
@@ -57,20 +58,19 @@ export async function POST(request: NextRequest) {
     const validated = generateReportSchema.parse(body);
 
     let facilityId: string | undefined = validated.facilityId;
-    let district = validated.district;
 
     if (facilityId === '__all_national__') {
       facilityId = undefined;
-      district = undefined;
     } else if (facilityId === '__all_district__') {
       facilityId = undefined;
     }
 
     const filters: ReportFilters = {
       facilityId,
-      district,
+      district: typeof validated.district === 'string' ? validated.district : undefined,
       diseaseCode: validated.diseaseCode as DiseaseCode | undefined,
-      status: validated.status as CaseStatus | undefined,
+      status: typeof validated.status === 'string' ? validated.status as CaseStatus : undefined,
+      validationStatus: typeof validated.validationStatus === 'string' ? validated.validationStatus as ValidationStatus : undefined,
     };
 
     if (validated.dateFrom) {
@@ -112,10 +112,10 @@ export async function POST(request: NextRequest) {
       cases: reportData.cases,
       summary: reportData.summary,
       filters: {
-        facility: validated.facilityId,
         district: validated.district,
         diseaseCode: validated.diseaseCode,
         status: validated.status,
+        validationStatus: validated.validationStatus,
       },
     }), {
       status: 200,

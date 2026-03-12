@@ -20,6 +20,7 @@ interface ReportFilters {
   endDate: string;
   diseaseCode?: string;
   status?: string;
+  validationStatus?: string;
 }
 
 interface FacilitySearchResult {
@@ -86,6 +87,12 @@ const STATUS_OPTIONS = [
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'resolved', label: 'Resolved' },
   { value: 'invalidated', label: 'Invalidated' },
+];
+
+const VALIDATION_OPTIONS = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'validated', label: 'Validated' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 const getReportLevel = (reportType: string): string => {
@@ -184,36 +191,16 @@ export default function ReportsPage() {
   };
 
   const handleFacilityChange = (value: string | null | undefined) => {
-    if (value === '__all__') {
-      if (userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.NATIONAL_OFFICER) {
-        setFilters(prev => ({ ...prev, facilityId: '__all_national__', district: undefined }));
-      } else if (userRole === USER_ROLES.DISTRICT_OFFICER && filters.district) {
-        setFilters(prev => ({ ...prev, facilityId: '__all_district__' }));
-      }
-    } else {
-      const newFacilityId = value || undefined;
-      setFilters(prev => ({ ...prev, facilityId: newFacilityId, district: undefined }));
-    }
+    setFilters(prev => ({ ...prev, facilityId: value || undefined }));
     setPreviewData(null);
-  };
-
-  const getAllFacilitiesOption = (): SelectOption | null => {
-    if (userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.NATIONAL_OFFICER) {
-      return { value: '__all__', label: 'All Facilities (National)' };
-    } else if (userRole === USER_ROLES.DISTRICT_OFFICER && filters.district) {
-      const districtName = DISTRICT_OPTIONS.find(d => d.value === filters.district)?.label || '';
-      return { value: '__all__', label: `All Facilities (${districtName})` };
-    }
-    return null;
+    clearError('facilityId');
   };
 
   const searchFacilities = async (query: string): Promise<SelectOption[]> => {
-    const allOption = getAllFacilitiesOption();
-    
-    if (!query.trim() && !filters.district && !allOption) return [];
+    const searchQuery = query.trim() || 'a';
     
     try {
-      const params = new URLSearchParams({ q: query || 'a' });
+      const params = new URLSearchParams({ q: searchQuery, limit: '50' });
       if (filters.district) {
         params.append('district', filters.district);
       }
@@ -221,28 +208,19 @@ export default function ReportsPage() {
       const response = await fetch(`/api/facilities/search?${params.toString()}`);
       const data = await response.json();
       
-      if (data.success && data.data) {
-        const facilityOptions = (data.data as FacilitySearchResult[]).map((facility) => ({
-          value: facility.id,
-          label: `${facility.name} (${facility.code})`
-        }));
-        
-        if (allOption) {
-          return [allOption, ...facilityOptions];
-        }
-        return facilityOptions;
+      if (data.success && Array.isArray(data.data)) {
+        return data.data
+          .filter((f: { _id?: string; id?: string }) => f._id || f.id)
+          .map((facility: { _id?: string; id?: string; name: string; code: string }) => ({
+            value: facility._id || facility.id,
+            label: `${facility.name} (${facility.code})`
+          }));
       }
-      return allOption ? [allOption] : [];
+      return [];
     } catch (error) {
       console.error('Error searching facilities:', error);
-      return allOption ? [allOption] : [];
+      return [];
     }
-  };
-
-  const shouldShowAllFacilitiesOption = (): boolean => {
-    return userRole === USER_ROLES.ADMIN || 
-           userRole === USER_ROLES.NATIONAL_OFFICER || 
-           (userRole === USER_ROLES.DISTRICT_OFFICER && !!filters.district);
   };
 
   const clearError = (field: string) => {
@@ -274,7 +252,7 @@ export default function ReportsPage() {
     }
 
     const visibleFields = getVisibleFields();
-    const isAllFacilities = filters.facilityId === '__all_national__' || filters.facilityId === '__all_district__';
+    const isAllFacilities = filters.facilityId === 'all';
     
     if (visibleFields.district && level === 'district' && !filters.district) {
       newErrors.district = 'District is required for district reports';
@@ -282,7 +260,7 @@ export default function ReportsPage() {
     
     if (visibleFields.facility && level === 'facility' && !filters.facilityId && !isAllFacilities &&
         userRole !== USER_ROLES.HEALTH_WORKER && userRole !== USER_ROLES.LAB_TECHNICIAN) {
-      newErrors.facilityId = 'Facility is required for facility reports';
+      newErrors.facilityId = 'Please select a facility';
     }
 
     setErrors(newErrors);
@@ -299,12 +277,15 @@ export default function ReportsPage() {
 
     setIsLoadingPreview(true);
     try {
+      const facilityId = filters.facilityId === 'all' ? undefined : filters.facilityId;
+      
       const requestBody = {
         reportType: filters.reportType,
-        facilityId: filters.facilityId,
+        facilityId,
         district: filters.district,
         diseaseCode: filters.diseaseCode,
         status: filters.status,
+        validationStatus: filters.validationStatus,
         dateFrom: filters.startDate,
         dateTo: filters.endDate,
       };
@@ -342,12 +323,15 @@ export default function ReportsPage() {
 
     setIsLoading(true);
     try {
+      const facilityId = filters.facilityId === 'all' ? undefined : filters.facilityId;
+      
       const requestBody = {
         reportType: filters.reportType,
-        facilityId: filters.facilityId,
+        facilityId,
         district: filters.district,
         diseaseCode: filters.diseaseCode,
         status: filters.status,
+        validationStatus: filters.validationStatus,
         dateFrom: filters.startDate,
         dateTo: filters.endDate,
       };
@@ -455,12 +439,9 @@ export default function ReportsPage() {
                     value={filters.facilityId}
                     onChange={handleFacilityChange}
                     onSearch={searchFacilities}
-                    placeholder={filters.district ? 'Search in district...' : 'Search facilities...'}
+                    placeholder={filters.district ? 'Search in district...' : 'Search or select facility...'}
                     isClearable
                     error={errors.facilityId}
-                    showAllOption={shouldShowAllFacilitiesOption()}
-                    allOptionLabel={getAllFacilitiesOption()?.label || 'All Facilities'}
-                    showSearchOnOpen
                   />
                   {filters.district && (
                     <p className="mt-1 text-xs text-blue-600">
@@ -515,6 +496,17 @@ export default function ReportsPage() {
                   />
                 </div>
               )}
+
+              <div>
+                <SearchableSelect
+                  label="Validation Status"
+                  value={filters.validationStatus}
+                  onChange={(value) => { setFilters(prev => ({ ...prev, validationStatus: value || undefined })); setPreviewData(null); }}
+                  options={VALIDATION_OPTIONS}
+                  placeholder="All validations..."
+                  isClearable
+                />
+              </div>
 
               <div>
                 <Input
