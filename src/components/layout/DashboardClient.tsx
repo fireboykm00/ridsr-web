@@ -36,15 +36,15 @@ export default function DashboardClient({ children }: DashboardClientProps) {
   const sidebar = session?.user ? <Sidebar /> : null;
 
   return (
-    <div className="flex min-h-screen bg-muted relative">
+    <div className="flex h-screen overflow-hidden bg-muted relative">
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-cover bg-center opacity-70"
         style={{ backgroundImage: "url('/rwanda-pattern.svg')" }}
       />
       <div className='fixed h-screen z-30'>
         {sidebar}
       </div>
-      <div className="flex-1 md:ml-64 relative">
+      <div className="flex-1 md:ml-64 relative overflow-y-auto">
         <div className="flex items-center border-b border-border bg-card/90 backdrop-blur-sm p-4 sticky top-0 z-20">
           <Breadcrumb />
         </div>

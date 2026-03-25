@@ -22,8 +22,8 @@ const Navbar = () => {
 
   const authenticatedNavLinks = [
     { name: "Dashboard", href: "/dashboard" },
-    { name: "Report Case", href: "/report-case" },
-    { name: "Cases", href: "/cases" },
+    { name: "Report Case", href: "/dashboard/report-case" },
+    { name: "Cases", href: "/dashboard/cases" },
     { name: "About", href: "/about" },
     { name: "FAQ", href: "/faq" },
   ];
