@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { Badge } from '@/components/ui/Badge';
 import { useToastHelpers } from '@/components/ui/Toast';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
 import { DocumentTextIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { Case, ValidationStatus, USER_ROLES, UserRole } from '@/types';
 import { getCasesWithFilters } from '@/lib/services/caseService';
@@ -90,7 +91,7 @@ export default function CaseListPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -98,7 +99,7 @@ export default function CaseListPage() {
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center">
           <h2 className="text-xl font-semibold text-foreground mb-4">Access Denied</h2>
           <p className="text-muted-foreground">Please sign in to view cases</p>
@@ -201,64 +202,62 @@ export default function CaseListPage() {
 
       {/* Cases Table */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted border-b border-border">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Case ID</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Patient ID</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Disease</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Report Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Outcome</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cases.length > 0 ? (
-                cases.map(caseItem => (
-                  <tr key={caseItem.id} className="border-b border-border hover:bg-muted">
-                    <td className="px-6 py-4 text-sm">
-                      <Link
-                        href={`/dashboard/cases/${caseItem.id}`}
-                        className="text-primary hover:underline font-medium"
-                      >
-                        {caseItem.id.substring(0, 8)}...
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-foreground">{caseItem.patientId}</td>
-                    <td className="px-6 py-4 text-sm text-foreground">{caseItem.diseaseCode}</td>
-                    <td className="px-6 py-4 text-sm">{getStatusBadge(caseItem.validationStatus)}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {new Date(caseItem.reportDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">
-                      {caseItem.outcome ? (
-                        <Badge variant={caseItem.outcome === 'recovered' ? 'success' : 'error'}>
-                          {caseItem.outcome}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground/60">Pending</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <DocumentTextIcon className="h-12 w-12 text-muted-foreground/60 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No cases found</h3>
-                    <p className="text-muted-foreground">
-                      {searchTerm || Object.values(filters).some(f => f && f !== 'all')
-                        ? 'Try adjusting your search or filters'
-                        : 'No cases have been reported yet'
-                      }
-                    </p>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow isHoverable={false}>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Case ID</TableHeaderCell>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Patient ID</TableHeaderCell>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Disease</TableHeaderCell>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</TableHeaderCell>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Report Date</TableHeaderCell>
+              <TableHeaderCell className="px-6 py-3 text-left text-sm font-semibold text-foreground">Outcome</TableHeaderCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {cases.length > 0 ? (
+              cases.map(caseItem => (
+                <TableRow key={caseItem.id}>
+                  <TableCell className="px-6 py-4 text-sm">
+                    <Link
+                      href={`/dashboard/cases/${caseItem.id}`}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {caseItem.id.substring(0, 8)}...
+                    </Link>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-foreground">{caseItem.patientId}</TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-foreground">{caseItem.diseaseCode}</TableCell>
+                  <TableCell className="px-6 py-4 text-sm">{getStatusBadge(caseItem.validationStatus)}</TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                    {new Date(caseItem.reportDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-sm text-muted-foreground">
+                    {caseItem.outcome ? (
+                      <Badge variant={caseItem.outcome === 'recovered' ? 'success' : 'error'}>
+                        {caseItem.outcome}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground/60">Pending</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow isHoverable={false}>
+                <TableCell colSpan={6} className="px-6 py-12 text-center">
+                  <DocumentTextIcon className="h-12 w-12 text-muted-foreground/60 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No cases found</h3>
+                  <p className="text-muted-foreground">
+                    {searchTerm || Object.values(filters).some(f => f && f !== 'all')
+                      ? 'Try adjusting your search or filters'
+                      : 'No cases have been reported yet'
+                    }
+                  </p>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-border">
             <p className="text-sm text-muted-foreground">

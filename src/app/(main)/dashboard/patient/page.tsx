@@ -16,6 +16,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { z } from 'zod';
 import { ApiClientError, parseApiError } from '@/lib/utils/apiError';
 import { zodErrorToFieldMap } from '@/lib/utils/zod';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
 
 interface PatientFormData {
   firstName: string;
@@ -240,7 +241,7 @@ export default function PatientsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -248,7 +249,7 @@ export default function PatientsPage() {
 
   if (status === 'authenticated' && !canAccessPatients) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground">
@@ -260,7 +261,7 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen">
       <div className="p-6">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -362,57 +363,55 @@ export default function PatientsPage() {
               <p className="text-muted-foreground">No patients found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">National ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Gender</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">District</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Phone</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {patients.length > 0 && patients.map((patient, index) => {
-                    const patientId = patient.id || (patient as Patient & { _id?: string })._id || '';
-                    return (
-                    <tr key={(patientId || patient.firstName) + index} className="border-b border-border hover:bg-muted">
-                      <td className="py-3 px-4 text-foreground">
-                        {patient.firstName} {patient.lastName}
-                      </td>
-                      <td className="py-3 px-4 text-foreground">{patient.nationalId}</td>
-                      <td className="py-3 px-4 text-foreground capitalize">{patient.gender}</td>
-                      <td className="py-3 px-4 text-foreground capitalize">
-                        {patient.address?.district || patient.district || 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 text-foreground">{patient.phone}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleViewPatient(patientId)}
-                            disabled={!patientId}
-                            className="p-2 text-primary hover:bg-primary/5 rounded"
-                            title="View Details"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleViewPatient(patientId)}
-                            disabled={!patientId}
-                            className="p-2 text-green-600 hover:bg-green-50 rounded"
-                            title="Edit Patient"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )})}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell>Name</TableHeaderCell>
+                  <TableHeaderCell>National ID</TableHeaderCell>
+                  <TableHeaderCell>Gender</TableHeaderCell>
+                  <TableHeaderCell>District</TableHeaderCell>
+                  <TableHeaderCell>Phone</TableHeaderCell>
+                  <TableHeaderCell>Actions</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {patients.length > 0 && patients.map((patient, index) => {
+                  const patientId = patient.id || (patient as Patient & { _id?: string })._id || '';
+                  return (
+                  <TableRow key={(patientId || patient.firstName) + index} isHoverable>
+                    <TableCell>
+                      {patient.firstName} {patient.lastName}
+                    </TableCell>
+                    <TableCell>{patient.nationalId}</TableCell>
+                    <TableCell className="capitalize">{patient.gender}</TableCell>
+                    <TableCell className="capitalize">
+                      {patient.address?.district || patient.district || 'N/A'}
+                    </TableCell>
+                    <TableCell>{patient.phone}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleViewPatient(patientId)}
+                          disabled={!patientId}
+                          className="p-2 text-primary hover:bg-primary/5 rounded"
+                          title="View Details"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleViewPatient(patientId)}
+                          disabled={!patientId}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded"
+                          title="Edit Patient"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )})}
+              </TableBody>
+            </Table>
           )}
         </Card>
 

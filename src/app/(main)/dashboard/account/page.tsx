@@ -76,7 +76,7 @@ export default function AccountPage() {
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-4">You must be logged in to view this page.</p>
@@ -232,7 +232,7 @@ export default function AccountPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-muted p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-foreground">Account Management</h1>

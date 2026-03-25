@@ -1,11 +1,15 @@
 // src/features/home/HeroSection.tsx
-import Link from 'next/link';
+import Link from "next/link";
 
 const HeroSection = () => {
   return (
-    <section className="bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-        <div className="max-w-3xl">
+    <section className="relative bg-background overflow-hidden">
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/rwanda-pattern-hero.svg')" }}
+      />
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div className="max-w-3xl bg-background/80 rounded-md p-8 md:p-10">
           <p className="text-xs uppercase tracking-[0.25em] text-primary font-semibold mb-4">
             Republic of Rwanda &middot; Ministry of Health
           </p>
@@ -13,8 +17,9 @@ const HeroSection = () => {
             National Integrated Disease Surveillance &amp; Response
           </h1>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl">
-            A unified digital platform enabling real-time disease monitoring, rapid outbreak response,
-            and data-driven public health decisions across all 30 districts of Rwanda.
+            A unified digital platform enabling real-time disease monitoring,
+            rapid outbreak response, and data-driven public health decisions
+            across all 30 districts of Rwanda.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -36,22 +41,31 @@ const HeroSection = () => {
         <div className="mt-16 pt-10 border-t border-border grid grid-cols-2 md:grid-cols-4 gap-8">
           <div>
             <p className="text-3xl font-bold text-foreground">500+</p>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Health Facilities</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
+              Health Facilities
+            </p>
           </div>
           <div>
             <p className="text-3xl font-bold text-foreground">30/30</p>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Districts Covered</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
+              Districts Covered
+            </p>
           </div>
           <div>
             <p className="text-3xl font-bold text-foreground">24/7</p>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Active Monitoring</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
+              Active Monitoring
+            </p>
           </div>
           <div>
             <p className="text-3xl font-bold text-foreground">99.9%</p>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">System Uptime</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">
+              System Uptime
+            </p>
           </div>
         </div>
       </div>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />
     </section>
   );
 };

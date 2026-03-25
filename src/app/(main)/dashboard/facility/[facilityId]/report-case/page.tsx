@@ -39,7 +39,7 @@ export default function FacilityCaseReportForm() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -47,7 +47,7 @@ export default function FacilityCaseReportForm() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-6">
@@ -91,7 +91,7 @@ export default function FacilityCaseReportForm() {
 
   if (!canReportForFacility()) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-6">

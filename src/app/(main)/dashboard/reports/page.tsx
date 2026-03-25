@@ -372,7 +372,7 @@ export default function ReportsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -390,7 +390,7 @@ export default function ReportsPage() {
 
   if (!canGenerateReport) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground">You do not have permission to generate reports.</p>
@@ -403,7 +403,7 @@ export default function ReportsPage() {
   const reportLevel = getReportLevel(filters.reportType);
 
   return (
-    <div className="min-h-screen bg-muted py-8">
+    <div className="min-h-screen py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">Generate Reports</h1>

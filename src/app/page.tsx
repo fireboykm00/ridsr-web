@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import HeroSection from '@/features/home/HeroSection';
 import FeaturesSection from '@/features/home/FeaturesSection';
 import PartnersSection from '@/features/home/PartnersSection';
+import CTASection from '@/features/home/CTASection';
 import Footer from '@/components/layout/Footer';
 
 export default function HomePage() {
@@ -14,6 +15,7 @@ export default function HomePage() {
                 <HeroSection />
                 <FeaturesSection />
                 <PartnersSection />
+                <CTASection />
             </main>
 
             <Footer />

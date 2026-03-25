@@ -163,7 +163,7 @@ export default function DistrictDetailPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
       </div>
     );
@@ -175,7 +175,7 @@ export default function DistrictDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 max-w-lg text-center">
           <h1 className="text-2xl font-bold text-foreground mb-3">Access Error</h1>
           <p className="text-muted-foreground mb-5">{error}</p>

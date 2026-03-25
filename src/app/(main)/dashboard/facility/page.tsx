@@ -13,6 +13,7 @@ import { USER_ROLES, Facility, CreateFacilityInput, UpdateFacilityInput } from '
 import { facilityService } from '@/lib/services/facilityService';
 import FacilityManagementForm from '@/components/forms/FacilityManagementForm';
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
 
 export default function FacilityManagementPage() {
   const { data: session, status } = useSession();
@@ -110,7 +111,7 @@ export default function FacilityManagementPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -187,70 +188,68 @@ export default function FacilityManagementPage() {
         </div>
         <p className="text-sm text-muted-foreground mb-4">Showing {facilities.length} of {totalFacilities} facilities</p>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Code</th>
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Type</th>
-                <th className="text-left py-3 px-4 font-semibold text-foreground">District</th>
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Contact</th>
-                <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
-                <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {facilities.map((facility) => (
-                <tr key={facility.id} className="border-b border-border hover:bg-muted">
-                  <td className="py-3 px-4 text-foreground font-medium">{facility.name}</td>
-                  <td className="py-3 px-4 text-muted-foreground">{facility.code}</td>
-                  <td className="py-3 px-4 text-muted-foreground capitalize">{facility.type.replace('_', ' ')}</td>
-                  <td className="py-3 px-4 text-muted-foreground capitalize">{facility.district}</td>
-                  <td className="py-3 px-4 text-muted-foreground">
-                    <div>{facility.contactPerson}</div>
-                    <div className="text-xs text-muted-foreground/60">{facility.phone}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${facility.isActive ? 'bg-green-100 text-green-800' : 'bg-destructive/10 text-destructive'
-                      }`}>
-                      {facility.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingFacility(facility);
-                          setShowModal(true);
-                        }}
-                        className="p-2 text-primary hover:bg-primary/5 rounded"
-                        title="Edit"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(facility)}
-                        className={`p-2 rounded ${facility.isActive ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'
-                          }`}
-                        title={facility.isActive ? 'Deactivate' : 'Activate'}
-                      >
-                        <XMarkIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {facilities.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                    No facilities found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">Name</TableHeaderCell>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">Code</TableHeaderCell>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">Type</TableHeaderCell>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">District</TableHeaderCell>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">Contact</TableHeaderCell>
+              <TableHeaderCell className="text-left py-3 px-4 font-semibold text-foreground">Status</TableHeaderCell>
+              <TableHeaderCell className="text-right py-3 px-4 font-semibold text-foreground">Actions</TableHeaderCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {facilities.map((facility) => (
+              <TableRow key={facility.id} className="hover:bg-muted">
+                <TableCell className="py-3 px-4 text-foreground font-medium">{facility.name}</TableCell>
+                <TableCell className="py-3 px-4 text-muted-foreground">{facility.code}</TableCell>
+                <TableCell className="py-3 px-4 text-muted-foreground capitalize">{facility.type.replace('_', ' ')}</TableCell>
+                <TableCell className="py-3 px-4 text-muted-foreground capitalize">{facility.district}</TableCell>
+                <TableCell className="py-3 px-4 text-muted-foreground">
+                  <div>{facility.contactPerson}</div>
+                  <div className="text-xs text-muted-foreground/60">{facility.phone}</div>
+                </TableCell>
+                <TableCell className="py-3 px-4">
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${facility.isActive ? 'bg-green-100 text-green-800' : 'bg-destructive/10 text-destructive'
+                    }`}>
+                    {facility.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </TableCell>
+                <TableCell className="py-3 px-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingFacility(facility);
+                        setShowModal(true);
+                      }}
+                      className="p-2 text-primary hover:bg-primary/5 rounded"
+                      title="Edit"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(facility)}
+                      className={`p-2 rounded ${facility.isActive ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'
+                        }`}
+                      title={facility.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {facilities.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  No facilities found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</p>

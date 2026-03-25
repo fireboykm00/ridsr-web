@@ -12,6 +12,7 @@ import { USER_ROLES, Case, ValidationStatus, UserRole, LabResultInterpretation }
 import { z } from 'zod';
 import { parseApiError, ApiClientError } from '@/lib/utils/apiError';
 import { zodErrorToFieldMap } from '@/lib/utils/zod';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
 
 interface ValidationCase extends Case {
   patient?: {
@@ -525,7 +526,7 @@ export default function ValidationHubPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -533,7 +534,7 @@ export default function ValidationHubPage() {
 
   if (!canAccessHub) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground">You do not have permission to access the validation hub</p>
@@ -543,7 +544,7 @@ export default function ValidationHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen">
       <div className="p-6">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Validation Hub</h1>
@@ -609,63 +610,61 @@ export default function ValidationHubPage() {
               <p className="text-muted-foreground">All pending cases are processed</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Case ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Disease</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Facility</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Report Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {pendingCases.map((caseItem) => (
-                    <tr key={caseItem.id} className="hover:bg-muted">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{caseItem.id.substring(0, 8)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {caseItem.patient ? `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.diseaseCode}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.facility?.name || 'Unknown'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <Button variant="secondary" size="sm" onClick={() => void handleViewCase(caseItem)} className="flex items-center gap-1">
-                          <EyeIcon className="h-4 w-4" />
-                          Submit Results
-                        </Button>
-                        {canValidateCases && (
-                          <>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleValidateCase(caseItem.id, 'rejected')}
-                              disabled={validatingCaseId === caseItem.id}
-                              className="flex items-center gap-1"
-                            >
-                              <XCircleIcon className="h-4 w-4" />
-                              Reject
-                            </Button>
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleValidateCase(caseItem.id, 'validated')}
-                              disabled={validatingCaseId === caseItem.id}
-                              className="flex items-center gap-1"
-                            >
-                              <CheckCircleIcon className="h-4 w-4" />
-                              Validate
-                            </Button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Case ID</TableHeaderCell>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient</TableHeaderCell>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Disease</TableHeaderCell>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Facility</TableHeaderCell>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Report Date</TableHeaderCell>
+                  <TableHeaderCell className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingCases.map((caseItem) => (
+                  <TableRow key={caseItem.id} className="hover:bg-muted">
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{caseItem.id.substring(0, 8)}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                      {caseItem.patient ? `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 'Unknown'}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.diseaseCode}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.facility?.name || 'Unknown'}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <Button variant="secondary" size="sm" onClick={() => void handleViewCase(caseItem)} className="flex items-center gap-1">
+                        <EyeIcon className="h-4 w-4" />
+                        Submit Results
+                      </Button>
+                      {canValidateCases && (
+                        <>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleValidateCase(caseItem.id, 'rejected')}
+                            disabled={validatingCaseId === caseItem.id}
+                            className="flex items-center gap-1"
+                          >
+                            <XCircleIcon className="h-4 w-4" />
+                            Reject
+                          </Button>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleValidateCase(caseItem.id, 'validated')}
+                            disabled={validatingCaseId === caseItem.id}
+                            className="flex items-center gap-1"
+                          >
+                            <CheckCircleIcon className="h-4 w-4" />
+                            Validate
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </Card>
       </div>

@@ -1,7 +1,7 @@
 // src/components/ui/Button.tsx
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger' | 'outline' | 'destructive' | 'success';
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger' | 'outline' | 'destructive' | 'success' | 'accent';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -39,6 +39,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       outline: 'border border-border text-foreground hover:bg-muted disabled:opacity-50',
       destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 focus:ring-destructive',
       success: 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 focus:ring-green-500',
+      accent: 'bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50 font-semibold',
     };
 
     const widthClass = fullWidth ? 'w-full' : '';

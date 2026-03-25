@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableCell, TableHeaderCell } from '@/components/ui/Table';
 import { USER_ROLES } from '@/types';
 import { getAllCases, updateCase } from '@/lib/services/caseService';
 import { useRouter } from 'next/navigation';
@@ -77,7 +78,7 @@ export default function ValidationPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -85,7 +86,7 @@ export default function ValidationPage() {
 
   if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as any)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
           <p className="text-muted-foreground">Only authorized personnel can validate cases</p>
@@ -95,7 +96,7 @@ export default function ValidationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-foreground mb-8">Case Validation</h1>
         
@@ -107,49 +108,47 @@ export default function ValidationPage() {
               <p className="text-muted-foreground">No cases requiring validation at this time</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Case ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Patient</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Disease</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Report Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Facility</th>
-                    <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingCases.map((caseItem) => (
-                    <tr key={caseItem.id} className="border-b border-border hover:bg-muted">
-                      <td className="py-3 px-4 text-foreground">{caseItem.id.substring(0, 8)}</td>
-                      <td className="py-3 px-4 text-foreground">{caseItem.patientId}</td>
-                      <td className="py-3 px-4 text-foreground">{caseItem.diseaseCode}</td>
-                      <td className="py-3 px-4 text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-foreground">{caseItem.facilityId}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="success" 
-                            size="sm"
-                            onClick={() => handleValidateCase(caseItem.id)}
-                          >
-                            Validate
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleRejectCase(caseItem.id)}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell>Case ID</TableHeaderCell>
+                  <TableHeaderCell>Patient</TableHeaderCell>
+                  <TableHeaderCell>Disease</TableHeaderCell>
+                  <TableHeaderCell>Report Date</TableHeaderCell>
+                  <TableHeaderCell>Facility</TableHeaderCell>
+                  <TableHeaderCell>Actions</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingCases.map((caseItem) => (
+                  <TableRow key={caseItem.id}>
+                    <TableCell>{caseItem.id.substring(0, 8)}</TableCell>
+                    <TableCell>{caseItem.patientId}</TableCell>
+                    <TableCell>{caseItem.diseaseCode}</TableCell>
+                    <TableCell>{new Date(caseItem.reportDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{caseItem.facilityId}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="success" 
+                          size="sm"
+                          onClick={() => handleValidateCase(caseItem.id)}
+                        >
+                          Validate
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleRejectCase(caseItem.id)}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </Card>
       </div>

@@ -112,7 +112,7 @@ export default function FacilityDetailPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -120,7 +120,7 @@ export default function FacilityDetailPage() {
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center">
           <h2 className="text-xl font-semibold text-foreground mb-4">Access Denied</h2>
           <p className="text-muted-foreground">Please sign in to view facility details</p>
@@ -131,7 +131,7 @@ export default function FacilityDetailPage() {
 
   if (!facility) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center">
           <h2 className="text-xl font-semibold text-foreground mb-4">Facility not found</h2>
           <Link href="/dashboard/facility">

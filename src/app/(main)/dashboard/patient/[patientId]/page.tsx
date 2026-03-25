@@ -222,7 +222,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -230,7 +230,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
 
   if (!patient) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-foreground">Patient not found</h2>
           <Link href="/dashboard/patient" className="text-primary hover:underline mt-4 inline-block">
@@ -244,7 +244,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
   const age = calculateAge(patient.dateOfBirth);
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen">
       <div className="p-6">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
