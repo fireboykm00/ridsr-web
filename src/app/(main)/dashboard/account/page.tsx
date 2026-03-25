@@ -76,10 +76,10 @@ export default function AccountPage() {
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-4">You must be logged in to view this page.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground mb-4">You must be logged in to view this page.</p>
           <Button onClick={() => window.location.href = '/login'}>
             Go to Login
           </Button>
@@ -232,10 +232,10 @@ export default function AccountPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Account Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">Account Management</h1>
           <Button
             onClick={handleSignOut}
             variant="tertiary"
@@ -257,9 +257,9 @@ export default function AccountPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab.id
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${activeTab === tab.id
+                          ? 'bg-primary/5 text-primary border border-primary/20'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -273,16 +273,16 @@ export default function AccountPage() {
             {/* User Info Card */}
             <Card className="p-4 mt-4">
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <UserIcon className="h-8 w-8 text-blue-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <UserIcon className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-medium text-gray-900">{session.user.name}</h3>
-                <p className="text-sm text-gray-500">{session.user.email}</p>
-                <p className="text-xs text-gray-400 mt-1">
+                <h3 className="font-medium text-foreground">{session.user.name}</h3>
+                <p className="text-sm text-muted-foreground">{session.user.email}</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
                   Role: {session.user.role?.replace('_', ' ').toUpperCase()}
                 </p>
                 {session.user.workerId && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground/60">
                     ID: {session.user.workerId}
                   </p>
                 )}
@@ -440,7 +440,7 @@ export default function AccountPage() {
                       onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
                       disabled={loading}
                     />
-                    <p className="text-sm text-gray-500 ml-7 -mt-2">Receive email notifications for case updates and alerts</p>
+                    <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive email notifications for case updates and alerts</p>
 
                     <Checkbox
                       id="smsAlerts"
@@ -449,7 +449,7 @@ export default function AccountPage() {
                       onChange={(e) => setSettings({ ...settings, smsAlerts: e.target.checked })}
                       disabled={loading}
                     />
-                    <p className="text-sm text-gray-500 ml-7 -mt-2">Receive SMS alerts for urgent cases and outbreaks</p>
+                    <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive SMS alerts for urgent cases and outbreaks</p>
 
                     <Checkbox
                       id="weeklyReports"
@@ -458,7 +458,7 @@ export default function AccountPage() {
                       onChange={(e) => setSettings({ ...settings, weeklyReports: e.target.checked })}
                       disabled={loading}
                     />
-                    <p className="text-sm text-gray-500 ml-7 -mt-2">Receive weekly summary reports via email</p>
+                    <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive weekly summary reports via email</p>
 
                     <Checkbox
                       id="twoFactorAuth"
@@ -467,7 +467,7 @@ export default function AccountPage() {
                       onChange={(e) => setSettings({ ...settings, twoFactorAuth: e.target.checked })}
                       disabled={loading}
                     />
-                    <p className="text-sm text-gray-500 ml-7 -mt-2">Enable two-factor authentication for enhanced security</p>
+                    <p className="text-sm text-muted-foreground ml-7 -mt-2">Enable two-factor authentication for enhanced security</p>
                   </div>
 
                   <Button

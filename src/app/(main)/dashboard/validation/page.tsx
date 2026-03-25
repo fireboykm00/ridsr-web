@@ -77,56 +77,56 @@ export default function ValidationPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session || ![USER_ROLES.ADMIN, USER_ROLES.NATIONAL_OFFICER, USER_ROLES.DISTRICT_OFFICER].includes(session.user?.role as any)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Only authorized personnel can validate cases</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">Only authorized personnel can validate cases</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted p-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Case Validation</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-8">Case Validation</h1>
         
         <Card className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Cases Requiring Validation</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Cases Requiring Validation</h2>
           
           {pendingCases.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">No cases requiring validation at this time</p>
+              <p className="text-muted-foreground">No cases requiring validation at this time</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Case ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Patient</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Disease</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Report Date</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Facility</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Case ID</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Patient</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Disease</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Report Date</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Facility</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pendingCases.map((caseItem) => (
-                    <tr key={caseItem.id} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900">{caseItem.id.substring(0, 8)}</td>
-                      <td className="py-3 px-4 text-gray-900">{caseItem.patientId}</td>
-                      <td className="py-3 px-4 text-gray-900">{caseItem.diseaseCode}</td>
-                      <td className="py-3 px-4 text-gray-900">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
-                      <td className="py-3 px-4 text-gray-900">{caseItem.facilityId}</td>
+                    <tr key={caseItem.id} className="border-b border-border hover:bg-muted">
+                      <td className="py-3 px-4 text-foreground">{caseItem.id.substring(0, 8)}</td>
+                      <td className="py-3 px-4 text-foreground">{caseItem.patientId}</td>
+                      <td className="py-3 px-4 text-foreground">{caseItem.diseaseCode}</td>
+                      <td className="py-3 px-4 text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-foreground">{caseItem.facilityId}</td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
                           <Button 

@@ -222,18 +222,18 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!patient) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Patient not found</h2>
-          <Link href="/dashboard/patient" className="text-blue-600 hover:underline mt-4 inline-block">
+          <h2 className="text-xl font-semibold text-foreground">Patient not found</h2>
+          <Link href="/dashboard/patient" className="text-primary hover:underline mt-4 inline-block">
             Back to Patients
           </Link>
         </div>
@@ -244,24 +244,24 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
   const age = calculateAge(patient.dateOfBirth);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="p-6">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link 
               href="/dashboard/patient" 
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md"
             >
               <ArrowLeftIcon className="h-5 w-5" />
             </Link>
             <div className="flex items-center gap-3">
-              <UserIcon className="h-6 w-6 text-blue-700" />
+              <UserIcon className="h-6 w-6 text-primary" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                   {patient.firstName} {patient.lastName}
                 </h1>
-                <p className="text-gray-600">Patient Details</p>
+                <p className="text-muted-foreground">Patient Details</p>
               </div>
             </div>
           </div>
@@ -279,67 +279,67 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
           <div className="lg:col-span-2 space-y-6">
             {/* Demographics */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Demographics</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Demographics</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Age</p>
-                  <p className="text-gray-900 font-medium">{age} years</p>
+                  <p className="text-sm text-muted-foreground">Age</p>
+                  <p className="text-foreground font-medium">{age} years</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Gender</p>
-                  <p className="text-gray-900 font-medium capitalize">{patient.gender}</p>
+                  <p className="text-sm text-muted-foreground">Gender</p>
+                  <p className="text-foreground font-medium capitalize">{patient.gender}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Date of Birth</p>
-                  <p className="text-gray-900 font-medium">{formatDate(patient.dateOfBirth)}</p>
+                  <p className="text-sm text-muted-foreground">Date of Birth</p>
+                  <p className="text-foreground font-medium">{formatDate(patient.dateOfBirth)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">National ID</p>
-                  <p className="text-gray-900 font-medium">{patient.nationalId}</p>
+                  <p className="text-sm text-muted-foreground">National ID</p>
+                  <p className="text-foreground font-medium">{patient.nationalId}</p>
                 </div>
               </div>
             </Card>
 
             {/* Contact Information */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="text-gray-900 font-medium">{patient.phone || 'Not provided'}</p>
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="text-foreground font-medium">{patient.phone || 'Not provided'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="text-gray-900 font-medium">Not provided</p>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="text-foreground font-medium">Not provided</p>
                 </div>
               </div>
             </Card>
 
             {/* Address */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Address</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">District</p>
-                  <p className="text-gray-900 font-medium capitalize">
+                  <p className="text-sm text-muted-foreground">District</p>
+                  <p className="text-foreground font-medium capitalize">
                     {patient.district || patient.address?.district || 'Not specified'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Sector</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Sector</p>
+                  <p className="text-foreground font-medium">
                     {patient.address?.sector || 'Not specified'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Street</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Street</p>
+                  <p className="text-foreground font-medium">
                     {patient.address?.street || 'Not specified'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Province</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Province</p>
+                  <p className="text-foreground font-medium">
                     {patient.address?.province || 'Not specified'}
                   </p>
                 </div>
@@ -348,23 +348,23 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
 
             {/* Emergency Contact */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Emergency Contact</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Emergency Contact</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Name</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="text-foreground font-medium">
                     {patient.emergencyContact?.name || 'Not provided'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Phone</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Phone</p>
+                  <p className="text-foreground font-medium">
                     {patient.emergencyContact?.phone || 'Not provided'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Relationship</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Relationship</p>
+                  <p className="text-foreground font-medium">
                     {patient.emergencyContact?.relationship || 'Not specified'}
                   </p>
                 </div>
@@ -373,17 +373,17 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
 
             {/* Additional Information */}
             <Card className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Additional Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Occupation</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Occupation</p>
+                  <p className="text-foreground font-medium">
                     {patient.occupation || 'Not specified'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Created</p>
-                  <p className="text-gray-900 font-medium">
+                  <p className="text-sm text-muted-foreground">Created</p>
+                  <p className="text-foreground font-medium">
                     {formatDate(patient.createdAt)}
                   </p>
                 </div>
@@ -395,33 +395,33 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
           <div className="space-y-6">
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
-                <ClipboardDocumentListIcon className="h-5 w-5 text-blue-700" />
-                <h2 className="text-lg font-semibold text-gray-900">Case History</h2>
+                <ClipboardDocumentListIcon className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Case History</h2>
               </div>
               
               {casesLoading ? (
                 <div className="flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-700"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
                 </div>
               ) : cases.length === 0 ? (
-                <p className="text-gray-500 text-sm">No cases found for this patient</p>
+                <p className="text-muted-foreground text-sm">No cases found for this patient</p>
               ) : (
                 <div className="space-y-3">
                   {cases.slice(0, 5).map((caseItem) => (
-                    <div key={caseItem.id} className="border-l-4 border-blue-200 pl-3 py-2">
+                    <div key={caseItem.id} className="border-l-4 border-primary/20 pl-3 py-2">
                       <div className="flex items-center justify-between">
-                        <p className="font-medium text-sm text-gray-900">
+                        <p className="font-medium text-sm text-foreground">
                           {caseItem.diseaseCode || 'Unknown Disease'}
                         </p>
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          caseItem.status === 'confirmed' ? 'bg-red-100 text-red-800' :
+                          caseItem.status === 'confirmed' ? 'bg-destructive/10 text-destructive' :
                           caseItem.status === 'suspected' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
+                          'bg-muted text-foreground'
                         }`}>
                           {caseItem.status}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatDate(caseItem.createdAt)}
                       </p>
                     </div>
@@ -429,7 +429,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
                   {cases.length > 5 && (
                     <Link 
                       href={`/dashboard/cases?patientId=${patientId}`}
-                      className="text-blue-600 hover:underline text-sm"
+                      className="text-primary hover:underline text-sm"
                     >
                       View all {cases.length} cases
                     </Link>
@@ -492,7 +492,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ patien
             />
 
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900">Emergency Contact</h3>
+              <h3 className="text-sm font-medium text-foreground">Emergency Contact</h3>
               
               <Input
                 label="Contact Name"

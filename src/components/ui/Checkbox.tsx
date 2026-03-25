@@ -15,24 +15,24 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           <input
             ref={ref}
             type="checkbox"
-            className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${className}`}
+            className={`h-4 w-4 text-primary focus:ring-ring accent-primary border-border rounded ${className}`}
             {...props}
           />
         </div>
         <div className="ml-3 text-sm">
           {label && (
             <label 
-              className={`font-medium ${error ? 'text-red-700' : 'text-gray-700'}`}
+              className={`font-medium text-sm ${error ? 'text-destructive' : 'text-foreground'}`}
               htmlFor={props.id}
             >
               {label}
             </label>
           )}
           {helperText && !error && (
-            <p className="text-gray-500">{helperText}</p>
+            <p className="text-xs text-muted-foreground">{helperText}</p>
           )}
           {error && (
-            <p className="text-red-600">{error}</p>
+            <p className="text-xs text-destructive">{error}</p>
           )}
         </div>
       </div>

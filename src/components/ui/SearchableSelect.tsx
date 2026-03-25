@@ -241,17 +241,17 @@ const SearchableSelect = <T = string,>({
   }, [value, options, selectedLabel]);
 
   const variantClasses = `
-    border rounded-lg focus-within:border-blue-700 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 
+    border rounded-md focus-within:border-primary focus-within:ring-2 focus-within:ring-ring
     py-3 px-4 transition-colors duration-150
-    ${error ? 'border-red-500' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white hover:border-gray-400'}
+    ${error ? 'border-destructive' : 'border-border'}
+    ${disabled ? 'bg-muted cursor-not-allowed' : 'bg-card hover:border-foreground/30'}
   `;
 
   const dropdownContent = () => {
     if (isLoading || isSearching) {
       return (
-        <div className="px-3 py-4 text-sm text-gray-500 flex items-center justify-center">
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div className="px-3 py-4 text-sm text-muted-foreground flex items-center justify-center">
+          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -264,7 +264,7 @@ const SearchableSelect = <T = string,>({
       const message = onSearch 
         ? (searchTerm.length > 0 ? 'No results found' : 'Start typing to search...')
         : 'No options available';
-      return <div className="px-3 py-2 text-sm text-gray-500">{message}</div>;
+      return <div className="px-3 py-2 text-sm text-muted-foreground">{message}</div>;
     }
 
     return displayOptions.map((option, index) => (
@@ -279,8 +279,8 @@ const SearchableSelect = <T = string,>({
         }}
         className={`
           w-full text-left px-3 py-2 text-sm cursor-pointer transition-colors duration-100
-          ${index === highlightedIndex ? 'bg-blue-50 text-blue-900' : ''}
-          ${value === option.value ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-900 hover:bg-gray-50'}
+          ${index === highlightedIndex ? 'bg-primary/5 text-foreground' : ''}
+          ${value === option.value ? 'bg-primary/10 text-primary font-medium' : 'text-foreground hover:bg-muted'}
         `}
       >
         {option.label}
@@ -291,7 +291,7 @@ const SearchableSelect = <T = string,>({
   return (
     <div className={`w-full ${containerClassName}`}>
       {label && (
-        <label className={`block text-sm font-medium ${error ? 'text-red-700' : 'text-gray-700'} mb-2`}>
+        <label className={`block text-xs font-medium ${error ? 'text-destructive' : 'text-foreground'} mb-1.5`}>
           {label}
         </label>
       )}
@@ -300,13 +300,13 @@ const SearchableSelect = <T = string,>({
           role="combobox"
           onClick={handleToggle}
           onKeyDown={disabled ? undefined : handleKeyDown}
-          className={`${variantClasses} cursor-pointer flex items-center justify-between`}
+          className={`${variantClasses} cursor-pointer flex items-center justify-between select-none`}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
           aria-controls="select-listbox"
           tabIndex={0}
         >
-          <span className={`truncate ${value ? 'text-gray-900' : 'text-gray-500'}`}>
+          <span className={`truncate ${value ? 'text-foreground' : 'text-muted-foreground'}`}>
             {selectedOption || placeholder}
           </span>
           <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
@@ -315,7 +315,7 @@ const SearchableSelect = <T = string,>({
                 role="button"
                 tabIndex={-1}
                 onClick={handleClear}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                className="p-1 hover:bg-muted rounded transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
@@ -326,21 +326,21 @@ const SearchableSelect = <T = string,>({
                   }
                 }}
               >
-                <XMarkIcon className="h-4 w-4 text-gray-400" />
+                <XMarkIcon className="h-4 w-4 text-muted-foreground" />
               </span>
             )}
-            <ChevronDownIcon className={`h-4 w-4 text-gray-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDownIcon className={`h-4 w-4 text-muted-foreground transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
           </div>
         </div>
 
         {isOpen && (
           <div 
-            className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-[100] overflow-hidden pointer-events-auto"
+            className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-md z-[100] overflow-hidden pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {onSearch && (
-              <div className="relative border-b border-gray-200">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <div className="relative border-b border-border">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -349,7 +349,7 @@ const SearchableSelect = <T = string,>({
                   onChange={handleSearchChange}
                   onKeyDown={handleKeyDown}
                   onMouseDown={(e) => e.stopPropagation()}
-                  className="w-full pl-9 pr-3 py-2.5 text-sm focus:outline-none"
+                  className="w-full pl-9 pr-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none bg-card"
                   autoComplete="off"
                 />
               </div>
@@ -362,10 +362,10 @@ const SearchableSelect = <T = string,>({
       </div>
 
       {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-600">{helperText}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>
       )}
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-xs text-destructive">{error}</p>
       )}
     </div>
   );

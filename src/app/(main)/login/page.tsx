@@ -38,7 +38,6 @@ export default function LoginPage() {
     }
   }, [status, router]);
 
-  // Show error from URL params (e.g., from middleware redirect)
   useEffect(() => {
     if (error) {
       showError(getAuthErrorMessage(error, code));
@@ -88,11 +87,9 @@ export default function LoginPage() {
         showError(getAuthErrorMessage(result.error, result.code));
         setLoading(false);
       } else if (result?.ok) {
-        // Get updated session to ensure user data is available
         const session = await getSession();
         if (session?.user) {
           success("Login successful!");
-          // Small delay to show success message
           setTimeout(() => {
             router.push(callbackUrl);
             router.refresh();
@@ -116,26 +113,26 @@ export default function LoginPage() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-muted py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <RIDSRLogo
             size={43}
             showText={true}
             textSize={24}
-            textColor="#1f2937"
+            textColor="#111827"
           />
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-2xl font-bold text-foreground">
             Sign in to RIDSR
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-muted-foreground">
             Access the Rwanda National Integrated Disease Surveillance and
             Response Platform
           </p>
@@ -184,7 +181,7 @@ export default function LoginPage() {
             <div className="text-sm">
               <Link
                 href="/forgot-password"
-                className="font-medium text-blue-700 hover:text-blue-800 focus:outline-none focus:underline"
+                className="font-medium text-primary hover:text-primary/80 focus:outline-none focus:underline"
                 tabIndex={loading ? -1 : 0}
               >
                 Forgot your password?
@@ -205,32 +202,32 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        <div className="mt-6 p-4 bg-card border border-border rounded-md">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Demo Credentials
           </p>
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Email</span>
-              <span className="font-mono text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-100">
+              <span className="text-muted-foreground">Email</span>
+              <span className="font-mono text-foreground bg-background px-2 py-0.5 rounded border border-border text-xs">
                 admin@ridsr.rw
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Password</span>
-              <span className="font-mono text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-100">
+              <span className="text-muted-foreground">Password</span>
+              <span className="font-mono text-foreground bg-background px-2 py-0.5 rounded border border-border text-xs">
                 Hello123
               </span>
             </div>
           </div>
         </div>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center text-sm text-muted-foreground">
           <p>
             Don&apos;t have an account?{" "}
             <Link
               href="/register"
-              className="font-medium text-blue-700 hover:text-blue-800"
+              className="font-medium text-primary hover:text-primary/80"
             >
               Register
             </Link>

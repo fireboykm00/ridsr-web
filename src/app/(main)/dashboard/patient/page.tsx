@@ -240,18 +240,18 @@ export default function PatientsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (status === 'authenticated' && !canAccessPatients) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">
             Lab technicians do not have access to the patients page.
           </p>
         </div>
@@ -260,12 +260,12 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="p-6">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserGroupIcon className="h-6 w-6 text-blue-700" />
-            <h1 className="text-2xl font-bold text-gray-900">Patients</h1>
+            <UserGroupIcon className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">Patients</h1>
           </div>
           <Button
             onClick={() => setShowModal(true)}
@@ -343,10 +343,10 @@ export default function PatientsPage() {
 
         {/* Results Summary */}
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Showing {patients.length} of {total} patients
           </p>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             Page {currentPage} of {totalPages}
           </div>
         </div>
@@ -355,45 +355,45 @@ export default function PatientsPage() {
         <Card className="p-6">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-700"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
           ) : patients.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">No patients found</p>
+              <p className="text-muted-foreground">No patients found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">National ID</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Gender</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Phone</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">National ID</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Gender</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">District</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Phone</th>
+                    <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {patients.length > 0 && patients.map((patient, index) => {
                     const patientId = patient.id || (patient as Patient & { _id?: string })._id || '';
                     return (
-                    <tr key={(patientId || patient.firstName) + index} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900">
+                    <tr key={(patientId || patient.firstName) + index} className="border-b border-border hover:bg-muted">
+                      <td className="py-3 px-4 text-foreground">
                         {patient.firstName} {patient.lastName}
                       </td>
-                      <td className="py-3 px-4 text-gray-900">{patient.nationalId}</td>
-                      <td className="py-3 px-4 text-gray-900 capitalize">{patient.gender}</td>
-                      <td className="py-3 px-4 text-gray-900 capitalize">
+                      <td className="py-3 px-4 text-foreground">{patient.nationalId}</td>
+                      <td className="py-3 px-4 text-foreground capitalize">{patient.gender}</td>
+                      <td className="py-3 px-4 text-foreground capitalize">
                         {patient.address?.district || patient.district || 'N/A'}
                       </td>
-                      <td className="py-3 px-4 text-gray-900">{patient.phone}</td>
+                      <td className="py-3 px-4 text-foreground">{patient.phone}</td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewPatient(patientId)}
                             disabled={!patientId}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                            className="p-2 text-primary hover:bg-primary/5 rounded"
                             title="View Details"
                           >
                             <EyeIcon className="h-4 w-4" />

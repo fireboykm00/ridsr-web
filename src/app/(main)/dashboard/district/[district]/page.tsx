@@ -163,8 +163,8 @@ export default function DistrictDetailPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700" />
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
       </div>
     );
   }
@@ -175,10 +175,10 @@ export default function DistrictDetailPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 max-w-lg text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Access Error</h1>
-          <p className="text-gray-600 mb-5">{error}</p>
+          <h1 className="text-2xl font-bold text-foreground mb-3">Access Error</h1>
+          <p className="text-muted-foreground mb-5">{error}</p>
           <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
         </Card>
       </div>
@@ -192,47 +192,47 @@ export default function DistrictDetailPage() {
         <section className="rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 p-8">
           <div className="flex items-start justify-between gap-6">
             <div>
-              <p className="text-xs tracking-[0.2em] uppercase text-blue-700 mb-2">District Detail</p>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{districtLabel}</h1>
-              <p className="text-gray-600">Operational view for facilities, users, and surveillance activity.</p>
+              <p className="text-xs tracking-[0.2em] uppercase text-primary mb-2">District Detail</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{districtLabel}</h1>
+              <p className="text-muted-foreground">Operational view for facilities, users, and surveillance activity.</p>
             </div>
-            <MapPinIcon className="h-12 w-12 text-blue-500" />
+            <MapPinIcon className="h-12 w-12 text-primary" />
           </div>
         </section>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Facilities</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalFacilities}</p>
+          <p className="text-sm text-muted-foreground">Facilities</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalFacilities}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Users</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+          <p className="text-sm text-muted-foreground">Users</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Total Cases</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalCases}</p>
+          <p className="text-sm text-muted-foreground">Total Cases</p>
+          <p className="text-2xl font-bold text-foreground">{stats.totalCases}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Pending Validation</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.pendingCases}</p>
+          <p className="text-sm text-muted-foreground">Pending Validation</p>
+          <p className="text-2xl font-bold text-foreground">{stats.pendingCases}</p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BuildingOfficeIcon className="h-5 w-5 text-blue-700" />
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BuildingOfficeIcon className="h-5 w-5 text-primary" />
             Facility Network
           </h2>
           <div className="space-y-3">
-            {facilities.length === 0 && <p className="text-gray-500">No facilities found for this district.</p>}
+            {facilities.length === 0 && <p className="text-muted-foreground">No facilities found for this district.</p>}
             {facilities.map((facility) => (
-              <div key={facility.id} className="rounded-lg bg-gray-50 p-4 flex items-center justify-between">
+              <div key={facility.id} className="rounded-md bg-muted p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-gray-900">{facility.name}</p>
-                  <p className="text-sm text-gray-500 capitalize">{facility.type.replace(/_/g, ' ')}</p>
+                  <p className="font-medium text-foreground">{facility.name}</p>
+                  <p className="text-sm text-muted-foreground capitalize">{facility.type.replace(/_/g, ' ')}</p>
                 </div>
                 <Button size="sm" variant="secondary" onClick={() => router.push(`/dashboard/facility/${facility.id}`)}>
                   Open
@@ -243,19 +243,19 @@ export default function DistrictDetailPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <DocumentTextIcon className="h-5 w-5 text-cyan-700" />
             Recent Case Activity
           </h2>
           <div className="space-y-3">
-            {recentCases.length === 0 && <p className="text-gray-500">No cases recorded yet.</p>}
+            {recentCases.length === 0 && <p className="text-muted-foreground">No cases recorded yet.</p>}
             {recentCases.map((caseItem) => (
-              <div key={caseItem.id} className="rounded-lg bg-gray-50 p-4">
+              <div key={caseItem.id} className="rounded-md bg-muted p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="font-medium text-gray-900">{caseItem.diseaseCode}</p>
-                  <span className="text-xs text-gray-500">{new Date(caseItem.reportDate).toLocaleDateString()}</span>
+                  <p className="font-medium text-foreground">{caseItem.diseaseCode}</p>
+                  <span className="text-xs text-muted-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</span>
                 </div>
-                <div className="text-sm text-gray-600 flex items-center gap-4">
+                <div className="text-sm text-muted-foreground flex items-center gap-4">
                   <span className="capitalize">Status: {caseItem.status}</span>
                   <span className="capitalize">Validation: {caseItem.validationStatus}</span>
                 </div>
@@ -266,11 +266,11 @@ export default function DistrictDetailPage() {
       </div>
 
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <ExclamationTriangleIcon className="h-5 w-5 text-amber-600" />
           Response Focus
         </h2>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           {stats.pendingCases > 0
             ? `There are ${stats.pendingCases} pending cases that need validation review in ${districtLabel}.`
             : `No pending validation backlog right now in ${districtLabel}.`}

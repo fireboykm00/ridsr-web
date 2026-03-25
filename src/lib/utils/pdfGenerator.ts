@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+// --- Interfaces ---
 export interface CaseReportData {
   id: string;
   reportDate: string;
@@ -15,6 +16,7 @@ export interface CaseReportData {
   facilityCode?: string;
   patientInfo: string;
   patientNationalId?: string;
+  submittedBy?: string;
 }
 
 export interface ReportOptions {
@@ -24,14 +26,12 @@ export interface ReportOptions {
   generatedAt: string;
   generatedBy: string;
   cases: CaseReportData[];
-  filters?: {
-    district?: string;
-    facilityName?: string;
-    diseaseCode?: string;
-    status?: string;
-    validationStatus?: string;
-  };
 }
+
+// --- Constants & Helpers ---
+const MARGIN = 10;
+const DEEP_BLUE = [0, 93, 170] as [number, number, number];
+const LIGHT_GRAY = [230, 230, 230] as [number, number, number];
 
 const diseaseNames: Record<string, string> = {
   CHOLERA: "Cholera",
@@ -44,21 +44,17 @@ const diseaseNames: Record<string, string> = {
   PLAGUE: "Plague",
   RABIES: "Rabies",
   EBOLA: "Ebola Virus Disease",
-  MONKEYPOX: "Monkeypox",
-  TYPHOID: "Typhoid Fever",
-  HEPATITIS_E: "Hepatitis E",
 };
 
-const getDiseaseName = (code: string): string => {
-  return diseaseNames[code] || code;
-};
+const getDiseaseName = (code: string): string => diseaseNames[code] || code;
+
+// --- Drawing Functions ---
 
 function drawHeader(doc: jsPDF): number {
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Logo placeholder (public folder)
   try {
-    doc.addImage("/rbc_logo.png", "PNG", 14, 12, 40, 20);
+    doc.addImage("/rbc_logo.png", "PNG", MARGIN, 10, 35, 18, "FAST");
   } catch {}
 
   doc.setFont("helvetica", "bold");
@@ -66,19 +62,16 @@ function drawHeader(doc: jsPDF): number {
   doc.setTextColor(33, 37, 41);
   doc.text(
     "Rwanda National Integrated Disease Surveillance and Response",
-    50,
-    18,
+    48,
+    16,
   );
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(107, 114, 128);
-  doc.text("Ministry of Health | Republic of Rwanda", 50, 24);
+  doc.text("Ministry of Health | Kigali, Rwanda | info@rbc.gov.rw", 48, 22);
 
-  doc.setDrawColor(214, 217, 222);
-  doc.line(14, 34, pageWidth - 14, 34);
-
-  return 42;
+  return 35;
 }
 
 function drawTitleSection(
@@ -88,25 +81,30 @@ function drawTitleSection(
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth();
 
+  // Main Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(33, 37, 41);
-  doc.text(options.title, pageWidth / 2, yPos, { align: "center" });
+  doc.text(options.title.toUpperCase(), pageWidth / 2, yPos, {
+    align: "center",
+  });
 
-  yPos += 8;
+  // --- Full Width Light Gray Line ---
+  yPos += 3;
+  doc.setDrawColor(LIGHT_GRAY[0], LIGHT_GRAY[1], LIGHT_GRAY[2]);
+  doc.setLineWidth(0.1);
+  doc.line(MARGIN, yPos, pageWidth - MARGIN, yPos);
 
+  yPos += 7;
+
+  // Date Details
   doc.setFontSize(9);
-
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(128, 128, 128);
   const dateDetailsText = `Period: ${options.dateRange.from} to ${options.dateRange.to} - Generated: ${options.generatedAt}`;
+  doc.text(dateDetailsText, pageWidth / 2, yPos, { align: "center" });
 
-  doc.text(
-    dateDetailsText,
-    pageWidth / 2, // Horizontal center
-    yPos, // Vertical position
-    { align: "center" },
-  );
-
-  return yPos + 12;
+  return yPos + 4;
 }
 
 function drawTableSection(
@@ -116,132 +114,115 @@ function drawTableSection(
 ): number {
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  const tableData = options.cases.map((c, index) => {
-    const details: string[] = [];
-
-    if (c.symptoms?.length) {
-      details.push(
-        `Symptoms: ${c.symptoms.slice(0, 3).join(", ")}${c.symptoms.length > 3 ? "..." : ""}`,
-      );
-    }
-
-    if (c.outcome) {
-      details.push(`Outcome: ${c.outcome}`);
-    }
-
-    const facilityDisplay = c.facilityCode
-      ? `${c.facilityName} (${c.facilityCode})`
-      : c.facilityName;
-
-    return [
-      index + 1,
-      c.patientInfo,
-      getDiseaseName(c.diseaseCode),
-      facilityDisplay,
-      c.status.toUpperCase(),
-      c.validationStatus.toUpperCase(),
-      c.reportDate,
-      details.join("\n"),
-    ];
-  });
+  const tableData = options.cases.map((c, index) => [
+    index + 1,
+    c.patientInfo,
+    getDiseaseName(c.diseaseCode),
+    c.facilityCode ? `${c.facilityName} (${c.facilityCode})` : c.facilityName,
+    c.submittedBy || "-",
+    c.status.toUpperCase(),
+    c.validationStatus.toUpperCase(),
+    c.reportDate,
+    `${c.symptoms?.slice(0, 3).join(", ")}${c.symptoms.length > 3 ? "..." : ""}`,
+  ]);
 
   autoTable(doc, {
     startY,
-
+    margin: { left: MARGIN, right: MARGIN },
     head: [
       [
         "SN",
         "Patient",
         "Disease",
         "Facility",
+        "Submitted By",
         "Status",
         "Validation",
         "Report Date",
-        "Clinical Notes",
       ],
     ],
-
     body: tableData,
 
+    // Modern Table Styling
     styles: {
-      fontSize: 7,
-      cellPadding: 2.8,
-      overflow: "linebreak",
-      lineColor: [214, 217, 222],
-      lineWidth: 0.2,
-      textColor: [33, 37, 41],
+      fontSize: 7.5,
+      cellPadding: 3,
+      lineColor: [235, 237, 240],
+      lineWidth: 0.1,
       valign: "middle",
     },
-
     headStyles: {
-      fillColor: [35, 64, 142],
+      fillColor: DEEP_BLUE,
       textColor: [255, 255, 255],
       fontStyle: "bold",
-      fontSize: 8,
       halign: "center",
     },
-
     alternateRowStyles: {
-      fillColor: [250, 251, 252],
+      fillColor: [248, 250, 252],
     },
-
     columnStyles: {
       0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 24 },
-      3: { cellWidth: 30 },
-      4: { cellWidth: 18, halign: "center" },
-      5: { cellWidth: 20, halign: "center" },
-      6: { cellWidth: 20, halign: "center" },
-      7: { cellWidth: "auto" },
+      5: { halign: "center" },
+      6: { halign: "center" },
+      7: { halign: "center" },
     },
 
-    didParseCell: function (data) {
-      if (
-        data.section === "body" &&
-        (data.column.index === 4 || data.column.index === 5)
-      ) {
-        data.cell.styles.fontStyle = "bold";
-      }
-    },
-
-    didDrawPage: function (data) {
+    // --- Border Radius Effect ---
+    // We draw a rounded rectangle behind the header area
+    didDrawPage: (data) => {
       const height = doc.internal.pageSize.getHeight();
 
+      // Footer
       doc.setDrawColor(214, 217, 222);
-      doc.line(14, height - 14, pageWidth - 14, height - 14);
-
+      doc.line(MARGIN, height - 12, pageWidth - MARGIN, height - 12);
       doc.setFontSize(8);
       doc.setTextColor(107, 114, 128);
-
-      doc.text(`Generated by: ${options.generatedBy}`, 14, height - 8);
-
+      doc.text(`Generated by: ${options.generatedBy}`, MARGIN, height - 7);
       doc.text(
         `${data.pageNumber}/${doc.getNumberOfPages()}`,
-        pageWidth - 14,
-        height - 8,
+        pageWidth - MARGIN,
+        height - 7,
         { align: "right" },
       );
     },
+
+    willDrawCell: (data) => {
+      // Bold the status columns
+      if (
+        data.section === "body" &&
+        (data.column.index === 5 || data.column.index === 6)
+      ) {
+        doc.setFont("helvetica", "bold");
+      }
+    },
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY;
-  return finalY;
+  return (doc as any).lastAutoTable.finalY;
 }
 
+// --- Main Generator ---
+
 export function generateCaseReportPDF(options: ReportOptions): jsPDF {
-  const doc = new jsPDF();
-  // TODO: use or remove
+  const doc = new jsPDF({
+    orientation: "p",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+
   const pageWidth = doc.internal.pageSize.getWidth();
 
   let yPos = drawHeader(doc);
   yPos = drawTitleSection(doc, options, yPos);
-  yPos = drawTableSection(doc, options, yPos);
 
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-  }
+  // --- Full Width Deep Blue Line before Table ---
+  doc.setDrawColor(DEEP_BLUE[0], DEEP_BLUE[1], DEEP_BLUE[2]);
+  doc.setLineWidth(0.8);
+  doc.line(0, yPos, pageWidth, yPos);
+
+  yPos += 6; // Compact spacing
+
+  drawTableSection(doc, options, yPos);
 
   return doc;
 }

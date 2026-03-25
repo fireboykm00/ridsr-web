@@ -138,54 +138,54 @@ function CaseDetailModal({
   if (!isOpen || !caseItem) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-500/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-muted0/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-md max-w-4xl w-full mx-4 max-h-[92vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">Submit Lab Results</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <h2 className="text-xl font-bold text-foreground">Submit Lab Results</h2>
+            <button onClick={onClose} className="text-muted-foreground/60 hover:text-muted-foreground">
               <XCircleIcon className="h-6 w-6" />
             </button>
           </div>
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Case Information</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-3">Case Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Case ID</label>
-                  <p className="text-gray-900">{caseItem.id.substring(0, 8)}</p>
+                  <label className="text-sm font-medium text-foreground/80">Case ID</label>
+                  <p className="text-foreground">{caseItem.id.substring(0, 8)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Disease Code</label>
-                  <p className="text-gray-900">{caseItem.diseaseCode}</p>
+                  <label className="text-sm font-medium text-foreground/80">Disease Code</label>
+                  <p className="text-foreground">{caseItem.diseaseCode}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Onset Date</label>
-                  <p className="text-gray-900">{new Date(caseItem.onsetDate).toLocaleDateString()}</p>
+                  <label className="text-sm font-medium text-foreground/80">Onset Date</label>
+                  <p className="text-foreground">{new Date(caseItem.onsetDate).toLocaleDateString()}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Report Date</label>
-                  <p className="text-gray-900">{new Date(caseItem.reportDate).toLocaleDateString()}</p>
+                  <label className="text-sm font-medium text-foreground/80">Report Date</label>
+                  <p className="text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Lab Results</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-3">Lab Results</h3>
               {loadingLabResults ? (
-                <p className="text-gray-600 text-sm">Loading lab results...</p>
+                <p className="text-muted-foreground text-sm">Loading lab results...</p>
               ) : labResults.length === 0 ? (
-                <p className="text-gray-600 text-sm">No lab results yet for this case.</p>
+                <p className="text-muted-foreground text-sm">No lab results yet for this case.</p>
               ) : (
                 <div className="space-y-2">
                   {labResults.map((result, index) => (
-                    <div key={result.id || result._id || index} className="p-3 bg-gray-50 rounded-md text-sm">
-                      <p className="font-medium text-gray-900">{result.testName} ({result.testType})</p>
-                      <p className="text-gray-700">
+                    <div key={result.id || result._id || index} className="p-3 bg-muted rounded-md text-sm">
+                      <p className="font-medium text-foreground">{result.testName} ({result.testType})</p>
+                      <p className="text-foreground/80">
                         {result.resultValue} {result.resultUnit || ''} - {result.interpretation}
                       </p>
-                      <p className="text-gray-500 text-xs">{new Date(result.testDate).toLocaleString()}</p>
+                      <p className="text-muted-foreground text-xs">{new Date(result.testDate).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
@@ -194,50 +194,50 @@ function CaseDetailModal({
 
             {canSubmitLabResult && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Submit Lab Result</h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <h3 className="text-lg font-semibold text-foreground mb-3">Submit Lab Result</h3>
+                <p className="text-sm text-muted-foreground mb-3">
                   Required: test type, test name, test date, result value, interpretation.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <input
-                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testType ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testType ? 'border-destructive' : 'border-border'}`}
                       placeholder="Test Type *"
                       value={form.testType}
                       onChange={(e) => onFormFieldChange('testType', e.target.value)}
                     />
-                    {formErrors.testType && <p className="mt-1 text-xs text-red-600">{formErrors.testType}</p>}
+                    {formErrors.testType && <p className="mt-1 text-xs text-destructive">{formErrors.testType}</p>}
                   </div>
                   <div>
                     <input
-                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testName ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testName ? 'border-destructive' : 'border-border'}`}
                       placeholder="Test Name *"
                       value={form.testName}
                       onChange={(e) => onFormFieldChange('testName', e.target.value)}
                     />
-                    {formErrors.testName && <p className="mt-1 text-xs text-red-600">{formErrors.testName}</p>}
+                    {formErrors.testName && <p className="mt-1 text-xs text-destructive">{formErrors.testName}</p>}
                   </div>
                   <div>
                     <input
-                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testDate ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.testDate ? 'border-destructive' : 'border-border'}`}
                       type="datetime-local"
                       value={form.testDate}
                       onChange={(e) => onFormFieldChange('testDate', e.target.value)}
                     />
-                    {formErrors.testDate && <p className="mt-1 text-xs text-red-600">{formErrors.testDate}</p>}
+                    {formErrors.testDate && <p className="mt-1 text-xs text-destructive">{formErrors.testDate}</p>}
                   </div>
                   <div>
                     <input
-                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.resultValue ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.resultValue ? 'border-destructive' : 'border-border'}`}
                       placeholder="Result Value *"
                       value={form.resultValue}
                       onChange={(e) => onFormFieldChange('resultValue', e.target.value)}
                     />
-                    {formErrors.resultValue && <p className="mt-1 text-xs text-red-600">{formErrors.resultValue}</p>}
+                    {formErrors.resultValue && <p className="mt-1 text-xs text-destructive">{formErrors.resultValue}</p>}
                   </div>
                   <div>
                     <select
-                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.interpretation ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full rounded-md border px-3 py-2 text-sm ${formErrors.interpretation ? 'border-destructive' : 'border-border'}`}
                       value={form.interpretation}
                       onChange={(e) => onFormFieldChange('interpretation', e.target.value)}
                     >
@@ -246,11 +246,11 @@ function CaseDetailModal({
                       <option value="equivocal">equivocal</option>
                       <option value="contaminated">contaminated</option>
                     </select>
-                    {formErrors.interpretation && <p className="mt-1 text-xs text-red-600">{formErrors.interpretation}</p>}
+                    {formErrors.interpretation && <p className="mt-1 text-xs text-destructive">{formErrors.interpretation}</p>}
                   </div>
                   <div>
                     <input
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded-md border border-border px-3 py-2 text-sm"
                       placeholder="Result Unit (optional)"
                       value={form.resultUnit}
                       onChange={(e) => onFormFieldChange('resultUnit', e.target.value)}
@@ -258,7 +258,7 @@ function CaseDetailModal({
                   </div>
                   <div className="md:col-span-2">
                     <input
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded-md border border-border px-3 py-2 text-sm"
                       placeholder="Reference Range (optional)"
                       value={form.referenceRange}
                       onChange={(e) => onFormFieldChange('referenceRange', e.target.value)}
@@ -525,30 +525,30 @@ export default function ValidationHubPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!canAccessHub) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You do not have permission to access the validation hub</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">You do not have permission to access the validation hub</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Validation Hub</h1>
-          <p className="text-gray-600 mt-2">Review cases and submit laboratory results</p>
-          <p className="text-gray-500 text-sm mt-1">After lab result submission, a case moves from pending to in-review queue.</p>
+          <h1 className="text-2xl font-bold text-foreground">Validation Hub</h1>
+          <p className="text-muted-foreground mt-2">Review cases and submit laboratory results</p>
+          <p className="text-muted-foreground text-sm mt-1">After lab result submission, a case moves from pending to in-review queue.</p>
         </div>
 
         <Card className="p-4 mb-4">
@@ -599,38 +599,38 @@ export default function ValidationHubPage() {
 
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Pending Cases ({pendingCases.length})</h2>
+            <h2 className="text-lg font-semibold text-foreground">Pending Cases ({pendingCases.length})</h2>
           </div>
 
           {pendingCases.length === 0 ? (
             <div className="text-center py-12">
-              <CheckCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No pending cases</h3>
-              <p className="text-gray-600">All pending cases are processed</p>
+              <CheckCircleIcon className="h-12 w-12 text-muted-foreground/60 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No pending cases</h3>
+              <p className="text-muted-foreground">All pending cases are processed</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Case ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disease</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Facility</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Case ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Patient</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Disease</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Facility</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Report Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {pendingCases.map((caseItem) => (
-                    <tr key={caseItem.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{caseItem.id.substring(0, 8)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr key={caseItem.id} className="hover:bg-muted">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{caseItem.id.substring(0, 8)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                         {caseItem.patient ? `${caseItem.patient.firstName} ${caseItem.patient.lastName}` : 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{caseItem.diseaseCode}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{caseItem.facility?.name || 'Unknown'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.diseaseCode}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{caseItem.facility?.name || 'Unknown'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">{new Date(caseItem.reportDate).toLocaleDateString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <Button variant="secondary" size="sm" onClick={() => void handleViewCase(caseItem)} className="flex items-center gap-1">
                           <EyeIcon className="h-4 w-4" />

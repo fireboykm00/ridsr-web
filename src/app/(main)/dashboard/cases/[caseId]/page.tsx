@@ -189,18 +189,18 @@ export default function CaseDetailPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600">Please sign in to view case details</p>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Access Denied</h2>
+          <p className="text-muted-foreground">Please sign in to view case details</p>
         </Card>
       </div>
     );
@@ -208,9 +208,9 @@ export default function CaseDetailPage() {
 
   if (!caseData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Case not found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Case not found</h2>
           <Link href="/dashboard/cases">
             <Button variant="secondary">Back to Cases</Button>
           </Link>
@@ -230,10 +230,10 @@ export default function CaseDetailPage() {
             </Button>
           </Link>
           <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-foreground">
               Case #{resolvedCaseId.substring(0, 8)}
             </h1>
-            <p className="text-gray-600">Case Details and Management</p>
+            <p className="text-muted-foreground">Case Details and Management</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -263,45 +263,45 @@ export default function CaseDetailPage() {
         {/* Case Information */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <DocumentTextIcon className="h-6 w-6 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Case Information</h2>
+            <DocumentTextIcon className="h-6 w-6 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Case Information</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600">Disease Code</p>
-              <p className="text-gray-900 font-medium">{caseData.diseaseCode}</p>
+              <p className="text-sm text-muted-foreground">Disease Code</p>
+              <p className="text-foreground font-medium">{caseData.diseaseCode}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Validation Status</p>
+              <p className="text-sm text-muted-foreground">Validation Status</p>
               {getStatusBadge(caseData.validationStatus)}
             </div>
             <div>
-              <p className="text-sm text-gray-600">Report Date</p>
-              <p className="text-gray-900 font-medium">
+              <p className="text-sm text-muted-foreground">Report Date</p>
+              <p className="text-foreground font-medium">
                 {new Date(caseData.reportDate).toLocaleDateString()}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Onset Date</p>
-              <p className="text-gray-900 font-medium">
+              <p className="text-sm text-muted-foreground">Onset Date</p>
+              <p className="text-foreground font-medium">
                 {new Date(caseData.onsetDate).toLocaleDateString()}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Outcome</p>
+              <p className="text-sm text-muted-foreground">Outcome</p>
               {caseData.outcome ? (
                 getOutcomeBadge(caseData.outcome)
               ) : (
-                <span className="text-gray-400">Not specified</span>
+                <span className="text-muted-foreground/60">Not specified</span>
               )}
             </div>
             <div>
-              <p className="text-sm text-gray-600">Facility ID</p>
-              <p className="text-gray-900 font-medium">{caseData.facilityId}</p>
+              <p className="text-sm text-muted-foreground">Facility ID</p>
+              <p className="text-foreground font-medium">{caseData.facilityId}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Reporter ID</p>
-              <p className="text-gray-900 font-medium">{caseData.reporterId}</p>
+              <p className="text-sm text-muted-foreground">Reporter ID</p>
+              <p className="text-foreground font-medium">{caseData.reporterId}</p>
             </div>
           </div>
         </Card>
@@ -310,48 +310,48 @@ export default function CaseDetailPage() {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <UserIcon className="h-6 w-6 text-green-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Patient Information</h2>
+            <h2 className="text-lg font-semibold text-foreground">Patient Information</h2>
           </div>
           {patientData ? (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-gray-600">Patient ID</p>
-                <p className="text-gray-900 font-medium">{patientData.id}</p>
+                <p className="text-sm text-muted-foreground">Patient ID</p>
+                <p className="text-foreground font-medium">{patientData.id}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Name</p>
-                <p className="text-gray-900 font-medium">
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="text-foreground font-medium">
                   {patientData.firstName} {patientData.lastName}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">National ID</p>
-                <p className="text-gray-900 font-medium">{patientData.nationalId}</p>
+                <p className="text-sm text-muted-foreground">National ID</p>
+                <p className="text-foreground font-medium">{patientData.nationalId}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Date of Birth</p>
-                <p className="text-gray-900 font-medium">
+                <p className="text-sm text-muted-foreground">Date of Birth</p>
+                <p className="text-foreground font-medium">
                   {new Date(patientData.dateOfBirth).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Gender</p>
-                <p className="text-gray-900 font-medium capitalize">{patientData.gender}</p>
+                <p className="text-sm text-muted-foreground">Gender</p>
+                <p className="text-foreground font-medium capitalize">{patientData.gender}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className="text-gray-900 font-medium">{patientData.phone}</p>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <p className="text-foreground font-medium">{patientData.phone}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">District</p>
-                <p className="text-gray-900 font-medium capitalize">
+                <p className="text-sm text-muted-foreground">District</p>
+                <p className="text-foreground font-medium capitalize">
                   {patientData.district.replace('_', ' ')}
                 </p>
               </div>
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600">Loading patient information...</p>
+              <p className="text-muted-foreground">Loading patient information...</p>
             </div>
           )}
         </Card>
@@ -360,11 +360,11 @@ export default function CaseDetailPage() {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <BeakerIcon className="h-6 w-6 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Clinical Information</h2>
+            <h2 className="text-lg font-semibold text-foreground">Clinical Information</h2>
           </div>
           <div className="space-y-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Symptoms</h3>
+              <h3 className="text-sm font-medium text-foreground mb-2">Symptoms</h3>
               {caseData.symptoms && caseData.symptoms.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {caseData.symptoms.map((symptom, index) => (
@@ -374,34 +374,34 @@ export default function CaseDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600 text-sm">No symptoms recorded</p>
+                <p className="text-muted-foreground text-sm">No symptoms recorded</p>
               )}
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Lab Results</h3>
+              <h3 className="text-sm font-medium text-foreground mb-2">Lab Results</h3>
               {loadingLabResults ? (
-                <p className="text-gray-600 text-sm">Loading lab results...</p>
+                <p className="text-muted-foreground text-sm">Loading lab results...</p>
               ) : labResults.length > 0 ? (
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {labResults.map((result, index) => (
                     <div
                       key={result.id || result._id || `lab-result-${index}`}
-                      className="rounded-md bg-gray-50 p-3"
+                      className="rounded-md bg-muted p-3"
                     >
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {result.testName} ({result.testType})
                       </p>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-foreground/80">
                         {result.resultValue} {result.resultUnit || ''} - {result.interpretation}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(result.testDate).toLocaleString()}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600 text-sm">No lab results recorded for this case</p>
+                <p className="text-muted-foreground text-sm">No lab results recorded for this case</p>
               )}
             </div>
           </div>

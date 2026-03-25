@@ -149,32 +149,32 @@ const UserSearch = ({ onUserSelect, filters = {}, showFilters = true }: UserSear
 
       {isLoading ? (
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-700"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {filteredUsers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               {users.length === 0 ? 'No users available' : 'No users match your search'}
             </div>
           ) : (
             filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                className="p-3 border border-border rounded-md hover:bg-muted cursor-pointer transition-colors"
                 onClick={() => handleUserSelect(user)}
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <h4 className="font-medium text-gray-900">{user.name}</h4>
-                    <p className="text-sm text-gray-600">{user.email}</p>
+                    <h4 className="font-medium text-foreground text-sm">{user.name}</h4>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                       {user.role.replace('_', ' ')}
                     </span>
                     {user.facilityId && (
-                      <p className="text-xs text-gray-500 mt-1">{user.facilityId}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{user.facilityId}</p>
                     )}
                   </div>
                 </div>

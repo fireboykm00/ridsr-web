@@ -12,39 +12,39 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ 
-    children, 
-    variant = 'primary', 
-    size = 'md', 
-    isLoading = false, 
+  ({
+    children,
+    variant = 'primary',
+    size = 'md',
+    isLoading = false,
     fullWidth = false,
     className = '',
     disabled,
-    ...props 
+    ...props
   }, ref) => {
-    const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2';
-    
+    const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed select-none';
+
     const sizeClasses = {
       sm: 'text-xs px-3 py-1.5',
       md: 'text-sm px-4 py-2',
-      lg: 'text-base px-6 py-3',
+      lg: 'text-sm px-6 py-3',
     };
-    
+
     const variantClasses = {
-      primary: 'bg-blue-700 text-white hover:bg-blue-800 disabled:bg-blue-300',
-      secondary: 'bg-transparent border border-blue-700 text-blue-700 hover:bg-blue-50 disabled:border-blue-300 disabled:text-blue-300',
-      tertiary: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
-      ghost: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
-      danger: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
-      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:border-gray-200 disabled:text-gray-400',
-      destructive: 'bg-red-600 text-white hover:bg-red-700 disabled:bg-red-300 focus:ring-red-500',
-      success: 'bg-green-600 text-white hover:bg-green-700 disabled:bg-green-300 focus:ring-green-500'
+      primary: 'bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50',
+      secondary: 'bg-transparent border border-primary text-primary hover:bg-primary/5 disabled:opacity-50',
+      tertiary: 'text-muted-foreground hover:bg-muted disabled:opacity-50',
+      ghost: 'text-muted-foreground hover:bg-muted disabled:opacity-50',
+      danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 focus:ring-destructive',
+      outline: 'border border-border text-foreground hover:bg-muted disabled:opacity-50',
+      destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 focus:ring-destructive',
+      success: 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 focus:ring-green-500',
     };
-    
+
     const widthClass = fullWidth ? 'w-full' : '';
-    
+
     const classes = `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${widthClass} ${className}`;
-    
+
     return (
       <button
         ref={ref}

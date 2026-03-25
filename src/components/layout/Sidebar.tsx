@@ -208,7 +208,7 @@ const Sidebar: React.FC = () => {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-white rounded-lg shadow hover:bg-gray-50"
+        className="md:hidden fixed top-4 right-4 z-50 p-2 bg-card border border-border rounded-md hover:bg-muted"
         aria-label="Toggle sidebar"
       >
         {!isOpen ? <svg
@@ -240,15 +240,15 @@ const Sidebar: React.FC = () => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-screen w-64 bg-white shadow-lg
+          fixed top-0 left-0 h-screen w-64 bg-[#032f3d]
           transform transition-transform duration-300 ease-in-out
           z-40
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
       >
         <nav className="h-full flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <RIDSRLogo size={50} textSize={30} />
+          <div className="p-4 border-b border-white/10">
+            <RIDSRLogo size={50} textSize={30} textColor="#FFFFFF" color="#4EA8DE" />
           </div>
 
           <ul className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
@@ -264,10 +264,10 @@ const Sidebar: React.FC = () => {
                         setIsOpen(false);
                       }}
                       className={`
-                        w-full flex items-center px-4 py-2 rounded-lg transition-colors
+                        w-full flex items-center px-4 py-2 rounded-md transition-colors text-sm
                         ${isActive
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-white/10 text-white font-medium"
+                          : "text-gray-400 hover:bg-white/5 hover:text-white"
                         }
                       `}
                     >
@@ -279,10 +279,10 @@ const Sidebar: React.FC = () => {
                       href={item.href}
                       onClick={() => setIsOpen(false)}
                       className={`
-                        flex items-center px-4 py-2 rounded-lg transition-colors
+                        flex items-center px-4 py-2 rounded-md transition-colors text-sm
                         ${isActive
-                          ? "bg-blue-50 text-blue-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-white/10 text-white font-medium"
+                          : "text-gray-400 hover:bg-white/5 hover:text-white"
                         }
                       `}
                     >
@@ -295,10 +295,10 @@ const Sidebar: React.FC = () => {
             })}
           </ul>
 
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-white/10">
             <p className="text-xs text-gray-500">
               Logged in as:{" "}
-              <span className="font-medium">{session.user.name}</span>
+              <span className="font-medium text-gray-300">{session.user.name}</span>
             </p>
           </div>
         </nav>
@@ -307,7 +307,7 @@ const Sidebar: React.FC = () => {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 md:hidden z-30"
+          className="fixed inset-0 bg-black/30 md:hidden z-30"
           onClick={() => setIsOpen(false)}
         />
       )}

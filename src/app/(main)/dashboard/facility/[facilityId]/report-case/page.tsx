@@ -39,23 +39,23 @@ export default function FacilityCaseReportForm() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground mb-6">
             You must be signed in to view this page
           </p>
           <a
             href="/login"
-            className="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors inline-block"
+            className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors inline-block"
           >
             Sign in
           </a>
@@ -91,15 +91,15 @@ export default function FacilityCaseReportForm() {
 
   if (!canReportForFacility()) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground mb-6">
             You don&apos;t have permission to report cases for this facility.
           </p>
           <button
             onClick={() => router.back()}
-            className="px-6 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors"
+            className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:bg-primary/90 transition-colors"
           >
             Go Back
           </button>
@@ -116,30 +116,30 @@ export default function FacilityCaseReportForm() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="hover:text-gray-700"
+              className="hover:text-foreground/80"
             >
               Dashboard
             </button>
             <span>/</span>
             <button
               onClick={() => router.push(`/dashboard/facility/${facilityId}`)}
-              className="hover:text-gray-700"
+              className="hover:text-foreground/80"
             >
               {facilityInfo?.name || 'Facility'}
             </button>
             <span>/</span>
-            <span className="text-gray-900">Report Case</span>
+            <span className="text-foreground">Report Case</span>
           </nav>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Case Reporting Form</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Case Reporting Form</h1>
+          <p className="text-muted-foreground">
             Report suspected or confirmed cases of epidemic-prone diseases from{' '}
             <span className="font-medium">{facilityInfo?.name || 'this facility'}</span>
             {facilityInfo?.district && (
-              <span className="text-gray-500"> ({facilityInfo.district})</span>
+              <span className="text-muted-foreground"> ({facilityInfo.district})</span>
             )}
           </p>
         </div>

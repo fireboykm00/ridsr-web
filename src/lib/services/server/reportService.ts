@@ -1,6 +1,7 @@
 import { Case as CaseModel } from '@/lib/models/Case';
 import { Patient as PatientModel } from '@/lib/models/Patient';
 import { Facility as FacilityModel } from '@/lib/models/Facility';
+import { User as UserModel } from '@/lib/models/User';
 import {
   CaseStatus,
   DiseaseCode,
@@ -38,6 +39,7 @@ export interface CaseReportData {
   patientInfo: string;
   patientId: string;
   patientNationalId?: string;
+  submittedBy?: string;
 }
 
 export interface ReportSummary {
@@ -126,15 +128,20 @@ class ReportService {
 
     const facilityIdsSet = new Set<string>();
     const patientIdsSet = new Set<string>();
+    const reporterIdsSet = new Set<string>();
     
     cases.forEach((c: Record<string, { toString: () => string }>) => {
       facilityIdsSet.add(c.facilityId.toString());
       patientIdsSet.add(c.patientId.toString());
+      if (c.reporterId) reporterIdsSet.add(c.reporterId.toString());
     });
 
-    const [facilities, patients] = await Promise.all([
+    const [facilities, patients, reporters] = await Promise.all([
       FacilityModel.find({ _id: { $in: Array.from(facilityIdsSet) } }).lean(),
       PatientModel.find({ _id: { $in: Array.from(patientIdsSet) } }).lean(),
+      reporterIdsSet.size > 0
+        ? UserModel.find({ _id: { $in: Array.from(reporterIdsSet) } }).select('_id name').lean()
+        : Promise.resolve([]),
     ]);
 
     const facilityMap = new Map<string, FacilityType>();
@@ -166,6 +173,11 @@ class ReportService {
         createdAt: p.createdAt.toISOString(),
         updatedAt: p.updatedAt.toISOString(),
       } as PatientType);
+    });
+
+    const reporterMap = new Map<string, string>();
+    reporters.forEach((r: Record<string, unknown> & { _id: { toString: () => string }; name?: string }) => {
+      reporterMap.set(r._id.toString(), r.name || 'Unknown');
     });
 
     const diseaseNames: Record<string, string> = {
@@ -204,6 +216,7 @@ class ReportService {
         patientInfo: patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown',
         patientNationalId: patient?.nationalId || '',
         patientId: patient?.id || '',
+        submittedBy: reporterMap.get(c.reporterId?.toString()) || '-',
       };
     });
 

@@ -92,18 +92,18 @@ export default function DistrictsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700" />
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
       </div>
     );
   }
 
   if (!session?.user || !(session.user?.role && nationalRoles.includes(session.user.role as UserRole))) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">This page is only available for national-level roles.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">This page is only available for national-level roles.</p>
         </div>
       </div>
     );
@@ -114,26 +114,26 @@ export default function DistrictsPage() {
       <section className="rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="uppercase tracking-[0.2em] text-xs text-blue-700 mb-2">National Oversight</p>
-            <h1 className="text-3xl font-bold text-gray-900">District Intelligence Map</h1>
-            <p className="text-gray-600 mt-2">Click a district to open details and operational metrics.</p>
+            <p className="uppercase tracking-[0.2em] text-xs text-primary mb-2">National Oversight</p>
+            <h1 className="text-3xl font-bold text-foreground">District Intelligence Map</h1>
+            <p className="text-muted-foreground mt-2">Click a district to open details and operational metrics.</p>
           </div>
-          <MapPinIcon className="h-12 w-12 text-blue-500" />
+          <MapPinIcon className="h-12 w-12 text-primary" />
         </div>
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Districts</p>
-          <p className="text-2xl font-bold text-gray-900">{districtsData.length}</p>
+          <p className="text-sm text-muted-foreground">Districts</p>
+          <p className="text-2xl font-bold text-foreground">{districtsData.length}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Facilities</p>
-          <p className="text-2xl font-bold text-gray-900">{totals.facilities}</p>
+          <p className="text-sm text-muted-foreground">Facilities</p>
+          <p className="text-2xl font-bold text-foreground">{totals.facilities}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Pending Cases</p>
-          <p className="text-2xl font-bold text-gray-900">{totals.pending}</p>
+          <p className="text-sm text-muted-foreground">Pending Cases</p>
+          <p className="text-2xl font-bold text-foreground">{totals.pending}</p>
         </Card>
       </div>
 
@@ -161,21 +161,21 @@ export default function DistrictsPage() {
         {filtered.map((d) => (
           <Card key={d.district} className="p-5 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-900 capitalize">{d.district}</h3>
+              <h3 className="text-lg font-semibold text-foreground capitalize">{d.district}</h3>
               <Button size="sm" onClick={() => router.push(`/dashboard/district/${d.district}`)}>
                 Open
               </Button>
             </div>
             <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2 text-gray-700">
+              <p className="flex items-center gap-2 text-foreground/80">
                 <BuildingOfficeIcon className="h-4 w-4" />
                 {d.facilities} facilities
               </p>
-              <p className="flex items-center gap-2 text-gray-700">
+              <p className="flex items-center gap-2 text-foreground/80">
                 <DocumentTextIcon className="h-4 w-4" />
                 {d.totalCases} total cases
               </p>
-              <p className="flex items-center gap-2 text-gray-700">
+              <p className="flex items-center gap-2 text-foreground/80">
                 <ExclamationTriangleIcon className="h-4 w-4" />
                 {d.pendingCases} pending validation
               </p>

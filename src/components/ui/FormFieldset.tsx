@@ -9,13 +9,13 @@ interface FormFieldsetProps extends React.FieldsetHTMLAttributes<HTMLFieldSetEle
 const FormFieldset = React.forwardRef<HTMLFieldSetElement, FormFieldsetProps>(
   ({ legend, children, className = '', ...props }, ref) => {
     return (
-      <fieldset 
-        ref={ref} 
-        className={`border border-gray-200 rounded-lg p-6 ${className}`}
+      <fieldset
+        ref={ref}
+        className={`border border-border rounded-md p-6 ${className}`}
         {...props}
       >
         {legend && (
-          <legend className="text-lg font-medium text-gray-900 px-2">
+          <legend className="text-sm font-semibold text-foreground px-2">
             {legend}
           </legend>
         )}

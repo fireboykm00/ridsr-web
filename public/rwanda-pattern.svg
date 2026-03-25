@@ -1,0 +1,36 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900">
+    <stop offset="0%" stop-color="#F8FAFC"></stop>
+    <stop offset="100%" stop-color="#EEF2F7"></stop>
+  </linearGradient>
+
+  <pattern id="imigongoPattern" patternUnits="userSpaceOnUse" width="160" height="160">
+    
+    <!-- diamond -->
+    <path d="M80 10 L150 80 L80 150 L10 80 Z" stroke="#23408E" stroke-width="1.4" fill="none" opacity="0.25"></path>
+    
+    <!-- inner diamond -->
+    <path d="M80 35 L125 80 L80 125 L35 80 Z" stroke="#9CA3AF" stroke-width="1" fill="none" opacity="0.25"></path>
+    
+    <!-- cross lines -->
+    <line x1="10" y1="80" x2="150" y2="80" stroke="#D1D5DB" stroke-width="0.8" opacity="0.25"></line>
+    <line x1="80" y1="10" x2="80" y2="150" stroke="#D1D5DB" stroke-width="0.8" opacity="0.25"></line>
+
+    <!-- circular basket hint -->
+    <circle cx="80" cy="80" r="60" stroke="#23408E" stroke-width="0.6" opacity="0.15" fill="none"></circle>
+  </pattern>
+</defs>
+
+<!-- base background -->
+<rect width="1600" height="900" fill="url(#bg)"></rect>
+
+<!-- pattern overlay -->
+<rect width="1600" height="900" fill="url(#imigongoPattern)"></rect>
+
+<!-- soft institutional waves -->
+<path d="M0 720 Q400 650 800 720 T1600 720 V900 H0 Z" fill="#23408E" opacity="0.06"></path>
+<path d="M0 780 Q500 700 1000 780 T1600 780 V900 H0 Z" fill="#1F3A82" opacity="0.05"></path>
+
+</svg>

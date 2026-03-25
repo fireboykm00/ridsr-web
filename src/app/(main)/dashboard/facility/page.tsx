@@ -110,8 +110,8 @@ export default function FacilityManagementPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -120,10 +120,10 @@ export default function FacilityManagementPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BuildingOfficeIcon className="h-6 w-6 text-blue-700" />
+          <BuildingOfficeIcon className="h-6 w-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Facility Management</h1>
-            <p className="text-gray-600">Manage health facilities and reporting centers</p>
+            <h1 className="text-2xl font-bold text-foreground">Facility Management</h1>
+            <p className="text-muted-foreground">Manage health facilities and reporting centers</p>
           </div>
         </div>
         {isAdmin && (
@@ -143,7 +143,7 @@ export default function FacilityManagementPage() {
       <Card className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="relative">
-            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <MagnifyingGlassIcon className="h-5 w-5 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               label="Search facility"
               placeholder="Enter code, name, ..etc"
@@ -185,34 +185,34 @@ export default function FacilityManagementPage() {
             ]}
           />
         </div>
-        <p className="text-sm text-gray-600 mb-4">Showing {facilities.length} of {totalFacilities} facilities</p>
+        <p className="text-sm text-muted-foreground mb-4">Showing {facilities.length} of {totalFacilities} facilities</p>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Code</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Type</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Contact</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-900">Actions</th>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
+                <th className="text-left py-3 px-4 font-semibold text-foreground">Code</th>
+                <th className="text-left py-3 px-4 font-semibold text-foreground">Type</th>
+                <th className="text-left py-3 px-4 font-semibold text-foreground">District</th>
+                <th className="text-left py-3 px-4 font-semibold text-foreground">Contact</th>
+                <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
+                <th className="text-right py-3 px-4 font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {facilities.map((facility) => (
-                <tr key={facility.id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-900 font-medium">{facility.name}</td>
-                  <td className="py-3 px-4 text-gray-600">{facility.code}</td>
-                  <td className="py-3 px-4 text-gray-600 capitalize">{facility.type.replace('_', ' ')}</td>
-                  <td className="py-3 px-4 text-gray-600 capitalize">{facility.district}</td>
-                  <td className="py-3 px-4 text-gray-600">
+                <tr key={facility.id} className="border-b border-border hover:bg-muted">
+                  <td className="py-3 px-4 text-foreground font-medium">{facility.name}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{facility.code}</td>
+                  <td className="py-3 px-4 text-muted-foreground capitalize">{facility.type.replace('_', ' ')}</td>
+                  <td className="py-3 px-4 text-muted-foreground capitalize">{facility.district}</td>
+                  <td className="py-3 px-4 text-muted-foreground">
                     <div>{facility.contactPerson}</div>
-                    <div className="text-xs text-gray-400">{facility.phone}</div>
+                    <div className="text-xs text-muted-foreground/60">{facility.phone}</div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${facility.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${facility.isActive ? 'bg-green-100 text-green-800' : 'bg-destructive/10 text-destructive'
                       }`}>
                       {facility.isActive ? 'Active' : 'Inactive'}
                     </span>
@@ -224,7 +224,7 @@ export default function FacilityManagementPage() {
                           setEditingFacility(facility);
                           setShowModal(true);
                         }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-2 text-primary hover:bg-primary/5 rounded"
                         title="Edit"
                       >
                         <PencilIcon className="h-4 w-4" />
@@ -243,7 +243,7 @@ export default function FacilityManagementPage() {
               ))}
               {facilities.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-500">
+                  <td colSpan={7} className="py-8 text-center text-muted-foreground">
                     No facilities found.
                   </td>
                 </tr>
@@ -252,8 +252,8 @@ export default function FacilityManagementPage() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">Page {currentPage} of {totalPages}</p>
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages}</p>
             <div className="flex gap-2">
               <Button
                 variant="secondary"

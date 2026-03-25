@@ -112,18 +112,18 @@ export default function FacilityDetailPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600">Please sign in to view facility details</p>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Access Denied</h2>
+          <p className="text-muted-foreground">Please sign in to view facility details</p>
         </Card>
       </div>
     );
@@ -131,9 +131,9 @@ export default function FacilityDetailPage() {
 
   if (!facility) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Facility not found</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Facility not found</h2>
           <Link href="/dashboard/facility">
             <Button variant="secondary">Back to Facilities</Button>
           </Link>
@@ -153,10 +153,10 @@ export default function FacilityDetailPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-3">
-            <BuildingOfficeIcon className="h-8 w-8 text-blue-600" />
+            <BuildingOfficeIcon className="h-8 w-8 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{facility.name}</h1>
-              <p className="text-gray-600">{facility.code} • {facility.type.replace('_', ' ')}</p>
+              <h1 className="text-3xl font-bold text-foreground">{facility.name}</h1>
+              <p className="text-muted-foreground">{facility.code} • {facility.type.replace('_', ' ')}</p>
             </div>
           </div>
         </div>
@@ -169,48 +169,48 @@ export default function FacilityDetailPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-blue-100">
-              <DocumentTextIcon className="h-6 w-6 text-blue-700" />
+            <div className="p-3 rounded-md bg-primary/10">
+              <DocumentTextIcon className="h-6 w-6 text-primary" />
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Total Cases</h3>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalCases}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">Total Cases</h3>
+              <p className="text-2xl font-bold text-foreground">{stats.totalCases}</p>
             </div>
           </div>
         </Card>
         
         <Card className="p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-yellow-100">
-              <ExclamationTriangleIcon className="h-6 w-6 text-yellow-700" />
+            <div className="p-3 rounded-md bg-yellow-100">
+              <ExclamationTriangleIcon className="h-6 w-6 text-accent-foreground" />
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Pending Cases</h3>
-              <p className="text-2xl font-bold text-gray-900">{stats.pendingCases}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">Pending Cases</h3>
+              <p className="text-2xl font-bold text-foreground">{stats.pendingCases}</p>
             </div>
           </div>
         </Card>
         
         <Card className="p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-green-100">
+            <div className="p-3 rounded-md bg-green-100">
               <ChartBarIcon className="h-6 w-6 text-green-700" />
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Validated Cases</h3>
-              <p className="text-2xl font-bold text-gray-900">{stats.validatedCases}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">Validated Cases</h3>
+              <p className="text-2xl font-bold text-foreground">{stats.validatedCases}</p>
             </div>
           </div>
         </Card>
         
         <Card className="p-6">
           <div className="flex items-center">
-            <div className="p-3 rounded-lg bg-purple-100">
+            <div className="p-3 rounded-md bg-purple-100">
               <UserGroupIcon className="h-6 w-6 text-purple-700" />
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-600">Staff Members</h3>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalStaff}</p>
+              <h3 className="text-sm font-medium text-muted-foreground">Staff Members</h3>
+              <p className="text-2xl font-bold text-foreground">{stats.totalStaff}</p>
             </div>
           </div>
         </Card>
@@ -219,43 +219,43 @@ export default function FacilityDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Facility Information */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Facility Information</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Facility Information</h2>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Facility Code</p>
-                <p className="text-gray-900 font-medium">{facility.code}</p>
+                <p className="text-sm text-muted-foreground">Facility Code</p>
+                <p className="text-foreground font-medium">{facility.code}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Type</p>
-                <p className="text-gray-900 font-medium capitalize">
+                <p className="text-sm text-muted-foreground">Type</p>
+                <p className="text-foreground font-medium capitalize">
                   {facility.type.replace('_', ' ')}
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">District</p>
-                <p className="text-gray-900 font-medium capitalize">
+                <p className="text-sm text-muted-foreground">District</p>
+                <p className="text-foreground font-medium capitalize">
                   {facility.district.replace('_', ' ')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Province</p>
-                <p className="text-gray-900 font-medium capitalize">
+                <p className="text-sm text-muted-foreground">Province</p>
+                <p className="text-foreground font-medium capitalize">
                   {facility.province.replace('_', ' ')}
                 </p>
               </div>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Status</p>
+              <p className="text-sm text-muted-foreground">Status</p>
               <Badge variant={facility.isActive ? 'success' : 'error'}>
                 {facility.isActive ? 'Active' : 'Inactive'}
               </Badge>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Created</p>
-              <p className="text-gray-900 font-medium">
+              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="text-foreground font-medium">
                 {new Date(facility.createdAt).toLocaleDateString()}
               </p>
             </div>
@@ -265,16 +265,16 @@ export default function FacilityDetailPage() {
         {/* Staff Members */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Staff Members</h2>
+            <h2 className="text-lg font-semibold text-foreground">Staff Members</h2>
             <Badge variant="info">{staff.length} members</Badge>
           </div>
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {staff.length > 0 ? (
               staff.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={member.id} className="flex items-center justify-between p-3 border border-border rounded-md">
                   <div>
-                    <h4 className="font-medium text-gray-900">{member.name}</h4>
-                    <p className="text-sm text-gray-600">{member.email}</p>
+                    <h4 className="font-medium text-foreground">{member.name}</h4>
+                    <p className="text-sm text-muted-foreground">{member.email}</p>
                   </div>
                   <Badge variant="info">
                     {member.role.replace('_', ' ')}
@@ -283,8 +283,8 @@ export default function FacilityDetailPage() {
               ))
             ) : (
               <div className="text-center py-8">
-                <UserGroupIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">No staff members found</p>
+                <UserGroupIcon className="h-12 w-12 text-muted-foreground/60 mx-auto mb-2" />
+                <p className="text-muted-foreground">No staff members found</p>
               </div>
             )}
           </div>
@@ -293,7 +293,7 @@ export default function FacilityDetailPage() {
 
       {/* Quick Actions */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href={`/dashboard/cases?facility=${facilityId}`}>
             <Button variant="secondary" fullWidth className="flex items-center justify-center gap-2 h-16">

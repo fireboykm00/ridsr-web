@@ -212,30 +212,30 @@ export default function UsersPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session || !canManageUsers) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">Only administrators, national officers, and district officers can manage users</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">Only administrators, national officers, and district officers can manage users</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="p-6">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserGroupIcon className="h-6 w-6 text-blue-700" />
-            <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+            <UserGroupIcon className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">User Management</h1>
           </div>
           <Button
             onClick={() => {
@@ -253,7 +253,7 @@ export default function UsersPage() {
         <Card className="p-6 mb-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-900">Search & Filters</h3>
+              <h3 className="text-lg font-medium text-foreground">Search & Filters</h3>
               <Button
                 variant="secondary"
                 size="sm"
@@ -317,7 +317,7 @@ export default function UsersPage() {
               />
             </div>
 
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               Showing {users.length} of {totalUsers} users
             </div>
           </div>
@@ -328,42 +328,42 @@ export default function UsersPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Name</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Worker ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">National ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Phone</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Role</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Facility</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">District</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-900">Actions</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Name</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Worker ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">National ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Email</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Phone</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Role</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Facility</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">District</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Status</th>
+                  <th className="text-left py-3 px-4 font-semibold text-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((user) => {
                   const facility = facilities.find(f => f.id === user.facilityId);
                   return (
-                    <tr key={user.id + user.workerId} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-900">{user.name}</td>
-                      <td className="py-3 px-4 text-gray-900">{user.workerId || '-'}</td>
-                      <td className="py-3 px-4 text-gray-900">{user.nationalId || '-'}</td>
-                      <td className="py-3 px-4 text-gray-900">{user.email}</td>
-                      <td className="py-3 px-4 text-gray-900">{user.phone || '-'}</td>
-                      <td className="py-3 px-4 text-gray-900 capitalize">
+                    <tr key={user.id + user.workerId} className="border-b border-border hover:bg-muted">
+                      <td className="py-3 px-4 text-foreground">{user.name}</td>
+                      <td className="py-3 px-4 text-foreground">{user.workerId || '-'}</td>
+                      <td className="py-3 px-4 text-foreground">{user.nationalId || '-'}</td>
+                      <td className="py-3 px-4 text-foreground">{user.email}</td>
+                      <td className="py-3 px-4 text-foreground">{user.phone || '-'}</td>
+                      <td className="py-3 px-4 text-foreground capitalize">
                         {user.role.replace(/_/g, ' ').toLowerCase()}
                       </td>
-                      <td className="py-3 px-4 text-gray-900">
+                      <td className="py-3 px-4 text-foreground">
                         {facility?.name || user.facilityId || '-'}
                       </td>
-                      <td className="py-3 px-4 text-gray-900 capitalize">
+                      <td className="py-3 px-4 text-foreground capitalize">
                         {user.district || '-'}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${user.isActive
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          : 'bg-destructive/10 text-destructive'
                           }`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
@@ -372,7 +372,7 @@ export default function UsersPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditUser(user)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                            className="p-2 text-primary hover:bg-primary/5 rounded"
                             title="Edit user"
                           >
                             <PencilIcon className="h-4 w-4" />
@@ -398,8 +398,8 @@ export default function UsersPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-              <div className="text-sm text-gray-600">
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+              <div className="text-sm text-muted-foreground">
                 Page {currentPage} of {totalPages}
               </div>
               <div className="flex gap-2">

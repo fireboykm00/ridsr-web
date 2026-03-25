@@ -46,8 +46,8 @@ export default function NationalDashboard() {
     totalUsers: 0,
     activeOutbreaks: 0,
   });
-  const [trendData, setTrendData] = useState([]);
-  const [diseaseData, setDiseaseData] = useState([]);
+  const [trendData, setTrendData] = useState<Array<{ name: string; value: number }>>([]);
+  const [diseaseData, setDiseaseData] = useState<Array<{ name: string; value: number }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -109,18 +109,18 @@ export default function NationalDashboard() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700" />
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
       </div>
     );
   }
 
   if (!session?.user || (session.user.role !== USER_ROLES.ADMIN && session.user.role !== USER_ROLES.NATIONAL_OFFICER)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="max-w-md text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -128,53 +128,53 @@ export default function NationalDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 p-8">
+      <section className="rounded-md bg-muted border border-border p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="uppercase tracking-[0.2em] text-xs text-blue-700 mb-2">National Command Center</p>
-            <h1 className="text-3xl font-bold text-gray-900">Rwanda Surveillance Overview</h1>
-            <p className="text-gray-600 mt-2">Live signal across cases, facilities, users, and validation throughput.</p>
+            <p className="uppercase tracking-[0.2em] text-xs text-primary font-semibold mb-2">National Command Center</p>
+            <h1 className="text-3xl font-bold text-foreground">Rwanda Surveillance Overview</h1>
+            <p className="text-muted-foreground mt-2 text-sm">Live signal across cases, facilities, users, and validation throughput.</p>
           </div>
-          <MapPinIcon className="h-12 w-12 text-blue-500" />
+          <MapPinIcon className="h-12 w-12 text-primary" />
         </div>
       </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Total Cases</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalCases}</p>
-          <p className="text-xs text-gray-500 mt-1">{stats.pendingCases} pending review</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Cases</p>
+          <p className="text-3xl font-bold text-foreground">{stats.totalCases}</p>
+          <p className="text-xs text-muted-foreground mt-1">{stats.pendingCases} pending review</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Facilities</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalFacilities}</p>
-          <p className="text-xs text-gray-500 mt-1">Nationwide reporting units</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Facilities</p>
+          <p className="text-3xl font-bold text-foreground">{stats.totalFacilities}</p>
+          <p className="text-xs text-muted-foreground mt-1">Nationwide reporting units</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Active Alerts</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.alerts}</p>
-          <p className="text-xs text-gray-500 mt-1">Escalation signals</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Active Alerts</p>
+          <p className="text-3xl font-bold text-foreground">{stats.alerts}</p>
+          <p className="text-xs text-muted-foreground mt-1">Escalation signals</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-gray-500">Users</p>
-          <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
-          <p className="text-xs text-gray-500 mt-1">Active surveillance staff</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Users</p>
+          <p className="text-3xl font-bold text-foreground">{stats.totalUsers}</p>
+          <p className="text-xs text-muted-foreground mt-1">Active surveillance staff</p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ChartBarIcon className="h-5 w-5 text-cyan-700" />
-            <h3 className="text-lg font-semibold text-gray-900">30-Day Trend</h3>
+            <ChartBarIcon className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">30-Day Trend</h3>
           </div>
           <LineChart data={trendData} />
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <DocumentTextIcon className="h-5 w-5 text-blue-700" />
-            <h3 className="text-lg font-semibold text-gray-900">Disease Mix</h3>
+            <DocumentTextIcon className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">Disease Mix</h3>
           </div>
           <BarChart data={diseaseData} />
         </Card>
@@ -183,8 +183,8 @@ export default function NationalDashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <ExclamationTriangleIcon className="h-5 w-5 text-amber-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Validation Distribution</h3>
+            <ExclamationTriangleIcon className="h-5 w-5 text-accent" />
+            <h3 className="text-lg font-semibold text-foreground">Validation Distribution</h3>
           </div>
           <PieChart
             data={[
@@ -196,28 +196,28 @@ export default function NationalDashboard() {
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Operational Snapshot</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Operational Snapshot</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-gray-700">
-                <BuildingOfficeIcon className="h-5 w-5 text-blue-700" />
+            <div className="flex items-center justify-between bg-muted rounded-md p-4">
+              <div className="flex items-center gap-2 text-foreground text-sm">
+                <BuildingOfficeIcon className="h-5 w-5 text-primary" />
                 Facility reporting coverage
               </div>
-              <span className="font-semibold text-gray-900">{stats.totalFacilities}</span>
+              <span className="font-semibold text-foreground">{stats.totalFacilities}</span>
             </div>
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-gray-700">
-                <UserGroupIcon className="h-5 w-5 text-indigo-700" />
+            <div className="flex items-center justify-between bg-muted rounded-md p-4">
+              <div className="flex items-center gap-2 text-foreground text-sm">
+                <UserGroupIcon className="h-5 w-5 text-primary" />
                 Surveillance workforce
               </div>
-              <span className="font-semibold text-gray-900">{stats.totalUsers}</span>
+              <span className="font-semibold text-foreground">{stats.totalUsers}</span>
             </div>
-            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-gray-700">
-                <DocumentTextIcon className="h-5 w-5 text-cyan-700" />
+            <div className="flex items-center justify-between bg-muted rounded-md p-4">
+              <div className="flex items-center gap-2 text-foreground text-sm">
+                <DocumentTextIcon className="h-5 w-5 text-primary" />
                 Open case volume
               </div>
-              <span className="font-semibold text-gray-900">{stats.pendingCases}</span>
+              <span className="font-semibold text-foreground">{stats.pendingCases}</span>
             </div>
           </div>
         </Card>

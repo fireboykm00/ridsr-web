@@ -43,7 +43,7 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
     return (
       <div className="w-full">
         {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
-        <div className="animate-pulse rounded-lg bg-gray-100" style={{ height }} />
+        <div className="animate-pulse rounded-md bg-muted" style={{ height }} />
       </div>
     );
   }
@@ -52,7 +52,7 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
     return (
       <div className="w-full">
         {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700" style={{ height }}>
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-6 text-sm text-destructive" style={{ height }}>
           Unable to load chart data. {error}
         </div>
       </div>
@@ -63,7 +63,7 @@ export const MapVisualization: React.FC<MapVisualizationProps> = ({
     return (
       <div className="w-full">
         {title && <h3 className="text-lg font-semibold mb-4">{title}</h3>}
-        <div className="rounded-lg bg-gray-50 px-4 py-6 text-sm text-gray-500" style={{ height }}>
+        <div className="rounded-md bg-muted px-4 py-6 text-sm text-muted-foreground" style={{ height }}>
           {emptyMessage}
         </div>
       </div>

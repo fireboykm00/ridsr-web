@@ -30,40 +30,41 @@ const FAQPage = () => {
   ];
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Frequently Asked Questions</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Frequently Asked Questions</h1>
+        <p className="text-muted-foreground mb-8">Find answers to common questions about the RIDSR Platform.</p>
 
         <Card className="p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">About RIDSR Platform</h2>
-          <p className="text-gray-700 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">About RIDSR Platform</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
             The Rwanda National Integrated Disease Surveillance and Response (RIDSR) Platform is a digital solution
             designed to strengthen disease surveillance and response capabilities across Rwanda.
           </p>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {faqs.map((faq, index) => (
             <Card key={index} className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.question}</h3>
-              <p className="text-gray-700">{faq.answer}</p>
+              <h3 className="text-base font-semibold text-foreground mb-2">{faq.question}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
             </Card>
           ))}
         </div>
 
         <Card className="p-6 mt-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Need More Help?</h3>
-          <p className="text-gray-700 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-3">Need More Help?</h3>
+          <p className="text-sm text-muted-foreground mb-4">
             If you have additional questions that are not answered here, please contact our support team.
           </p>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-6">
             <div>
-              <p className="font-medium text-gray-900">Email Support</p>
-              <p className="text-gray-700">support@ridsr.rw</p>
+              <p className="text-sm font-medium text-foreground">Email Support</p>
+              <p className="text-sm text-muted-foreground">support@ridsr.rw</p>
             </div>
             <div>
-              <p className="font-medium text-gray-900">Phone</p>
-              <p className="text-gray-700">+250 788 123 456</p>
+              <p className="text-sm font-medium text-foreground">Phone</p>
+              <p className="text-sm text-muted-foreground">+250 788 123 456</p>
             </div>
           </div>
         </Card>

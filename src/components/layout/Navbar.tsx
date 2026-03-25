@@ -1,164 +1,171 @@
 // src/components/layout/Navbar.tsx
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import RIDSRLogo from '../ui/RIDSRLogo';
+import Link from "next/link";
+import { useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import RIDSRLogo from "../ui/RIDSRLogo";
 
 const Navbar = () => {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const publicNavLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/about' },
-    { name: 'Features', href: '/features' },
-    { name: 'Academy', href: '/academy' },
-    { name: 'Directory', href: '/directory' },
-    { name: 'FAQ', href: '/faq' },
+    { name: "Home", href: "/" },
+    { name: "About", href: "/about" },
+    { name: "Features", href: "/features" },
+    { name: "Academy", href: "/academy" },
+    { name: "Directory", href: "/directory" },
+    { name: "FAQ", href: "/faq" },
   ];
 
   const authenticatedNavLinks = [
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Report Case', href: '/report-case' },
-    { name: 'Cases', href: '/cases' },
-    { name: 'About', href: '/about' },
-    { name: 'FAQ', href: '/faq' },
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Report Case", href: "/report-case" },
+    { name: "Cases", href: "/cases" },
+    { name: "About", href: "/about" },
+    { name: "FAQ", href: "/faq" },
   ];
 
-  return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm">
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo and Branding */}
-          <div className="flex items-center">
-            <div>
-              <RIDSRLogo size={50} showText={true} textSize={20} textColor="#1f2937" />
+  const userInitial = session?.user?.name?.charAt(0)?.toUpperCase() || "?";
 
-            </div>
-            <span className="ml-4 text-sm text-gray-600 hidden lg:block">
-              Republic of Rwanda | Ministry of Health
-            </span>
-          </div>
+  return (
+    <header className="sticky top-0 z-50 bg-background">
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between py-5">
+          {/* Logo */}
+          <Link href="/" className="flex items-center shrink-0">
+            <RIDSRLogo
+              size={44}
+              showText={true}
+              textSize={18}
+              textColor="#111827"
+            />
+          </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {status === "authenticated"
-              ? authenticatedNavLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))
-              : publicNavLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))
-            }
+          <div className="hidden md:flex items-center gap-8">
+            {(status === "authenticated"
+              ? authenticatedNavLinks
+              : publicNavLinks
+            ).map((link) => (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="text-[13px] text-foreground/70 hover:text-primary font-medium tracking-wide transition-colors"
+              >
+                {link.name}
+              </Link>
+            ))}
+          </div>
 
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
             {status === "authenticated" ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-600 hidden md:block">
-                  Welcome, {session?.user?.name}
-                </span>
+              <>
                 <button
                   onClick={() => signOut()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  className="text-[13px] text-foreground/60 hover:text-foreground font-medium transition-colors"
                 >
                   Logout
                 </button>
-              </div>
+                <Link
+                  href="/dashboard/account"
+                  className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold"
+                >
+                  {userInitial}
+                </Link>
+              </>
             ) : (
               <>
                 <Link
                   href="/login"
-                  className="ml-4 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="text-[13px] text-foreground/70 hover:text-primary font-medium transition-colors"
                 >
-                  Login
+                  Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[13px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors"
                 >
-                  Register
+                  Get Started
                 </Link>
               </>
             )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-blue-700 focus:outline-none"
-            >
-              {mobileMenuOpen ? (
-                <XMarkIcon className="h-6 w-6" />
-              ) : (
-                <Bars3Icon className="h-6 w-6" />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-foreground/70 hover:text-foreground p-1"
+          >
+            {mobileMenuOpen ? (
+              <XMarkIcon className="h-6 w-6" />
+            ) : (
+              <Bars3Icon className="h-6 w-6" />
+            )}
+          </button>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
-            <div className="flex flex-col space-y-3 px-4">
-              {(status === "authenticated" ? authenticatedNavLinks : publicNavLinks).map((link) => (
+          <div className="md:hidden pb-6 border-t border-border/50 pt-4">
+            <div className="flex flex-col gap-1">
+              {(status === "authenticated"
+                ? authenticatedNavLinks
+                : publicNavLinks
+              ).map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-gray-700 hover:text-blue-700 font-medium py-2 transition-colors"
+                  className="text-sm text-foreground/70 hover:text-primary font-medium py-2.5 px-2 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.name}
                 </Link>
               ))}
 
-              {status === "authenticated" ? (
-                <div className="pt-4 flex flex-col space-y-3">
-                  <span className="text-sm text-gray-600">
-                    Welcome, {session?.user?.name}
-                  </span>
-                  <button
-                    onClick={() => {
-                      signOut();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-center text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <div className="pt-4 flex flex-col space-y-3">
-                  <Link
-                    href="/login"
-                    className="w-full px-4 py-2 text-center text-sm font-medium text-blue-700 border border-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="w-full px-4 py-2 text-center text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded-lg transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
+              <div className="mt-4 pt-4 border-t border-border/50 flex flex-col gap-2 px-2">
+                {status === "authenticated" ? (
+                  <>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
+                        {userInitial}
+                      </div>
+                      <span className="text-sm text-foreground font-medium">
+                        {session?.user?.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-sm text-destructive font-medium text-left py-1"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="text-center text-sm font-medium text-primary border border-primary rounded-md py-2.5 hover:bg-primary/5 transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="text-center text-sm font-medium text-primary-foreground bg-primary rounded-md py-2.5 hover:bg-primary/90 transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}

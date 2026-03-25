@@ -3,56 +3,52 @@ import Link from 'next/link';
 
 const HeroSection = () => {
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-white py-16 md:py-24">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center">
-          <div className="md:w-1/2 mb-12 md:mb-0">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-              Rwanda National Integrated Disease Surveillance and Response Platform
-            </h1>
-            <p className="text-lg text-gray-700 mb-8 max-w-lg">
-              Transforming public health through digital innovation. Our platform enables real-time disease surveillance, rapid response, and data-driven decision making for health professionals across Rwanda.
-            </p>
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <Link
-                href="/dashboard"
-                className="px-8 py-4 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors text-center"
-              >
-                Access Dashboard
-              </Link>
-              <Link
-                href="/about"
-                className="px-8 py-4 bg-white text-blue-700 border border-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-center"
-              >
-                Learn More
-              </Link>
-            </div>
+    <section className="bg-background">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div className="max-w-3xl">
+          <p className="text-xs uppercase tracking-[0.25em] text-primary font-semibold mb-4">
+            Republic of Rwanda &middot; Ministry of Health
+          </p>
+          <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-foreground leading-[1.15] mb-6">
+            National Integrated Disease Surveillance &amp; Response
+          </h1>
+          <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-10 max-w-2xl">
+            A unified digital platform enabling real-time disease monitoring, rapid outbreak response,
+            and data-driven public health decisions across all 30 districts of Rwanda.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/dashboard"
+              className="px-7 py-3.5 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
+            >
+              Access Dashboard
+            </Link>
+            <Link
+              href="/about"
+              className="px-7 py-3.5 text-primary border border-primary text-sm font-medium rounded-md hover:bg-primary/5 transition-colors"
+            >
+              Learn More
+            </Link>
           </div>
-          <div className="md:w-1/2 flex justify-center">
-            <div className="relative">
-              <div className="w-80 h-80 md:w-96 md:h-96 bg-gradient-to-br from-blue-200 to-blue-400 rounded-2xl shadow-xl flex items-center justify-center">
-                <div className="bg-white rounded-xl p-6 w-4/5 h-4/5 flex flex-col justify-between">
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm font-medium text-gray-900">Surveillance Dashboard</div>
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="h-16 bg-blue-100 rounded-lg"></div>
-                    <div className="h-16 bg-green-100 rounded-lg"></div>
-                    <div className="h-16 bg-amber-100 rounded-lg"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-6 -right-6 bg-yellow-500 text-white py-2 px-4 rounded-lg shadow-lg">
-                <span className="font-bold">Real-time Data</span>
-              </div>
-            </div>
+        </div>
+
+        {/* Stats Row */}
+        <div className="mt-16 pt-10 border-t border-border grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div>
+            <p className="text-3xl font-bold text-foreground">500+</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Health Facilities</p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-foreground">30/30</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Districts Covered</p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-foreground">24/7</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Active Monitoring</p>
+          </div>
+          <div>
+            <p className="text-3xl font-bold text-foreground">99.9%</p>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">System Uptime</p>
           </div>
         </div>
       </div>

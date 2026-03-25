@@ -90,18 +90,18 @@ export default function CaseListPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600">Please sign in to view cases</p>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Access Denied</h2>
+          <p className="text-muted-foreground">Please sign in to view cases</p>
         </Card>
       </div>
     );
@@ -111,8 +111,8 @@ export default function CaseListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Cases</h1>
-          <p className="text-gray-600">View and manage disease cases</p>
+          <h1 className="text-3xl font-bold text-foreground">Cases</h1>
+          <p className="text-muted-foreground">View and manage disease cases</p>
         </div>
         {canReportCase && (
           <Link href="/dashboard/report-case">
@@ -148,7 +148,7 @@ export default function CaseListPage() {
         </div>
 
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-border">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <SearchableSelect
                 label="Status"
@@ -203,41 +203,41 @@ export default function CaseListPage() {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Case ID</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Patient ID</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Disease</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Report Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Outcome</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Case ID</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Patient ID</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Disease</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Report Date</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Outcome</th>
               </tr>
             </thead>
             <tbody>
               {cases.length > 0 ? (
                 cases.map(caseItem => (
-                  <tr key={caseItem.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <tr key={caseItem.id} className="border-b border-border hover:bg-muted">
                     <td className="px-6 py-4 text-sm">
                       <Link
                         href={`/dashboard/cases/${caseItem.id}`}
-                        className="text-blue-600 hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                       >
                         {caseItem.id.substring(0, 8)}...
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{caseItem.patientId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{caseItem.diseaseCode}</td>
+                    <td className="px-6 py-4 text-sm text-foreground">{caseItem.patientId}</td>
+                    <td className="px-6 py-4 text-sm text-foreground">{caseItem.diseaseCode}</td>
                     <td className="px-6 py-4 text-sm">{getStatusBadge(caseItem.validationStatus)}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {new Date(caseItem.reportDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
+                    <td className="px-6 py-4 text-sm text-muted-foreground">
                       {caseItem.outcome ? (
                         <Badge variant={caseItem.outcome === 'recovered' ? 'success' : 'error'}>
                           {caseItem.outcome}
                         </Badge>
                       ) : (
-                        <span className="text-gray-400">Pending</span>
+                        <span className="text-muted-foreground/60">Pending</span>
                       )}
                     </td>
                   </tr>
@@ -245,9 +245,9 @@ export default function CaseListPage() {
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No cases found</h3>
-                    <p className="text-gray-600">
+                    <DocumentTextIcon className="h-12 w-12 text-muted-foreground/60 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">No cases found</h3>
+                    <p className="text-muted-foreground">
                       {searchTerm || Object.values(filters).some(f => f && f !== 'all')
                         ? 'Try adjusting your search or filters'
                         : 'No cases have been reported yet'
@@ -260,8 +260,8 @@ export default function CaseListPage() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
+          <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+            <p className="text-sm text-muted-foreground">
               Showing page {currentPage} of {totalPages} ({total} total cases)
             </p>
             <div className="flex gap-2">

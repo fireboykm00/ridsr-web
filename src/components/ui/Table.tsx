@@ -30,12 +30,8 @@ interface TableHeaderCellProps extends React.ThHTMLAttributes<HTMLTableCellEleme
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(({ children, className = '', ...props }, ref) => {
   return (
-    <div className="overflow-x-auto">
-      <table
-        ref={ref}
-        className={`min-w-full divide-y divide-gray-200 ${className}`}
-        {...props}
-      >
+    <div className="overflow-x-auto rounded-md border border-border">
+      <table ref={ref} className={`min-w-full divide-y divide-border ${className}`} {...props}>
         {children}
       </table>
     </div>
@@ -44,7 +40,7 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(({ children, classN
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(({ children, className = '', ...props }, ref) => {
   return (
-    <thead ref={ref} className={`bg-gray-50 ${className}`} {...props}>
+    <thead ref={ref} className={`bg-muted ${className}`} {...props}>
       {children}
     </thead>
   );
@@ -52,7 +48,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
 
 const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(({ children, className = '', ...props }, ref) => {
   return (
-    <tbody ref={ref} className={`divide-y divide-gray-200 ${className}`} {...props}>
+    <tbody ref={ref} className={`divide-y divide-border ${className}`} {...props}>
       {children}
     </tbody>
   );
@@ -60,9 +56,9 @@ const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(({ c
 
 const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(({ children, isHoverable = true, className = '', ...props }, ref) => {
   return (
-    <tr 
-      ref={ref} 
-      className={`${isHoverable ? 'hover:bg-gray-50 transition-colors' : ''} ${className}`} 
+    <tr
+      ref={ref}
+      className={`${isHoverable ? 'hover:bg-muted/50 transition-colors' : ''} ${className}`}
       {...props}
     >
       {children}
@@ -71,36 +67,20 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(({ childre
 });
 
 const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(({ children, align = 'left', className = '', ...props }, ref) => {
-  const alignment = {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
-  };
-  
+  const alignment = { left: 'text-left', center: 'text-center', right: 'text-right' };
+
   return (
-    <td
-      ref={ref}
-      className={`px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${alignment[align]} ${className}`}
-      {...props}
-    >
+    <td ref={ref} className={`px-6 py-3 whitespace-nowrap text-sm text-foreground ${alignment[align]} ${className}`} {...props}>
       {children}
     </td>
   );
 });
 
 const TableHeaderCell = React.forwardRef<HTMLTableCellElement, TableHeaderCellProps>(({ children, align = 'left', className = '', ...props }, ref) => {
-  const alignment = {
-    left: 'text-left',
-    center: 'text-center',
-    right: 'text-right',
-  };
-  
+  const alignment = { left: 'text-left', center: 'text-center', right: 'text-right' };
+
   return (
-    <th
-      ref={ref}
-      className={`px-6 py-3 text-xs font-medium uppercase tracking-wider text-gray-500 ${alignment[align]} ${className}`}
-      {...props}
-    >
+    <th ref={ref} className={`px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground ${alignment[align]} ${className}`} {...props}>
       {children}
     </th>
   );

@@ -155,13 +155,13 @@ export default function AdminPage() {
 
   if (session?.user?.role !== USER_ROLES.ADMIN) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <Card className="p-8 text-center">
-          <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <Shield className="h-16 w-16 text-destructive mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Access Denied
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             You need administrator privileges to access this page.
           </p>
         </Card>
@@ -171,8 +171,8 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -206,14 +206,14 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             System Administration
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Comprehensive system overview and management tools
           </p>
         </div>
@@ -223,28 +223,28 @@ export default function AdminPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                <p className="text-3xl font-bold text-foreground">
                   {stats?.totalUsers || 0}
                 </p>
                 <p className="text-sm text-green-600">
                   {stats?.activeUsers || 0} active
                 </p>
               </div>
-              <Users className="h-12 w-12 text-blue-500" />
+              <Users className="h-12 w-12 text-primary" />
             </div>
           </Card>
 
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-muted-foreground">
                   Health Facilities
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-foreground">
                   {stats?.totalFacilities || 0}
                 </p>
-                <p className="text-sm text-blue-600">Across all districts</p>
+                <p className="text-sm text-primary">Across all districts</p>
               </div>
               <Building2 className="h-12 w-12 text-green-500" />
             </div>
@@ -253,8 +253,8 @@ export default function AdminPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Cases</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Total Cases</p>
+                <p className="text-3xl font-bold text-foreground">
                   {stats?.totalCases || 0}
                 </p>
                 <p className="text-sm text-orange-600">
@@ -268,15 +268,15 @@ export default function AdminPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm font-medium text-muted-foreground">
                   Active Alerts
                 </p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-foreground">
                   {stats?.totalAlerts || 0}
                 </p>
-                <p className="text-sm text-red-600">Require attention</p>
+                <p className="text-sm text-destructive">Require attention</p>
               </div>
-              <AlertTriangle className="h-12 w-12 text-red-500" />
+              <AlertTriangle className="h-12 w-12 text-destructive" />
             </div>
           </Card>
         </div>
@@ -284,21 +284,21 @@ export default function AdminPage() {
         {/* System Health & Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <Activity className="h-5 w-5" />
               System Health
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Overall Status</span>
+                <span className="text-sm text-muted-foreground">Overall Status</span>
                 {getHealthBadge(stats?.systemHealth || "healthy")}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Active Users</span>
+                <span className="text-sm text-muted-foreground">Active Users</span>
                 <Badge variant="info">{stats?.activeUsers || 0}</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground">
                   Pending Validations
                 </span>
                 <Badge variant="warning">
@@ -309,7 +309,7 @@ export default function AdminPage() {
           </Card>
 
           <Card className="lg:col-span-2 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -357,7 +357,7 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* User Distribution by Role */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               User Distribution by Role
             </h3>
@@ -372,7 +372,7 @@ export default function AdminPage() {
 
           {/* Facility Distribution by District */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Facilities by District
             </h3>
@@ -388,7 +388,7 @@ export default function AdminPage() {
 
         {/* Case Trends */}
         <Card className="p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             Case Trends (Last 30 Days)
           </h3>
@@ -406,7 +406,7 @@ export default function AdminPage() {
 
         {/* Recent Activity Log */}
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <Clock className="h-5 w-5" />
             Recent System Activity
           </h3>
@@ -415,16 +415,16 @@ export default function AdminPage() {
               stats.recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                  className="flex items-start gap-3 p-3 bg-muted rounded-md"
                 >
                   <div className="flex-shrink-0">
-                    <Activity className="h-4 w-4 text-blue-500 mt-0.5" />
+                    <Activity className="h-4 w-4 text-primary mt-0.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm text-foreground">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       by {activity.user} •{" "}
                       {new Date(activity.timestamp).toLocaleString()}
                     </p>
@@ -436,8 +436,8 @@ export default function AdminPage() {
               ))
             ) : (
               <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">No recent activity</p>
+                <Clock className="h-12 w-12 text-muted-foreground/60 mx-auto mb-2" />
+                <p className="text-muted-foreground">No recent activity</p>
               </div>
             )}
           </div>

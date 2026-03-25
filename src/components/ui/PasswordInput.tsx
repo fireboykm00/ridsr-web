@@ -18,7 +18,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
     return (
       <div className={`w-full ${containerClassName}`}>
         {label && (
-          <label className={`block text-sm font-medium ${error ? 'text-red-700' : 'text-gray-700'} mb-2`}>
+          <label className={`block text-xs font-medium ${error ? 'text-destructive' : 'text-foreground'} mb-1.5`}>
             {label}
           </label>
         )}
@@ -38,9 +38,9 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
             onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? (
-              <EyeSlashIcon className="h-5 w-5 text-gray-500" />
+              <EyeSlashIcon className="h-5 w-5 text-muted-foreground" />
             ) : (
-              <EyeIcon className="h-5 w-5 text-gray-500" />
+              <EyeIcon className="h-5 w-5 text-muted-foreground" />
             )}
           </button>
         </div>

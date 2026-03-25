@@ -13,7 +13,6 @@ interface ModalProps {
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal when clicking outside of it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
@@ -23,7 +22,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+      document.body.style.overflow = 'hidden';
     }
 
     return () => {
@@ -32,7 +31,6 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
     };
   }, [isOpen, onClose]);
 
-  // Close modal when pressing Escape key
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -56,24 +54,24 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
     md: 'max-w-md',
     lg: 'max-w-lg',
     xl: 'max-w-xl',
-    '2xl': 'max-w-2xl'
+    '2xl': 'max-w-2xl',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30">
       <div
         ref={modalRef}
-        className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden flex flex-col`}
+        className={`relative bg-card border border-border rounded-md w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden flex flex-col`}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           {title && (
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-sm font-semibold text-foreground">
               {title}
             </h3>
           )}
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="h-5 w-5" />

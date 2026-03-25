@@ -355,8 +355,7 @@ export default function ReportsPage() {
         dateRange: reportData.dateRange,
         generatedAt: reportData.generatedAt,
         generatedBy: reportData.generatedBy,
-        cases: reportData.cases,
-        filters: reportData.filters,
+        cases: reportData.cases
       };
 
       const doc = generateCaseReportPDF(pdfOptions);
@@ -373,8 +372,8 @@ export default function ReportsPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-700"></div>
+      <div className="min-h-screen flex items-center justify-center bg-muted">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -391,10 +390,10 @@ export default function ReportsPage() {
 
   if (!canGenerateReport) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <Card className="p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You do not have permission to generate reports.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Access Denied</h1>
+          <p className="text-muted-foreground">You do not have permission to generate reports.</p>
         </Card>
       </div>
     );
@@ -404,11 +403,11 @@ export default function ReportsPage() {
   const reportLevel = getReportLevel(filters.reportType);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Generate Reports</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Generate Reports</h1>
+          <p className="mt-2 text-muted-foreground">
             Create PDF reports for disease surveillance cases with custom filters
           </p>
         </div>
@@ -425,7 +424,7 @@ export default function ReportsPage() {
                   options={REPORT_TYPES.map(r => ({ value: r.value, label: r.label }))}
                   placeholder="Select a report type"
                 />
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {reportLevel === 'facility' && 'Facility-level reports show cases from a specific health facility'}
                   {reportLevel === 'district' && 'District-level reports show cases from all facilities in a district'}
                   {reportLevel === 'national' && 'National-level reports show all cases across Rwanda'}
@@ -444,7 +443,7 @@ export default function ReportsPage() {
                     error={errors.facilityId}
                   />
                   {filters.district && (
-                    <p className="mt-1 text-xs text-blue-600">
+                    <p className="mt-1 text-xs text-primary">
                       Showing facilities in {DISTRICT_OPTIONS.find(d => d.value === filters.district)?.label}
                     </p>
                   )}
@@ -464,7 +463,7 @@ export default function ReportsPage() {
                     error={errors.district}
                   />
                   {filters.facilityId && (
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       Facility selected - district filter disabled
                     </p>
                   )}
@@ -531,7 +530,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-border">
               <Button
                 type="button"
                 variant="secondary"
@@ -561,59 +560,59 @@ export default function ReportsPage() {
 
         {previewData && (
           <Card className="p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Report Preview</h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h2 className="text-lg font-semibold text-foreground mb-4">Report Preview</h2>
+            <div className="bg-primary/5 border border-primary/20 rounded-md p-4 mb-4">
               <div className="text-center">
-                <span className="text-3xl font-bold text-blue-700">{previewData.total}</span>
-                <p className="text-sm text-blue-600 mt-1">Total cases match your filters</p>
+                <span className="text-3xl font-bold text-primary">{previewData.total}</span>
+                <p className="text-sm text-primary mt-1">Total cases match your filters</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">By Status</h3>
+                <h3 className="text-sm font-medium text-foreground/80 mb-2">By Status</h3>
                 <div className="space-y-1">
                   {Object.entries(previewData.byStatus).map(([status, count]) => (
                     <div key={status} className="flex justify-between text-sm">
-                      <span className="capitalize text-gray-600">{status}</span>
+                      <span className="capitalize text-muted-foreground">{status}</span>
                       <span className="font-medium">{count}</span>
                     </div>
                   ))}
                   {Object.keys(previewData.byStatus).length === 0 && (
-                    <p className="text-sm text-gray-400">No data</p>
+                    <p className="text-sm text-muted-foreground/60">No data</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">By Validation</h3>
+                <h3 className="text-sm font-medium text-foreground/80 mb-2">By Validation</h3>
                 <div className="space-y-1">
                   {Object.entries(previewData.byValidation).map(([status, count]) => (
                     <div key={status} className="flex justify-between text-sm">
-                      <span className="capitalize text-gray-600">{status}</span>
+                      <span className="capitalize text-muted-foreground">{status}</span>
                       <span className="font-medium">{count}</span>
                     </div>
                   ))}
                   {Object.keys(previewData.byValidation).length === 0 && (
-                    <p className="text-sm text-gray-400">No data</p>
+                    <p className="text-sm text-muted-foreground/60">No data</p>
                   )}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Top Diseases</h3>
+                <h3 className="text-sm font-medium text-foreground/80 mb-2">Top Diseases</h3>
                 <div className="space-y-1">
                   {Object.entries(previewData.byDisease)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([disease, count]) => (
                       <div key={disease} className="flex justify-between text-sm">
-                        <span className="text-gray-600 truncate max-w-[120px]">{DISEASE_CODES.find(d => d.code === disease)?.name || disease}</span>
+                        <span className="text-muted-foreground truncate max-w-[120px]">{DISEASE_CODES.find(d => d.code === disease)?.name || disease}</span>
                         <span className="font-medium">{count}</span>
                       </div>
                     ))}
                   {Object.keys(previewData.byDisease).length === 0 && (
-                    <p className="text-sm text-gray-400">No data</p>
+                    <p className="text-sm text-muted-foreground/60">No data</p>
                   )}
                 </div>
               </div>
@@ -621,9 +620,9 @@ export default function ReportsPage() {
           </Card>
         )}
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Report Information</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
+        <div className="bg-primary/5 border border-primary/20 rounded-md p-4">
+          <h3 className="text-sm font-medium text-primary mb-2">Report Information</h3>
+          <ul className="text-sm text-primary space-y-1">
             <li>• Reports include all case fields: patient info, disease, symptoms, status, validation, and facility details</li>
             <li>• Summary statistics show case counts by status, validation, and disease</li>
             <li>• PDF output includes header with RIDSR branding and ministry information</li>

@@ -45,14 +45,14 @@ export default function Breadcrumb() {
   const breadcrumbs = getBreadcrumbs(pathname);
 
   return (
-    <nav className="flex items-center gap-2 text-sm text-gray-600">
+    <nav className="flex items-center gap-2 text-sm">
       {breadcrumbs.map((item, index) => (
         <div key={item.href} className="flex items-center gap-2">
-          {index > 0 && <span className="text-gray-400">/</span>}
+          {index > 0 && <span className="text-muted-foreground/60">/</span>}
           {index === breadcrumbs.length - 1 ? (
-            <span className="text-gray-900 font-medium">{item.label}</span>
+            <span className="text-foreground font-medium">{item.label}</span>
           ) : (
-            <Link href={item.href} className="text-blue-600 hover:text-blue-700">
+            <Link href={item.href} className="text-primary hover:text-primary/80">
               {item.label}
             </Link>
           )}

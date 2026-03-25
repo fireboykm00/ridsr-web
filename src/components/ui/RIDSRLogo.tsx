@@ -14,10 +14,10 @@ interface RIDSRLogoProps {
 
 export default function RIDSRLogo({
   size = 100,
-  color = "#0070F0",
+  color = "#005DAA",
   showText = true,
   textSize = 16,
-  textColor = "#000",
+  textColor = "#111827",
   className,
 }: RIDSRLogoProps) {
   return (
@@ -48,7 +48,7 @@ export default function RIDSRLogo({
           <circle cx="160" cy="100" r="6" fill={color} />
 
           {/* Sun Rays */}
-          <g fill="#F4BA19">
+          <g fill="#FFD200">
             {Array.from({ length: 24 }).map((_, i) => {
               const angle = i * 15 * (Math.PI / 180);
               const x = 100 + Math.cos(angle) * 30;
@@ -60,7 +60,7 @@ export default function RIDSRLogo({
                   y1="100"
                   x2={x}
                   y2={y}
-                  stroke="#F4BA19"
+                  stroke="#FFD200"
                   strokeWidth="2"
                 />
               );
