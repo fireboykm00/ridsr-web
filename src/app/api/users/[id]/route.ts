@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from '@/lib/utils/auth';
 import mongoose from 'mongoose';
 import { auth } from '@/lib/auth';
 import { dbConnect } from '@/lib/services/db';
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // Hash password if provided
     if (data.password) {
-      data.password = await bcrypt.hash(String(data.password), 12);
+      data.password = await hashPassword(String(data.password));
     }
 
     // Accept facility code (e.g. HC00055) or ObjectId.

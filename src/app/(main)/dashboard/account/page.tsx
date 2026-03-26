@@ -437,7 +437,7 @@ export default function AccountPage() {
                       id="emailNotifications"
                       label="Email Notifications"
                       checked={settings.emailNotifications}
-                      onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
+                      onChange={(checked) => setSettings({ ...settings, emailNotifications: checked })}
                       disabled={loading}
                     />
                     <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive email notifications for case updates and alerts</p>
@@ -446,7 +446,7 @@ export default function AccountPage() {
                       id="smsAlerts"
                       label="SMS Alerts"
                       checked={settings.smsAlerts}
-                      onChange={(e) => setSettings({ ...settings, smsAlerts: e.target.checked })}
+                      onChange={(checked) => setSettings({ ...settings, smsAlerts: checked })}
                       disabled={loading}
                     />
                     <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive SMS alerts for urgent cases and outbreaks</p>
@@ -455,7 +455,7 @@ export default function AccountPage() {
                       id="weeklyReports"
                       label="Weekly Reports"
                       checked={settings.weeklyReports}
-                      onChange={(e) => setSettings({ ...settings, weeklyReports: e.target.checked })}
+                      onChange={(checked) => setSettings({ ...settings, weeklyReports: checked })}
                       disabled={loading}
                     />
                     <p className="text-sm text-muted-foreground ml-7 -mt-2">Receive weekly summary reports via email</p>
@@ -464,7 +464,7 @@ export default function AccountPage() {
                       id="twoFactorAuth"
                       label="Two-Factor Authentication"
                       checked={settings.twoFactorAuth}
-                      onChange={(e) => setSettings({ ...settings, twoFactorAuth: e.target.checked })}
+                      onChange={(checked) => setSettings({ ...settings, twoFactorAuth: checked })}
                       disabled={loading}
                     />
                     <p className="text-sm text-muted-foreground ml-7 -mt-2">Enable two-factor authentication for enhanced security</p>

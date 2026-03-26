@@ -166,7 +166,7 @@ export default function LoginPage() {
                 id="remember-me"
                 label="Remember me"
                 checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
+                onChange={(checked) => setRememberMe(checked)}
                 disabled={loading}
               />
               <Link
